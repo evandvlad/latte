@@ -256,28 +256,6 @@
             assertEquals(st2.called, false);
         },
 
-        testBindResolve : function(){
-            var st = stub();
-
-            latte.bind(latte.wrapAsResolved(4), function(val){
-                return val + 4;
-            })(st);
-
-            assertEquals(st.args[0], 8);
-        },
-
-        testBindReject : function(){
-            var st1 = stub(),
-                st2 = stub();
-
-            latte.bind(latte.wrapAsRejected(6), null, function(val){
-                return val + 4;
-            })(st1, st2);
-
-            assertEquals(st1.called, false);
-            assertEquals(st2.args[0], 10);
-        },
-
         testLiftResolve : function(){
             var st1 = stub(),
                 st2 = stub();

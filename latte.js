@@ -120,7 +120,7 @@
 
     latte = {
 
-        version : '0.0.2',
+        version : '0.1.0',
 
         Promise : Promise,
 
@@ -132,19 +132,15 @@
             return unit(STATE_REJECT, val);
         },
 
-        bind : function(promise, resolve, reject){
-            var cbs = fapply(makeCallbacks, aslice(arguments, 1));
-
-            return promise(
-                fcompose(latte.wrapAsResolved, fbind(cbs, STATE_RESOLVE)),
-                fcompose(latte.wrapAsRejected, fbind(cbs, STATE_REJECT))
-            );
-        },
-
         lift : function(resolve, reject){
             return (function(args){
                 return function(promise){
-                    return fapply(latte.bind, aconcat([promise], aslice(args)));
+                    var cbs = fapply(makeCallbacks, args);
+
+                    return promise(
+                        fcompose(latte.wrapAsResolved, fbind(cbs, STATE_RESOLVE)),
+                        fcompose(latte.wrapAsRejected, fbind(cbs, STATE_REJECT))
+                    );
                 };
             }(arguments));
         },
@@ -176,21 +172,21 @@
         },
 
         lfilter : function(promises, f){
-            return latte.bind(latte.collect(promises), function(values){
+            return latte.lift(function(values){
                 return values.filter(f);
-            });
+            })(latte.collect(promises));
         },
 
         lmap : function(promises, f){
-            return latte.bind(latte.collect(promises), function(values){
+            return latte.lift(function(values){
                 return values.map(f);
-            });
+            })(latte.collect(promises));
         },
 
         lfold : function(promises, f, ival){
-            return latte.bind(latte.collect(promises), function(values){
+            return latte.lift(function(values){
                 return values.reduce(f, ival);
-            });
+            })(latte.collect(promises));
         }
     };
 
