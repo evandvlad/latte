@@ -429,6 +429,23 @@
             assertEquals(st2.called, false);
         },
 
+        testLconcatReject : function(){
+            var st1 = stub(),
+                st2 = stub();
+
+            latte.lconcat([
+                latte.wrapAsResolved(1)
+            ],[
+                latte.wrapAsResolved(2),
+                latte.wrapAsRejected('error')
+            ], [
+                latte.wrapAsResolved(3)
+            ])(st1, st2);
+
+            assertEquals(st1.called, false);
+            assertEquals(st2.args[0], 'error');
+        },
+
         testLfilter : function(){
             var st1 = stub(),
                 st2 = stub();
@@ -443,6 +460,22 @@
 
             assertEquals(st1.args[0], [3]);
             assertEquals(st2.called, false);
+        },
+
+        testLfilterReject : function(){
+            var st1 = stub(),
+                st2 = stub();
+
+            latte.lfilter([
+                latte.wrapAsResolved(1),
+                latte.wrapAsRejected('error'),
+                latte.wrapAsResolved(3)
+            ], function(v){
+                return v > 2;
+            })(st1, st2);
+
+            assertEquals(st1.called, false);
+            assertEquals(st2.args[0], 'error');
         },
 
         testLmap : function(){
@@ -461,6 +494,22 @@
             assertEquals(st2.called, false);
         },
 
+        testLmapRejected : function(){
+            var st1 = stub(),
+                st2 = stub();
+
+            latte.lmap([
+                latte.wrapAsResolved(1),
+                latte.wrapAsRejected('error'),
+                latte.wrapAsResolved(3)
+            ], function(v){
+                return v + 2;
+            })(st1, st2);
+
+            assertEquals(st1.called, false);
+            assertEquals(st2.args[0], 'error');
+        },
+
         testLfold : function(){
             var st1 = stub(),
                 st2 = stub();
@@ -475,7 +524,22 @@
 
             assertEquals(st1.args[0], 6);
             assertEquals(st2.called, false);
-        }
+        },
 
+        testLfoldRejected : function(){
+            var st1 = stub(),
+                st2 = stub();
+
+            latte.lfold([
+                latte.wrapAsResolved(1),
+                latte.wrapAsRejected('error'),
+                latte.wrapAsResolved(3)
+            ], function(acc, v){
+                return acc += v;
+            }, 0)(st1, st2);
+
+            assertEquals(st1.called, false);
+            assertEquals(st2.args[0], 'error');
+        }
     });
 }());
