@@ -35,6 +35,12 @@
         }(aslice(arguments, 1)));
     }
 
+    function funbind(f){
+        return aslice(arguments, 1).reduce(function(acc, args){
+            return acc = fapply(acc, args);
+        }, f);
+    }
+
     function fcompose(f1, f2){
         return function(){
             return f1(fapply(f2, arguments));
@@ -66,7 +72,7 @@
 
         return function(state, val){
             var res = fapply(callbacks, arguments);
-            return typeof res === 'function' ? fapply(res, handles) : fapply(fapply(makeCallbacks, handles), arguments);
+            return typeof res === 'function' ? fapply(res, handles) : funbind(makeCallbacks, handles, arguments);
         };
     }
 
@@ -88,7 +94,7 @@
 
             onValue : function(onFulfilled, onRejected, resolver, rejecter){
                 return unit.length ?
-                    fapply(fapply(combineCallbacks, arguments), unit) :
+                    funbind(combineCallbacks, arguments, unit) :
                     pending.push(fapply(combineCallbacks, arguments));
             }
         };
@@ -107,14 +113,14 @@
     function unit(state, val){
         return (function(args){
             return Promise(function(onFulfilled, onRejected){
-                fapply(fapply(makeCallbacks, arguments), args);
+                funbind(makeCallbacks, arguments, args);
             });
         }(arguments));
     }
 
     latte = {
 
-        version : '0.0.1',
+        version : '0.0.2',
 
         Promise : Promise,
 
@@ -126,10 +132,10 @@
             return unit(STATE_REJECT, val);
         },
 
-        bind : function(unit, resolve, reject){
+        bind : function(promise, resolve, reject){
             var cbs = fapply(makeCallbacks, aslice(arguments, 1));
 
-            return unit(
+            return promise(
                 fcompose(latte.wrapAsResolved, fbind(cbs, STATE_RESOLVE)),
                 fcompose(latte.wrapAsRejected, fbind(cbs, STATE_REJECT))
             );
@@ -137,19 +143,19 @@
 
         lift : function(resolve, reject){
             return (function(args){
-                return function(unit){
-                    return fapply(latte.bind, aconcat([unit], args));
+                return function(promise){
+                    return fapply(latte.bind, aconcat([promise], aslice(args)));
                 };
-            }(aslice(arguments)));
+            }(arguments));
         },
 
-        collect : function(units){
-            var ticks = units.length,
+        collect : function(promises){
+            var ticks = promises.length,
                 processed = 0;
 
             return ticks ? latte.Promise(function(onFulfilled, onRejected){
-                units.reduce(function(acc, unit, i){
-                    unit(function(val){
+                promises.reduce(function(acc, promise, i){
+                    promise(function(val){
                         acc[i] = val;
                         ++processed === ticks && onFulfilled(acc);
                     }, onRejected);
@@ -160,8 +166,8 @@
         },
 
         wpipe : function(wrapped, ival){
-            return wrapped.reduce(function(acc, wunit){
-                return acc(wunit);
+            return wrapped.reduce(function(acc, wpromise){
+                return acc(wpromise);
             }, latte.wrapAsResolved(ival));
         },
 
@@ -169,20 +175,20 @@
             return latte.collect(fapply(aconcat, aslice(arguments)));
         },
 
-        lfilter : function(units, f){
-            return latte.bind(latte.collect(units), function(values){
+        lfilter : function(promises, f){
+            return latte.bind(latte.collect(promises), function(values){
                 return values.filter(f);
             });
         },
 
-        lmap : function(units, f){
-            return latte.bind(latte.collect(units), function(values){
+        lmap : function(promises, f){
+            return latte.bind(latte.collect(promises), function(values){
                 return values.map(f);
             });
         },
 
-        lfold : function(units, f, ival){
-            return latte.bind(latte.collect(units), function(values){
+        lfold : function(promises, f, ival){
+            return latte.bind(latte.collect(promises), function(values){
                 return values.reduce(f, ival);
             });
         }
