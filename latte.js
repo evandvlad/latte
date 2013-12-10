@@ -23,6 +23,10 @@
 
         latte;
 
+    function ret(value){
+        return value;
+    }
+
     function fapply(f, args){
         return f.apply(null, args);
     }
@@ -41,10 +45,14 @@
         }, f);
     }
 
-    function fcompose(f1, f2){
-        return function(){
-            return f1(fapply(f2, arguments));
-        };
+    function fcompose(){
+        return (function(args){
+            return function(){
+                return aslice(args, 0, -1).reduceRight(function(acc, f){
+                    return acc = f(acc);
+                }, fapply(args[args.length - 1], arguments));
+            };
+        }(arguments));
     }
 
     function aslice(arr, from, to){
@@ -56,22 +64,16 @@
     }
 
     function makeCallbacks(onResolve, onReject){
-        var cbs = [];
-
-        cbs[STATE_RESOLVE] = onResolve;
-        cbs[STATE_REJECT] = onReject;
-
         return function(state, val){
-            return typeof cbs[state] === 'function' ? cbs[state](val) : val;
+            return ((state === STATE_RESOLVE ? onResolve : onReject) || ret)(val);
         };
     }
 
     function combineCallbacks(onFulfilled, onRejected, resolver, rejector){
-        var callbacks = makeCallbacks(onFulfilled || resolver, onRejected || rejector),
-            handles = aslice(arguments, 2);
-
         return function(state, val){
-            var res = fapply(callbacks, arguments);
+            var res = fapply(makeCallbacks(onFulfilled || resolver, onRejected || rejector), arguments),
+                handles = [resolver, rejector];
+
             return typeof res === 'function' ? fapply(res, handles) : funbind(makeCallbacks, handles, arguments);
         };
     }
@@ -120,7 +122,7 @@
 
     latte = {
 
-        version : '0.1.0',
+        version : '0.1.1',
 
         Promise : Promise,
 
