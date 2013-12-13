@@ -97,6 +97,20 @@
             assertEquals(st2.args[0], 123);
         },
 
+        testTransmitResolve : function(){
+            var st1 = stub(),
+                st2 = stub(),
+                h;
+
+            latte.Promise(function(resolver, rejector){
+                h = resolver;
+            })(latte.wrap)(st1)(st2);
+
+            h(123);
+            assertEquals(st1.args[0], 123);
+            assertEquals(st2.args[0], 123);
+        },
+
         testNullPromiseResolveContinuator : function(){
             var st1 = stub(),
                 st2 = stub(),
@@ -151,7 +165,7 @@
             latte.Promise(function(resolver, rejector){
                 h = resolver;
             })(st1)(function(val){
-                return latte.wrapAsResolved(val + 5);
+                return latte.wrap(val + 5);
             })(st2);
 
             h(123);
@@ -185,7 +199,7 @@
             latte.Promise(function(resolver, rejector){
                 h = rejector;
             })(null, st1)(null, function(val){
-                return latte.wrapAsRejected(val + 5);
+                return latte.wrap(val + 5, true);
             })(null, st2);
 
             h(123);
@@ -233,7 +247,7 @@
             var st1 = stub(),
                 st2 = stub();
 
-            latte.wrapAsResolved(5)(st1, st2);
+            latte.wrap(5)(st1, st2);
             assertEquals(st1.args[0], 5);
             assertEquals(st2.called, false);
         },
@@ -242,7 +256,7 @@
             var st1 = stub(),
                 st2 = stub();
 
-            latte.wrapAsRejected(5)(st1, st2);
+            latte.wrap(5, true)(st1, st2);
             assertEquals(st1.called, false);
             assertEquals(st2.args[0], 5);
         },
@@ -251,7 +265,7 @@
             var st1 = stub(),
                 st2 = stub();
 
-            latte.wrapAsResolved(function(){return 5;})(st1, st2);
+            latte.wrap(function(){return 5;})(st1, st2);
             assertEquals(st1.args[0](), 5);
             assertEquals(st2.called, false);
         },
@@ -262,7 +276,7 @@
 
             latte.lift(function(val){
                 return val + 5;
-            })(latte.wrapAsResolved(3))(st1, st2);
+            })(latte.wrap(3))(st1, st2);
 
             assertEquals(st1.args[0], 8);
             assertEquals(st2.called, false);
@@ -274,7 +288,7 @@
 
             latte.lift(null, function(val){
                 return val + 5;
-            })(latte.wrapAsRejected(3))(st1, st2);
+            })(latte.wrap(3, true))(st1, st2);
 
             assertEquals(st1.called, false);
             assertEquals(st2.args[0], 8);
@@ -299,8 +313,8 @@
                 latte.Promise(function(resolve){
                     h = resolve;
                 }),
-                latte.wrapAsResolved(2),
-                latte.wrapAsResolved(3)
+                latte.wrap(2),
+                latte.wrap(3)
             ])(st1, st2);
 
             h(1);
@@ -315,11 +329,11 @@
                 h;
 
             latte.collect([
-                latte.wrapAsResolved(1),
+                latte.wrap(1),
                 latte.Promise(function(resolve, reject){
                     h = reject;
                 }),
-                latte.wrapAsResolved(3)
+                latte.wrap(3)
             ])(st1, st2);
 
             h('error');
@@ -332,7 +346,7 @@
             var st1 = stub(),
                 st2 = stub(),
                 p1 = function(){
-                    return latte.wrapAsResolved(1);
+                    return latte.wrap(1);
                 },
                 p2 = function(v){
                     return latte.Promise(function(resolve){
@@ -342,7 +356,7 @@
                     });
                 },
                 p3 = function(v){
-                    return latte.wrapAsResolved(v + 3);
+                    return latte.wrap(v + 3);
                 };
 
             latte.wpipe([p1, p2, p3])(st1, st2);
@@ -357,7 +371,7 @@
             var st1 = stub(),
                 st2 = stub(),
                 p1 = function(){
-                    return latte.wrapAsResolved(1);
+                    return latte.wrap(1);
                 },
                 p2 = function(v){
                     return latte.Promise(function(resolve){
@@ -367,7 +381,7 @@
                     });
                 },
                 p3 = function(v){
-                    return latte.wrapAsResolved(v + 3);
+                    return latte.wrap(v + 3);
                 };
 
             latte.wpipe([p1, p2, p3], 10)(st1, st2);
@@ -382,7 +396,7 @@
             var st1 = stub(),
                 st2 = stub(),
                 p1 = function(){
-                    return latte.wrapAsResolved(1);
+                    return latte.wrap(1);
                 },
                 p2 = function(v){
                     return latte.Promise(function(resolve){
@@ -392,7 +406,7 @@
                     });
                 },
                 p3 = function(v){
-                    return latte.wrapAsRejected('error');
+                    return latte.wrap('error', true);
                 };
 
             latte.wpipe([p1, p2, p3])(st1, st2);
@@ -403,140 +417,109 @@
             }, 1);
         },
 
-        testEmptyLconcat : function(){
+        testLiftWithFilter : function(){
             var st1 = stub(),
                 st2 = stub();
 
-            latte.lconcat([], [])(st1, st2);
-
-            assertEquals(st1.args[0], []);
-            assertEquals(st2.called, false);
-        },
-
-        testLconcat : function(){
-            var st1 = stub(),
-                st2 = stub();
-
-            latte.lconcat([
-                latte.wrapAsResolved(1)
-            ], [
-                latte.wrapAsResolved(2)
-            ], [
-                latte.wrapAsResolved(3)
-            ])(st1, st2);
-
-            assertEquals(st1.args[0], [1,2,3]);
-            assertEquals(st2.called, false);
-        },
-
-        testLconcatReject : function(){
-            var st1 = stub(),
-                st2 = stub();
-
-            latte.lconcat([
-                latte.wrapAsResolved(1)
-            ],[
-                latte.wrapAsResolved(2),
-                latte.wrapAsRejected('error')
-            ], [
-                latte.wrapAsResolved(3)
-            ])(st1, st2);
-
-            assertEquals(st1.called, false);
-            assertEquals(st2.args[0], 'error');
-        },
-
-        testLfilter : function(){
-            var st1 = stub(),
-                st2 = stub();
-
-            latte.lfilter([
-                latte.wrapAsResolved(1),
-                latte.wrapAsResolved(2),
-                latte.wrapAsResolved(3)
-            ], function(v){
-                return v > 2;
-            })(st1, st2);
+            latte.lift(function(list){
+                return list.filter(function(v){
+                    return v > 2;
+                });
+            })(latte.collect([
+                latte.wrap(1),
+                latte.wrap(2),
+                latte.wrap(3)
+            ]))(st1, st2);
 
             assertEquals(st1.args[0], [3]);
             assertEquals(st2.called, false);
         },
 
-        testLfilterReject : function(){
+        testLiftWithFilterReject : function(){
             var st1 = stub(),
                 st2 = stub();
 
-            latte.lfilter([
-                latte.wrapAsResolved(1),
-                latte.wrapAsRejected('error'),
-                latte.wrapAsResolved(3)
-            ], function(v){
-                return v > 2;
-            })(st1, st2);
+            latte.lift(function(list){
+                return list.filter(function(v){
+                    return v > 2;
+                });
+            })(latte.collect([
+                latte.wrap(1),
+                latte.wrap('error', true),
+                latte.wrap(3)
+            ]))(st1, st2);
 
             assertEquals(st1.called, false);
             assertEquals(st2.args[0], 'error');
         },
 
-        testLmap : function(){
+        testLiftWithMap : function(){
             var st1 = stub(),
                 st2 = stub();
 
-            latte.lmap([
-                latte.wrapAsResolved(1),
-                latte.wrapAsResolved(2),
-                latte.wrapAsResolved(3)
-            ], function(v){
-                return v + 2;
-            })(st1, st2);
+            latte.lift(function(list){
+                return list.map(function(v){
+                    return v + 2;
+                });
+            })(latte.collect([
+                latte.wrap(1),
+                latte.wrap(2),
+                latte.wrap(3)
+            ]))(st1, st2);
 
             assertEquals(st1.args[0], [3,4,5]);
             assertEquals(st2.called, false);
         },
 
-        testLmapRejected : function(){
+        testLiftWithMapRejected : function(){
             var st1 = stub(),
                 st2 = stub();
 
-            latte.lmap([
-                latte.wrapAsResolved(1),
-                latte.wrapAsRejected('error'),
-                latte.wrapAsResolved(3)
-            ], function(v){
-                return v + 2;
-            })(st1, st2);
+            latte.lift(function(list){
+                return list.map(function(v){
+                    return v + 2;
+                });
+            })(latte.collect([
+                latte.wrap(1),
+                latte.wrap('error', true),
+                latte.wrap(3)
+            ]))(st1, st2);
 
             assertEquals(st1.called, false);
             assertEquals(st2.args[0], 'error');
         },
 
-        testLfold : function(){
+        testLiftReduce : function(){
             var st1 = stub(),
                 st2 = stub();
 
-            latte.lfold([
-                latte.wrapAsResolved(1),
-                latte.wrapAsResolved(2),
-                latte.wrapAsResolved(3)
-            ], function(acc, v){
-                return acc += v;
-            }, 0)(st1, st2);
+            latte.lift(function(list){
+                return list.reduce(function(acc, v){
+                    return acc += v;
+                }, 0);
+            })(latte.collect([
+                latte.wrap(1),
+                latte.wrap(2),
+                latte.wrap(3)
+            ]))(st1, st2);
 
             assertEquals(st1.args[0], 6);
             assertEquals(st2.called, false);
         },
 
-        testLfoldRejected : function(){
+        testLiftReduceRejected : function(){
             var st1 = stub(),
                 st2 = stub();
 
-            latte.lfold([
-                latte.wrapAsResolved(1),
-                latte.wrapAsRejected('error'),
-                latte.wrapAsResolved(3)
-            ], function(acc, v){
-                return acc += v;
-            }, 0)(st1, st2);
+            latte.lift(function(list){
+                return list.reduce(function(acc, v){
+                    return acc += v;
+                }, 0);
+            })(latte.collect([
+                latte.wrap(1),
+                latte.wrap('error', true),
+                latte.wrap(3)
+            ]))(st1, st2);
 
             assertEquals(st1.called, false);
             assertEquals(st2.args[0], 'error');

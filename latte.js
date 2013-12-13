@@ -16,14 +16,13 @@
 
 }(this, function(){
 
-    var STATE_RESOLVE = 1,
-        STATE_REJECT = 0,
+    var STATUS_RESOLVE = 1,
+        STATUS_REJECT = 0,
 
         aproto = Array.prototype,
-
         latte;
 
-    function ret(value){
+    function pass(value){
         return value;
     }
 
@@ -63,40 +62,40 @@
         return aproto.concat.apply(aproto, arguments);
     }
 
-    function makeCallbacks(onResolve, onReject){
-        return function(state, val){
-            return ((state === STATE_RESOLVE ? onResolve : onReject) || ret)(val);
+    function makeHandler(onResolve, onReject){
+        return function(status, val){
+            return ((status === STATUS_RESOLVE ? onResolve : onReject) || pass)(val);
         };
     }
 
     function combineCallbacks(onFulfilled, onRejected, resolver, rejector){
         return function(state, val){
-            var res = fapply(makeCallbacks(onFulfilled || resolver, onRejected || rejector), arguments),
+            var res = fapply(makeHandler(onFulfilled || resolver, onRejected || rejector), arguments),
                 handles = [resolver, rejector];
 
-            return typeof res === 'function' ? fapply(res, handles) : funbind(makeCallbacks, handles, arguments);
+            return typeof res === 'function' ? fapply(res, handles) : funbind(makeHandler, handles, arguments);
         };
     }
 
     function PState(){
         var pending = [],
-            unit = [];
+            value = [];
 
         return {
 
             setValue : function(state, val){
-                if(!unit.length){
-                    unit.push(state, val);
+                if(!value.length){
+                    value.push(state, val);
 
                     while(pending.length){
-                        fapply(pending.shift(), unit);
+                        fapply(pending.shift(), value);
                     }
                 }
             },
 
             onValue : function(onFulfilled, onRejected, resolver, rejecter){
-                return unit.length ?
-                    funbind(combineCallbacks, arguments, unit) :
+                return value.length ?
+                    funbind(combineCallbacks, arguments, value) :
                     pending.push(fapply(combineCallbacks, arguments));
             }
         };
@@ -105,43 +104,39 @@
     function Promise(ctor){
         var pstate = PState();
 
-        ctor(fbind(pstate.setValue, STATE_RESOLVE), fbind(pstate.setValue, STATE_REJECT));
+        ctor(fbind(pstate.setValue, STATUS_RESOLVE), fbind(pstate.setValue, STATUS_REJECT));
 
         return function(onFulfilled, onRejected){
             return Promise(fbind(pstate.onValue, onFulfilled, onRejected));
         };
     }
 
-    function unit(state, val){
+    function unit(status, val){
         return (function(args){
             return Promise(function(onFulfilled, onRejected){
-                funbind(makeCallbacks, arguments, args);
+                funbind(makeHandler, arguments, args);
             });
         }(arguments));
     }
 
     latte = {
 
-        version : '0.1.1',
+        version : '0.2.0',
 
         Promise : Promise,
 
-        wrapAsResolved : function(val){
-            return unit(STATE_RESOLVE, val);
-        },
-
-        wrapAsRejected : function(val){
-            return unit(STATE_REJECT, val);
+        wrap : function(val, isRejected){
+            return unit(isRejected ? STATUS_REJECT : STATUS_RESOLVE, val);
         },
 
         lift : function(resolve, reject){
             return (function(args){
                 return function(promise){
-                    var cbs = fapply(makeCallbacks, args);
+                    var cbs = fapply(makeHandler, args);
 
                     return promise(
-                        fcompose(latte.wrapAsResolved, fbind(cbs, STATE_RESOLVE)),
-                        fcompose(latte.wrapAsRejected, fbind(cbs, STATE_REJECT))
+                        fcompose(fbind(unit, STATUS_RESOLVE), fbind(cbs, STATUS_RESOLVE)),
+                        fcompose(fbind(unit, STATUS_REJECT), fbind(cbs, STATUS_REJECT))
                     );
                 };
             }(arguments));
@@ -151,7 +146,7 @@
             var ticks = promises.length,
                 processed = 0;
 
-            return ticks ? latte.Promise(function(onFulfilled, onRejected){
+            return ticks ? Promise(function(onFulfilled, onRejected){
                 promises.reduce(function(acc, promise, i){
                     promise(function(val){
                         acc[i] = val;
@@ -160,35 +155,13 @@
 
                     return acc;
                 }, []);
-            }) : latte.wrapAsResolved([]);
+            }) : unit(STATUS_RESOLVE, []);
         },
 
         wpipe : function(wrapped, ival){
             return wrapped.reduce(function(acc, wpromise){
                 return acc(wpromise);
-            }, latte.wrapAsResolved(ival));
-        },
-
-        lconcat : function(){
-            return latte.collect(fapply(aconcat, aslice(arguments)));
-        },
-
-        lfilter : function(promises, f){
-            return latte.lift(function(values){
-                return values.filter(f);
-            })(latte.collect(promises));
-        },
-
-        lmap : function(promises, f){
-            return latte.lift(function(values){
-                return values.map(f);
-            })(latte.collect(promises));
-        },
-
-        lfold : function(promises, f, ival){
-            return latte.lift(function(values){
-                return values.reduce(f, ival);
-            })(latte.collect(promises));
+            }, unit(STATUS_RESOLVE, ival));
         }
     };
 
