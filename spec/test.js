@@ -104,7 +104,7 @@
 
             latte.Promise(function(resolver, rejector){
                 h = resolver;
-            })(latte.wrap)(st1)(st2);
+            })(latte.unit)(st1)(st2);
 
             h(123);
             assertEquals(st1.args[0], 123);
@@ -165,7 +165,7 @@
             latte.Promise(function(resolver, rejector){
                 h = resolver;
             })(st1)(function(val){
-                return latte.wrap(val + 5);
+                return latte.unit(val + 5);
             })(st2);
 
             h(123);
@@ -199,7 +199,7 @@
             latte.Promise(function(resolver, rejector){
                 h = rejector;
             })(null, st1)(null, function(val){
-                return latte.wrap(val + 5, true);
+                return latte.fail(val + 5);
             })(null, st2);
 
             h(123);
@@ -247,7 +247,7 @@
             var st1 = stub(),
                 st2 = stub();
 
-            latte.wrap(5)(st1, st2);
+            latte.unit(5)(st1, st2);
             assertEquals(st1.args[0], 5);
             assertEquals(st2.called, false);
         },
@@ -256,7 +256,7 @@
             var st1 = stub(),
                 st2 = stub();
 
-            latte.wrap(5, true)(st1, st2);
+            latte.fail(5)(st1, st2);
             assertEquals(st1.called, false);
             assertEquals(st2.args[0], 5);
         },
@@ -265,7 +265,7 @@
             var st1 = stub(),
                 st2 = stub();
 
-            latte.wrap(function(){return 5;})(st1, st2);
+            latte.unit(function(){return 5;})(st1, st2);
             assertEquals(st1.args[0](), 5);
             assertEquals(st2.called, false);
         },
@@ -276,7 +276,7 @@
 
             latte.lift(function(val){
                 return val + 5;
-            })(latte.wrap(3))(st1, st2);
+            })(latte.unit(3))(st1, st2);
 
             assertEquals(st1.args[0], 8);
             assertEquals(st2.called, false);
@@ -288,7 +288,7 @@
 
             latte.lift(null, function(val){
                 return val + 5;
-            })(latte.wrap(3, true))(st1, st2);
+            })(latte.fail(3))(st1, st2);
 
             assertEquals(st1.called, false);
             assertEquals(st2.args[0], 8);
@@ -313,8 +313,8 @@
                 latte.Promise(function(resolve){
                     h = resolve;
                 }),
-                latte.wrap(2),
-                latte.wrap(3)
+                latte.unit(2),
+                latte.unit(3)
             ])(st1, st2);
 
             h(1);
@@ -329,11 +329,11 @@
                 h;
 
             latte.collect([
-                latte.wrap(1),
+                latte.unit(1),
                 latte.Promise(function(resolve, reject){
                     h = reject;
                 }),
-                latte.wrap(3)
+                latte.unit(3)
             ])(st1, st2);
 
             h('error');
@@ -346,7 +346,7 @@
             var st1 = stub(),
                 st2 = stub(),
                 p1 = function(){
-                    return latte.wrap(1);
+                    return latte.unit(1);
                 },
                 p2 = function(v){
                     return latte.Promise(function(resolve){
@@ -356,7 +356,7 @@
                     });
                 },
                 p3 = function(v){
-                    return latte.wrap(v + 3);
+                    return latte.unit(v + 3);
                 };
 
             latte.wpipe([p1, p2, p3])(st1, st2);
@@ -371,7 +371,7 @@
             var st1 = stub(),
                 st2 = stub(),
                 p1 = function(){
-                    return latte.wrap(1);
+                    return latte.unit(1);
                 },
                 p2 = function(v){
                     return latte.Promise(function(resolve){
@@ -381,7 +381,7 @@
                     });
                 },
                 p3 = function(v){
-                    return latte.wrap(v + 3);
+                    return latte.unit(v + 3);
                 };
 
             latte.wpipe([p1, p2, p3], 10)(st1, st2);
@@ -396,7 +396,7 @@
             var st1 = stub(),
                 st2 = stub(),
                 p1 = function(){
-                    return latte.wrap(1);
+                    return latte.unit(1);
                 },
                 p2 = function(v){
                     return latte.Promise(function(resolve){
@@ -406,7 +406,7 @@
                     });
                 },
                 p3 = function(v){
-                    return latte.wrap('error', true);
+                    return latte.fail('error');
                 };
 
             latte.wpipe([p1, p2, p3])(st1, st2);
@@ -426,9 +426,9 @@
                     return v > 2;
                 });
             })(latte.collect([
-                latte.wrap(1),
-                latte.wrap(2),
-                latte.wrap(3)
+                latte.unit(1),
+                latte.unit(2),
+                latte.unit(3)
             ]))(st1, st2);
 
             assertEquals(st1.args[0], [3]);
@@ -444,9 +444,9 @@
                     return v > 2;
                 });
             })(latte.collect([
-                latte.wrap(1),
-                latte.wrap('error', true),
-                latte.wrap(3)
+                latte.unit(1),
+                latte.fail('error'),
+                latte.unit(3)
             ]))(st1, st2);
 
             assertEquals(st1.called, false);
@@ -462,9 +462,9 @@
                     return v + 2;
                 });
             })(latte.collect([
-                latte.wrap(1),
-                latte.wrap(2),
-                latte.wrap(3)
+                latte.unit(1),
+                latte.unit(2),
+                latte.unit(3)
             ]))(st1, st2);
 
             assertEquals(st1.args[0], [3,4,5]);
@@ -480,9 +480,9 @@
                     return v + 2;
                 });
             })(latte.collect([
-                latte.wrap(1),
-                latte.wrap('error', true),
-                latte.wrap(3)
+                latte.unit(1),
+                latte.fail('error'),
+                latte.unit(3)
             ]))(st1, st2);
 
             assertEquals(st1.called, false);
@@ -498,9 +498,9 @@
                     return acc += v;
                 }, 0);
             })(latte.collect([
-                latte.wrap(1),
-                latte.wrap(2),
-                latte.wrap(3)
+                latte.unit(1),
+                latte.unit(2),
+                latte.unit(3)
             ]))(st1, st2);
 
             assertEquals(st1.args[0], 6);
@@ -516,13 +516,76 @@
                     return acc += v;
                 }, 0);
             })(latte.collect([
-                latte.wrap(1),
-                latte.wrap('error', true),
-                latte.wrap(3)
+                latte.unit(1),
+                latte.fail('error'),
+                latte.unit(3)
             ]))(st1, st2);
 
             assertEquals(st1.called, false);
             assertEquals(st2.args[0], 'error');
+        },
+
+        testMonadicLawsLeftIdentity : function(){
+            var st1 = stub(),
+                st2 = stub(),
+
+                f = function(a){
+                    return latte.unit(a);
+                },
+                l,
+                r;
+
+            l = latte.unit(2)(f);
+            r = f(2);
+
+            l(st1);
+            r(st2);
+
+            assert(st1.args[0] === st2.args[0]);
+            assert(st1.args[0] === 2);
+        },
+
+        testMonadicLawsRightIdentity : function(){
+            var st1 = stub(),
+                st2 = stub(),
+                l,
+                r;
+
+            l = latte.unit(2)(latte.unit);
+            r = latte.unit(2);
+
+            l(st1);
+            r(st2);
+
+            assert(st1.args[0] === st2.args[0]);
+            assert(st1.args[0] === 2);
+        },
+
+        testMonadicLawsAssociativity : function(){
+            var st1 = stub(),
+                st2 = stub(),
+
+                f = function(a){
+                    return latte.unit(a + 3);
+                },
+
+                g = function(a){
+                    return latte.unit(a - 1);
+                },
+
+                l,
+                r;
+
+            l = latte.unit(2)(f)(g);
+            r = latte.unit(2)(function(a){
+                return f(a)(g);
+            });
+
+            l(st1);
+            r(st2);
+
+            assert(st1.args[0] === st2.args[0]);
+            assert(st1.args[0] === 4);
         }
     });
 }());

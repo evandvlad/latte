@@ -111,7 +111,7 @@
         };
     }
 
-    function unit(status, val){
+    function wrap(status, val){
         return (function(args){
             return Promise(function(onFulfilled, onRejected){
                 funbind(makeHandler, arguments, args);
@@ -121,12 +121,16 @@
 
     latte = {
 
-        version : '0.2.0',
+        version : '0.3.0',
 
         Promise : Promise,
 
-        wrap : function(val, isRejected){
-            return unit(isRejected ? STATUS_REJECT : STATUS_RESOLVE, val);
+        unit : function(val){
+            return wrap(STATUS_RESOLVE, val);
+        },
+
+        fail : function(val){
+            return wrap(STATUS_REJECT, val);
         },
 
         lift : function(resolve, reject){
@@ -135,8 +139,8 @@
                     var cbs = fapply(makeHandler, args);
 
                     return promise(
-                        fcompose(fbind(unit, STATUS_RESOLVE), fbind(cbs, STATUS_RESOLVE)),
-                        fcompose(fbind(unit, STATUS_REJECT), fbind(cbs, STATUS_REJECT))
+                        fcompose(latte.unit, fbind(cbs, STATUS_RESOLVE)),
+                        fcompose(latte.fail, fbind(cbs, STATUS_REJECT))
                     );
                 };
             }(arguments));
@@ -155,13 +159,13 @@
 
                     return acc;
                 }, []);
-            }) : unit(STATUS_RESOLVE, []);
+            }) : latte.unit([]);
         },
 
         wpipe : function(wrapped, ival){
             return wrapped.reduce(function(acc, wpromise){
                 return acc(wpromise);
-            }, unit(STATUS_RESOLVE, ival));
+            }, latte.unit(ival));
         }
     };
 
