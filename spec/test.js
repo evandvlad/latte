@@ -530,7 +530,7 @@
                 st2 = stub(),
 
                 f = function(a){
-                    return latte.unit(a);
+                    return latte.unit(a + 1);
                 },
                 l,
                 r;
@@ -540,6 +540,50 @@
 
             l(st1);
             r(st2);
+
+            assert(st1.args[0] === st2.args[0]);
+            assert(st1.args[0] === 3);
+        },
+
+        testMonadicLawsLeftIdentityPromise : function(){
+            var st1 = stub(),
+                st2 = stub(),
+
+                f = function(a){
+                    return latte.unit(a);
+                },
+                l,
+                r;
+
+            l = latte.Promise(function(resolve){
+                resolve(2);
+            })(f);
+            r = f(2);
+
+            l(st1);
+            r(st2);
+
+            assert(st1.args[0] === st2.args[0]);
+            assert(st1.args[0] === 2);
+        },
+
+        testMonadicLawsLeftIdentityReject : function(){
+            var st1 = stub(),
+                st2 = stub(),
+
+                f = function(a){
+                    return latte.fail(a);
+                },
+                l,
+                r;
+
+            l = latte.Promise(function(resolve, reject){
+                reject(2);
+            })(null, f);
+            r = f(2);
+
+            l(null, st1);
+            r(null, st2);
 
             assert(st1.args[0] === st2.args[0]);
             assert(st1.args[0] === 2);
@@ -556,6 +600,42 @@
 
             l(st1);
             r(st2);
+
+            assert(st1.args[0] === st2.args[0]);
+            assert(st1.args[0] === 2);
+        },
+
+        testMonadicLawsRightIdentityPromise : function(){
+            var st1 = stub(),
+                st2 = stub(),
+                l,
+                r;
+
+            l = latte.Promise(function(resolve){
+                resolve(2);
+            })(latte.unit);
+            r = latte.unit(2);
+
+            l(st1);
+            r(st2);
+
+            assert(st1.args[0] === st2.args[0]);
+            assert(st1.args[0] === 2);
+        },
+
+        testMonadicLawsRightIdentityReject : function(){
+            var st1 = stub(),
+                st2 = stub(),
+                l,
+                r;
+
+            l = latte.Promise(function(resolve, reject){
+                reject(2);
+            })(null, latte.fail);
+            r = latte.fail(2);
+
+            l(null, st1);
+            r(null, st2);
 
             assert(st1.args[0] === st2.args[0]);
             assert(st1.args[0] === 2);
@@ -583,6 +663,64 @@
 
             l(st1);
             r(st2);
+
+            assert(st1.args[0] === st2.args[0]);
+            assert(st1.args[0] === 4);
+        },
+
+        testMonadicLawsAssociativityPromise : function(){
+            var st1 = stub(),
+                st2 = stub(),
+
+                f = function(a){
+                    return latte.unit(a + 3);
+                },
+
+                g = function(a){
+                    return latte.unit(a - 1);
+                },
+
+                l,
+                r;
+
+            l = latte.Promise(function(resolve){
+                resolve(2);
+            })(f)(g);
+            r = latte.unit(2)(function(a){
+                return f(a)(g);
+            });
+
+            l(st1);
+            r(st2);
+
+            assert(st1.args[0] === st2.args[0]);
+            assert(st1.args[0] === 4);
+        },
+
+        testMonadicLawsAssociativityReject : function(){
+            var st1 = stub(),
+                st2 = stub(),
+
+                f = function(a){
+                    return latte.fail(a + 3);
+                },
+
+                g = function(a){
+                    return latte.fail(a - 1);
+                },
+
+                l,
+                r;
+
+            l = latte.Promise(function(resolve, reject){
+                reject(2);
+            })(null, f)(null, g);
+            r = latte.fail(2)(null, function(a){
+                return f(a)(null, g);
+            });
+
+            l(null, st1);
+            r(null, st2);
 
             assert(st1.args[0] === st2.args[0]);
             assert(st1.args[0] === 4);
