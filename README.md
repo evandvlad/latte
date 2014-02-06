@@ -1,23 +1,39 @@
-working with promise as monad
+Монада для работы с асинхронным кодом/"обещаниями"
 
 ### Monad laws ######
 
-    function f(a){
-        return latte.unit(a + 1);
+    var x = 'test';
+
+    function f(v){
+        return Latte('[' + v + ']');
     }
 
-    function g(a){
-        return latte.unit(a + 2);
+    function g(v){
+        return Latte('<' + v + '>');
+    }
+
+    function h(v){
+        return Latte('{' + v + '}');
     }
 
 
-    // Left identity: return a >>= f ≡ f a
-    latte.unit(2)(f) ≡ f(2);
+    // Left identity: (return x) >>= f == f x
+    Latte(x).bnd(f) == f(x);
 
-    // Right identity: m >>= return ≡ m
-    latte.unit(2)(latte.unit) ≡ latte.unit(2);
+    // Right identity: m >>= return == m
+    Latte(x).bnd(Latte) == Latte(x);
 
-    // Associativity: (m >>= f) >>= g ≡ m >>= (\x -> f x >>= g)
-    latte.unit(2)(f)(g) ≡ latte.unit(2)(function(a){
-        return f(a)(g);
-    });
+    // Associativity: (m >>= f) >>= g == m >>= (\x -> f x >>= g)
+    Latte(x).bnd(f).bnd(g) == Latte(x).bnd(function(x){ return f(x).bnd(g); });
+
+
+    // Alternative
+    // f <=< return == f
+    Latte.arw(f, Latte)(x) == f(x);
+
+    // return <=< f == f
+    Latte.arw(Latte, f)(x) == f(x);
+
+    // (f <=< g) <=< h == f <=< (g <=< h)
+    Latte.arw(function(x){ return Latte.arw(f, g)(x); }, h)(x) ==
+        Latte.arw(f, function(x){ return Latte.arw(g, h)(x); })(x)

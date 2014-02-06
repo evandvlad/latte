@@ -1,4 +1,0 @@
-load:
-  - ../latte.js
-test :
-  - test.js

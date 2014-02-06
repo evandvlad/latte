@@ -1,173 +1,176 @@
 /**
  * Autor: Evstigneev Andrey
- * Date: 05.12.13
- * Time: 1:45
+ * Date: 05.02.14
+ * Time: 1:02
  */
 
 (function(global, initializer){
 
     'use strict';
 
-    global.latte = initializer();
+    global.Latte = initializer();
 
     if(typeof module !== 'undefined' && module.exports){
-        module.exports = global.latte;
+        module.exports = global.Latte;
     }
 
 }(this, function(){
 
-    var STATUS_RESOLVE = 1,
-        STATUS_REJECT = 0,
+    var LATTE_PROP = '___LATTE',
+        E_PROP = '___E';
 
-        aproto = Array.prototype,
-        latte;
-
-    function pass(value){
-        return value;
+    function defineConstProp_(o, prop, v){
+        return Object.defineProperty(o, prop, {
+            enumerable : false,
+            configurable : false,
+            writable : false,
+            value : v
+        });
     }
 
-    function fapply(f, args){
-        return f.apply(null, args);
-    }
+    function Later_(ctor){
+        var cbs = [],
+            isval = false,
+            v;
 
-    function fbind(f){
-        return (function(args){
-            return function(){
-                return fapply(f, aconcat(args, aslice(arguments)));
-            };
-        }(aslice(arguments, 1)));
-    }
+        ctor(function(val){
+            if(!isval){
+                v = val;
+                isval = true;
 
-    function funbind(f){
-        return aslice(arguments, 1).reduce(function(acc, args){
-            return acc = fapply(acc, args);
-        }, f);
-    }
-
-    function fcompose(){
-        return (function(args){
-            return function(){
-                return aslice(args, 0, -1).reduceRight(function(acc, f){
-                    return acc = f(acc);
-                }, fapply(args[args.length - 1], arguments));
-            };
-        }(arguments));
-    }
-
-    function aslice(arr, from, to){
-        return aproto.slice.call(arr, from, to);
-    }
-
-    function aconcat(){
-        return aproto.concat.apply(aproto, arguments);
-    }
-
-    function makeHandler(onResolve, onReject){
-        return function(status, val){
-            return ((status === STATUS_RESOLVE ? onResolve : onReject) || pass)(val);
-        };
-    }
-
-    function combineCallbacks(onFulfilled, onRejected, resolver, rejector){
-        return function(state, val){
-            var res = fapply(makeHandler(onFulfilled || resolver, onRejected || rejector), arguments),
-                handles = [resolver, rejector];
-
-            return typeof res === 'function' ? fapply(res, handles) : funbind(makeHandler, handles, arguments);
-        };
-    }
-
-    function PState(){
-        var pending = [],
-            value = [];
-
-        return {
-
-            setValue : function(state, val){
-                if(!value.length){
-                    value.push(state, val);
-
-                    while(pending.length){
-                        fapply(pending.shift(), value);
-                    }
+                while(cbs.length){
+                    cbs.shift()(v);
                 }
-            },
-
-            onValue : function(onFulfilled, onRejected, resolver, rejecter){
-                return value.length ?
-                    funbind(combineCallbacks, arguments, value) :
-                    pending.push(fapply(combineCallbacks, arguments));
             }
+        });
+
+        return function(f){
+            isval ? f(v) : cbs.push(f);
         };
     }
 
-    function Promise(ctor){
-        var pstate = PState();
-
-        ctor(fbind(pstate.setValue, STATUS_RESOLVE), fbind(pstate.setValue, STATUS_REJECT));
-
-        return function(onFulfilled, onRejected){
-            return Promise(fbind(pstate.onValue, onFulfilled, onRejected));
-        };
+    function Latte(v){
+        return Latte.Later(function(f){
+            f(v);
+        });
     }
 
-    function wrap(status, val){
-        return (function(args){
-            return Promise(function(onFulfilled, onRejected){
-                funbind(makeHandler, arguments, args);
-            });
-        }(arguments));
-    }
-
-    latte = {
-
-        version : '0.3.0',
-
-        Promise : Promise,
-
-        unit : function(val){
-            return wrap(STATUS_RESOLVE, val);
-        },
-
-        fail : function(val){
-            return wrap(STATUS_REJECT, val);
-        },
-
-        lift : function(resolve, reject){
-            return (function(args){
-                return function(promise){
-                    var cbs = fapply(makeHandler, args);
-
-                    return promise(
-                        fcompose(latte.unit, fbind(cbs, STATUS_RESOLVE)),
-                        fcompose(latte.fail, fbind(cbs, STATUS_REJECT))
-                    );
-                };
-            }(arguments));
-        },
-
-        collect : function(promises){
-            var ticks = promises.length,
-                processed = 0;
-
-            return ticks ? Promise(function(onFulfilled, onRejected){
-                promises.reduce(function(acc, promise, i){
-                    promise(function(val){
-                        acc[i] = val;
-                        ++processed === ticks && onFulfilled(acc);
-                    }, onRejected);
-
-                    return acc;
-                }, []);
-            }) : latte.unit([]);
-        },
-
-        wpipe : function(wrapped, ival){
-            return wrapped.reduce(function(acc, wpromise){
-                return acc(wpromise);
-            }, latte.unit(ival));
-        }
+    Latte.isLatte = function(v){
+        return !!(typeof v === 'object' && v && v[LATTE_PROP]);
     };
 
-    return latte;
+    Latte.E = function(v){
+        return defineConstProp_(function E_(){
+            return v;
+        }, E_PROP, true);
+    };
+
+    Latte.isE = function(v){
+        return !!(Object.prototype.toString.call(v) === "[object Function]" && v[E_PROP]);
+    };
+
+    Latte.Later = function(ctor){
+
+        var lt = Later_(ctor),
+
+            self = {
+
+                always : function(f){
+                    lt(f);
+                    return self;
+                },
+
+                next : function(f){
+                    return self.always(function(v){
+                        !Latte.isE(v) && f(v);
+                    });
+                },
+
+                fail : function(f){
+                    return self.always(function(v){
+                        Latte.isE(v) && f(v);
+                    });
+                },
+
+                bnd : function(f){
+                    return Latte.Later(function(c){
+                        lt(function(v){
+                            !Latte.isE(v) ? f(v).always(c) : c(v);
+                        });
+                    });
+                },
+
+                lift : function(f, ms){
+                    return Latte.collect([self].concat(ms || [])).bnd(function(vs){
+                        return Latte(f.apply(null, vs));
+                    });
+                },
+
+                and : function(m){
+                    return Latte.all([self, m]).lift(function(vs){
+                        return Latte.isE(vs[0]) ? vs[0] : vs[1];
+                    });
+                },
+
+                or : function(m){
+                    return Latte.all([self, m]).lift(function(vs){
+                        return !Latte.isE(vs[0]) ? vs[0] : vs[1];
+                    });
+                }
+            };
+
+        defineConstProp_(self, LATTE_PROP, true);
+
+        return self;
+    };
+
+    Latte.collect = function(ms){
+        return Latte.all(ms).bnd(function(vs){
+            return Latte(vs.reduce(function(acc, v){
+                return Latte.isE(acc) ? acc : (Latte.isE(v) ? v : (acc.push(v) && acc));
+            }, []));
+        });
+    };
+
+    Latte.fold = function(ms, init, f){
+        return Latte.collect(ms).lift(function(vs){
+            return vs.reduce(f, init);
+        });
+    };
+
+    Latte.all = function(ms){
+        var ticks = ms.length,
+            processed = 0;
+
+        return ticks ? Latte.Later(function(h){
+            ms.reduce(function(acc, m, i){
+                m.always(function(v){
+                    acc[i] = v;
+                    ++processed === ticks && h(acc);
+                });
+
+                return acc;
+            }, []);
+        }) : Latte([]);
+    };
+
+    Latte.lift = function(f){
+        return function(m){
+            return Array.isArray(m) ? m[0].lift(f, m.slice(1)) : m.lift(f);
+        };
+    };
+
+    Latte.arw = function(f1){
+        return (function(fs){
+            return function(v){
+                return fs.reduce(function(acc, f){
+                    return acc.bnd(f);
+                }, f1(v));
+            };
+        })(Array.prototype.slice.call(arguments, 1));
+    };
+
+    Latte.version = '1.0.0';
+
+    return Latte;
 }));
