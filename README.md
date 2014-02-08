@@ -29,11 +29,11 @@
 
     // Alternative
     // f <=< return == f
-    Latte.arw(f, Latte)(x) == f(x);
+    Latte.A(f).abnd(Latte).ap(x) == f(x);
 
     // return <=< f == f
-    Latte.arw(Latte, f)(x) == f(x);
+    Latte.A(Latte).abnd(f).ap(x) == f(x);
 
     // (f <=< g) <=< h == f <=< (g <=< h)
-    Latte.arw(function(x){ return Latte.arw(f, g)(x); }, h)(x) ==
-        Latte.arw(f, function(x){ return Latte.arw(g, h)(x); })(x)
+    Latte.A(function(x){ return Latte.A(f).abnd(g).ap(x); }).abnd(h).ap(x) ==
+        Latte.A(f).abnd(function(x){ return Latte.A(g).abnd(h).ap(x); }).ap(x)

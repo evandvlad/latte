@@ -59,7 +59,7 @@ describe('Monadic Laws', function(){
             st1 = stub(),
             st2 = stub();
 
-        Latte.arw(f, Latte)(x).always(st1);
+        Latte.A(f).abnd(Latte).ap(x).always(st1);
         f(x).always(st2);
 
         assert.equal(st1.count, st2.count);
@@ -74,7 +74,7 @@ describe('Monadic Laws', function(){
             st1 = stub(),
             st2 = stub();
 
-        Latte.arw(Latte, f)(x).always(st1);
+        Latte.A(Latte).abnd(f).ap(x).always(st1);
         f(x).always(st2);
 
         assert.equal(st1.count, st2.count);
@@ -139,13 +139,13 @@ describe('Monadic Laws', function(){
                 return Latte('{' + x + '}');
             };
 
-        Latte.arw(function(x){
-            return Latte.arw(f, g)(x);
-        }, h)(x).always(st1);
+        Latte.A(function(x){
+            return Latte.A(f).abnd(g).ap(x);
+        }).abnd(h).ap(x).always(st1);
 
-        Latte.arw(f, function(x){
-            return Latte.arw(g, h)(x);
-        })(x).always(st2);
+        Latte.A(f).abnd(function(x){
+            return Latte.A(g).abnd(h).ap(x);
+        }).ap(x).always(st2);
 
         assert.equal(st1.count, st2.count);
         assert.equal(st1.args[0], st2.args[0]);
@@ -845,25 +845,31 @@ describe('Latte', function(){
         assert.equal(st3.args[0](), 'error-2');
     });
 
-    it('collect', function(){
+    it('seq', function(){
         var st = stub();
-        Latte.collect([Latte(1), Latte(2), Latte(3)]).always(st);
+        Latte(1).seq([Latte(2), Latte(3)]).always(st);
         assert.deepEqual(st.args[0], [1,2,3]);
     });
 
-    it('collect пустой массив', function(){
+    it('seq c пустым массивом', function(){
         var st = stub();
-        Latte.collect([]).always(st);
-        assert.deepEqual(st.args[0], []);
+        Latte(1).seq([]).always(st);
+        assert.deepEqual(st.args[0], [1]);
     });
 
-    it('collect co значением E в массиве', function(){
+    it('seq co значением E в массиве', function(){
         var st = stub();
-        Latte.collect([Latte(1), Latte(Latte.E('e')), Latte(3)]).always(st);
+        Latte(1).seq([Latte(Latte.E('e')), Latte(3)]).always(st);
         assert.equal(st.args[0](), 'e');
     });
 
-    it('collect последовательность результатов', function(done){
+    it('seq от значения E', function(){
+        var st = stub();
+        Latte(Latte.E('e')).seq([Latte(1), Latte(2)]).always(st);
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('seq последовательность результатов', function(done){
         var st = stub(),
             m1 = Latte.Later(function(h){
                 setTimeout(function(){
@@ -877,7 +883,7 @@ describe('Latte', function(){
                 }, 10);
             });
 
-        Latte.collect([m1, m2, m3]).always(st);
+        m1.seq([m2, m3]).always(st);
 
         setTimeout(function(){
             assert.deepEqual(st.args[0], [1,2,3]);
@@ -885,12 +891,72 @@ describe('Latte', function(){
         }, 100);
     });
 
+    it('flter', function(){
+        var st = stub();
+
+        Latte.flter(function(v){
+            return v > 2;
+        }, [Latte(1), Latte(2), Latte(3)]).always(st);
+
+        assert.deepEqual(st.args[0], [3]);
+    });
+
+    it('flter пустой массив', function(){
+        var st = stub();
+
+        Latte.flter(function(v){
+            return v > 2;
+        }, []).always(st);
+
+        assert.deepEqual(st.args[0], []);
+    });
+
+    it('flter co значением E в массиве', function(){
+        var st = stub();
+
+        Latte.flter(function(v){
+            return v > 2;
+        }, [Latte(1), Latte(Latte.E('e')), Latte(3)]).always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('mp', function(){
+        var st = stub();
+
+        Latte.mp(function(v){
+            return v + 2;
+        }, [Latte(1), Latte(2), Latte(3)]).always(st);
+
+        assert.deepEqual(st.args[0], [3,4,5]);
+    });
+
+    it('mp пустой массив', function(){
+        var st = stub();
+
+        Latte.mp(function(v){
+            return v + 2;
+        }, []).always(st);
+
+        assert.deepEqual(st.args[0], []);
+    });
+
+    it('mp co значением E в массиве', function(){
+        var st = stub();
+
+        Latte.mp(function(v){
+            return v + 2;
+        }, [Latte(1), Latte(Latte.E('e')), Latte(3)]).always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
     it('fold', function(){
         var st = stub();
 
-        Latte.fold([Latte(1), Latte(2), Latte(3)], 0, function(acc, v){
+        Latte.fold(function(acc, v){
             return acc += v;
-        }).always(st);
+        }, 0, [Latte(1), Latte(2), Latte(3)]).always(st);
 
         assert.equal(st.args[0], 6);
     });
@@ -898,9 +964,9 @@ describe('Latte', function(){
     it('fold пустой массив', function(){
         var st = stub();
 
-        Latte.fold([], 0, function(acc, v){
+        Latte.fold(function(acc, v){
             return acc += v;
-        }).always(st);
+        }, 0, []).always(st);
 
         assert.equal(st.args[0], 0);
     });
@@ -908,29 +974,35 @@ describe('Latte', function(){
     it('fold co значением E в массиве', function(){
         var st = stub();
 
-        Latte.fold([Latte(1), Latte(Latte.E('e')), Latte(3)], 0, function(acc, v){
+        Latte.fold(function(acc, v){
             return acc += v;
-        }).always(st);
+        }, 0, [Latte(1), Latte(Latte.E('e')), Latte(3)]).always(st);
 
         assert.equal(st.args[0](), 'e');
     });
 
-    it('all', function(){
+    it('static seq пустой массив', function(){
         var st = stub();
-        Latte.all([Latte(1), Latte(2), Latte(3)]).always(st);
-        assert.deepEqual(st.args[0], [1,2,3]);
-    });
-
-    it('all пустой массив', function(){
-        var st = stub();
-        Latte.all([]).always(st);
+        Latte.seq([]).always(st);
         assert.deepEqual(st.args[0], []);
     });
 
-    it('all co значением E в массиве', function(){
+    it('allseq', function(){
+        var st = stub();
+        Latte.allseq([Latte(1), Latte(2), Latte(3)]).always(st);
+        assert.deepEqual(st.args[0], [1,2,3]);
+    });
+
+    it('allseq пустой массив', function(){
+        var st = stub();
+        Latte.allseq([]).always(st);
+        assert.deepEqual(st.args[0], []);
+    });
+
+    it('allseq co значением E в массиве', function(){
         var st = stub();
 
-        Latte.all([Latte(1), Latte(Latte.E('e')), Latte(3)]).always(st);
+        Latte.allseq([Latte(1), Latte(Latte.E('e')), Latte(3)]).always(st);
 
         assert.equal(st.args[0].length, 3);
 
@@ -944,7 +1016,7 @@ describe('Latte', function(){
 
         Latte.lift(function(a){
             return a + '!!!';
-        })(Latte('test')).always(st);
+        }, Latte('test')).always(st);
 
         assert.equal(st.args[0], 'test!!!');
     });
@@ -954,7 +1026,7 @@ describe('Latte', function(){
 
         Latte.lift(function(a){
             return a + '!!!';
-        })([Latte('test')]).always(st);
+        }, [Latte('test')]).always(st);
 
         assert.equal(st.args[0], 'test!!!');
     });
@@ -964,7 +1036,7 @@ describe('Latte', function(){
 
         Latte.lift(function(a, b, c){
             return a + b + c;
-        })([Latte('test'), Latte(' '), Latte('Latte')]).always(st);
+        }, [Latte('test'), Latte(' '), Latte('Latte')]).always(st);
 
         assert.equal(st.args[0], 'test Latte');
     });
@@ -974,33 +1046,85 @@ describe('Latte', function(){
 
         Latte.lift(function(a, b, c){
             return a + b + c;
-        })([Latte('test'), Latte(' '), Latte(Latte.E('e'))]).always(st);
+        }, [Latte('test'), Latte(' '), Latte(Latte.E('e'))]).always(st);
 
         assert.equal(st.args[0](), 'e');
     });
 
-    it('arw без E значений', function(){
+    it('Arrow A abnd', function(){
         var st = stub();
 
-        Latte.arw(function(v){
-            return Latte(v + '?');
-        }, function(v){
-            return Latte(v + '!');
-        })('test').always(st);
+        Latte.A(Latte).abnd(function(x){
+            return Latte(x + 'b');
+        }).abnd(function(x){
+            return Latte(x + 'c');
+        }).ap('a').always(st);
 
-        assert.equal(st.args[0], 'test?!');
+        assert.equal(st.args[0], 'abc');
     });
 
-    it('arw c E значением', function(){
-        var st1 = stub(),
-            st2 = stub();
+    it('Arrow A abnd со значением E', function(){
+        var st = stub();
 
-        Latte.arw(function(v){
-            return Latte(Latte.E('error'));
-        }, st1, st1, st1)('test').always(st2);
+        Latte.A(Latte).abnd(function(x){
+            return Latte(Latte.E('e'));
+        }).abnd(function(x){
+            return Latte(x + 'c');
+        }).ap('a').always(st);
 
-        assert.equal(st1.called, false);
-        assert.equal(st2.args[0](), 'error');
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('Arrow A alift', function(){
+        var st = stub();
+
+        Latte.A(Latte).alift(function(x){
+            return x + 'b';
+        }).alift(function(x){
+            return x + 'c';
+        }).ap('a').always(st);
+
+        assert.equal(st.args[0], 'abc');
+    });
+
+    it('Arrow A alift со значением E', function(){
+        var st = stub();
+
+        Latte.A(Latte).alift(function(x){
+            return Latte.E('e');
+        }).alift(function(x){
+            return x + 'c';
+        }).ap('a').always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('Arrow A alift и abnd', function(){
+        var st = stub();
+
+        Latte.A(Latte).alift(function(x){
+            return x + 'b';
+        }).abnd(function(x){
+            return Latte(x + 'c');
+        }).alift(function(x){
+            return x + 'd';
+        }).ap('a').always(st);
+
+        assert.equal(st.args[0], 'abcd');
+    });
+
+    it('Arrow A alift и abnd cо значением E', function(){
+        var st = stub();
+
+        Latte.A(Latte).alift(function(x){
+            return x + 'b';
+        }).abnd(function(x){
+            return Latte(Latte.E('e'));
+        }).alift(function(x){
+            return x + 'd';
+        }).ap('a').always(st);
+
+        assert.equal(st.args[0](), 'e');
     });
 
 });

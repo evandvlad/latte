@@ -101,21 +101,19 @@
                 },
 
                 lift : function(f, ms){
-                    return Latte.collect([self].concat(ms || [])).bnd(function(vs){
-                        return Latte(f.apply(null, vs));
-                    });
+                    return Latte.lift(f, [self].concat(ms || []));
+                },
+
+                seq : function(ms){
+                    return Latte.seq([self].concat(ms));
                 },
 
                 and : function(m){
-                    return Latte.all([self, m]).lift(function(vs){
-                        return Latte.isE(vs[0]) ? vs[0] : vs[1];
-                    });
+                    return Latte.and(self, m);
                 },
 
                 or : function(m){
-                    return Latte.all([self, m]).lift(function(vs){
-                        return !Latte.isE(vs[0]) ? vs[0] : vs[1];
-                    });
+                    return Latte.or(self, m);
                 }
             };
 
@@ -124,21 +122,45 @@
         return self;
     };
 
-    Latte.collect = function(ms){
-        return Latte.all(ms).bnd(function(vs){
+    Latte.and = function(m1, m2){
+        return Latte.allseq([m1, m2]).lift(function(vs){
+            return Latte.isE(vs[0]) ? vs[0] : vs[1];
+        });
+    };
+
+    Latte.or = function(m1, m2){
+        return Latte.allseq([m1, m2]).lift(function(vs){
+            return !Latte.isE(vs[0]) ? vs[0] : vs[1];
+        });
+    };
+
+    Latte.seq = function(ms){
+        return Latte.allseq(ms).bnd(function(vs){
             return Latte(vs.reduce(function(acc, v){
                 return Latte.isE(acc) ? acc : (Latte.isE(v) ? v : (acc.push(v) && acc));
             }, []));
         });
     };
 
-    Latte.fold = function(ms, init, f){
-        return Latte.collect(ms).lift(function(vs){
+    Latte.mp = function(f, ms){
+        return Latte.fold(function(acc, v){
+            return acc.push(f(v)) && acc;
+        }, [], ms);
+    };
+
+    Latte.flter = function(f, ms){
+        return Latte.fold(function(acc, v){
+            return !!f(v) ? (acc.push(v) && acc) : acc;
+        }, [], ms);
+    };
+
+    Latte.fold = function(f, init, ms){
+        return Latte.seq(ms).lift(function(vs){
             return vs.reduce(f, init);
         });
     };
 
-    Latte.all = function(ms){
+    Latte.allseq = function(ms){
         var ticks = ms.length,
             processed = 0;
 
@@ -154,23 +176,33 @@
         }) : Latte([]);
     };
 
-    Latte.lift = function(f){
-        return function(m){
-            return Array.isArray(m) ? m[0].lift(f, m.slice(1)) : m.lift(f);
+    Latte.lift = function(f, ms){
+        return Latte.seq(Array.isArray(ms) ? ms : [ms]).bnd(function(vs){
+            return Latte(f.apply(null, vs));
+        });
+    };
+
+    Latte.A = function(f){
+
+        return {
+
+            abnd : function(g){
+                return Latte.A(function(v){
+                    return f(v).bnd(g);
+                });
+            },
+
+            alift : function(g){
+                return Latte.A(function(v){
+                    return f(v).lift(g);
+                });
+            },
+
+            ap : f
         };
     };
 
-    Latte.arw = function(f1){
-        return (function(fs){
-            return function(v){
-                return fs.reduce(function(acc, f){
-                    return acc.bnd(f);
-                }, f1(v));
-            };
-        })(Array.prototype.slice.call(arguments, 1));
-    };
-
-    Latte.version = '1.0.0';
+    Latte.version = '2.0.0';
 
     return Latte;
 }));
