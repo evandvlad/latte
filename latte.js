@@ -104,34 +104,22 @@
                     return Latte.lift(f, [self].concat(ms || []));
                 },
 
+                raise : function(f){
+                    return Latte.Later(function(c){
+                        lt(function(v){
+                            Latte.isE(v) ? Latte(f(v)).always(c) : c(v);
+                        });
+                    });
+                },
+
                 seq : function(ms){
                     return Latte.seq([self].concat(ms));
-                },
-
-                and : function(m){
-                    return Latte.and(self, m);
-                },
-
-                or : function(m){
-                    return Latte.or(self, m);
                 }
             };
 
         defineConstProp_(self, LATTE_PROP, true);
 
         return self;
-    };
-
-    Latte.and = function(m1, m2){
-        return Latte.allseq([m1, m2]).lift(function(vs){
-            return Latte.isE(vs[0]) ? vs[0] : vs[1];
-        });
-    };
-
-    Latte.or = function(m1, m2){
-        return Latte.allseq([m1, m2]).lift(function(vs){
-            return !Latte.isE(vs[0]) ? vs[0] : vs[1];
-        });
     };
 
     Latte.seq = function(ms){
@@ -202,7 +190,7 @@
         };
     };
 
-    Latte.version = '2.0.0';
+    Latte.version = '3.0.0';
 
     return Latte;
 }));

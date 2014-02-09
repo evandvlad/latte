@@ -709,140 +709,26 @@ describe('Latte', function(){
         assert.equal(st3.args[0](), 'error-2');
     });
 
-    it('and оба значения не E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            m1 = Latte(1),
-            m2 = Latte(2);
+    it('raise', function(){
+        var st = stub(),
+            st2 = stub();
 
-        m1.and(m2).always(st1);
+        Latte(Latte.E('e')).raise(function(e){
+            return Latte.E('new ' + e());
+        }).fail(st).always(st2);
 
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0], 2);
-        assert.equal(st2.args[0], 1);
-        assert.equal(st3.args[0], 2);
+        assert.equal(st.args[0](), 'new e');
+        assert.equal(st2.args[0](), 'new e');
     });
 
-    it('and первое значение - E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            m1 = Latte(Latte.E('error')),
-            m2 = Latte(2);
+    it('raise не вызывается при отсутствии E значения', function(){
+        var st = stub(),
+            st2 = stub();
 
-        m1.and(m2).always(st1);
+        Latte('test').raise(st).always(st2);
 
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0](), 'error');
-        assert.equal(st2.args[0](), 'error');
-        assert.equal(st3.args[0], 2);
-    });
-
-    it('and второе значение - E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            m1 = Latte(1),
-            m2 = Latte(Latte.E('error'));
-
-        m1.and(m2).always(st1);
-
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0](), 'error');
-        assert.equal(st2.args[0], 1);
-        assert.equal(st3.args[0](), 'error');
-    });
-
-    it('and оба значения - E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            m1 = Latte(Latte.E('error-1')),
-            m2 = Latte(Latte.E('error-2'));
-
-        m1.and(m2).always(st1);
-
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0](), 'error-1');
-        assert.equal(st2.args[0](), 'error-1');
-        assert.equal(st3.args[0](), 'error-2');
-    });
-
-    it('or оба значения не E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            m1 = Latte(1),
-            m2 = Latte(2);
-
-        m1.or(m2).always(st1);
-
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0], 1);
-        assert.equal(st2.args[0], 1);
-        assert.equal(st3.args[0], 2);
-    });
-
-    it('or первое значение - E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            m1 = Latte(Latte.E('error')),
-            m2 = Latte(2);
-
-        m1.or(m2).always(st1);
-
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0], 2);
-        assert.equal(st2.args[0](), 'error');
-        assert.equal(st3.args[0], 2);
-    });
-
-    it('or второе значение - E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            m1 = Latte(1),
-            m2 = Latte(Latte.E('error'));
-
-        m1.or(m2).always(st1);
-
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0], 1);
-        assert.equal(st2.args[0], 1);
-        assert.equal(st3.args[0](), 'error');
-    });
-
-    it('or оба значения - E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            m1 = Latte(Latte.E('error-1')),
-            m2 = Latte(Latte.E('error-2'));
-
-        m1.or(m2).always(st1);
-
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0](), 'error-2');
-        assert.equal(st2.args[0](), 'error-1');
-        assert.equal(st3.args[0](), 'error-2');
+        assert.equal(st.called, false);
+        assert.equal(st2.args[0], 'test');
     });
 
     it('seq', function(){
