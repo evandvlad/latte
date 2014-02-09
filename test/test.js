@@ -59,7 +59,7 @@ describe('Monadic Laws', function(){
             st1 = stub(),
             st2 = stub();
 
-        Latte.A(f).abnd(Latte).ap(x).always(st1);
+        Latte.A(f).abnd(Latte)(x).always(st1);
         f(x).always(st2);
 
         assert.equal(st1.count, st2.count);
@@ -74,7 +74,7 @@ describe('Monadic Laws', function(){
             st1 = stub(),
             st2 = stub();
 
-        Latte.A(Latte).abnd(f).ap(x).always(st1);
+        Latte.A(Latte).abnd(f)(x).always(st1);
         f(x).always(st2);
 
         assert.equal(st1.count, st2.count);
@@ -140,12 +140,12 @@ describe('Monadic Laws', function(){
             };
 
         Latte.A(function(x){
-            return Latte.A(f).abnd(g).ap(x);
-        }).abnd(h).ap(x).always(st1);
+            return Latte.A(f).abnd(g)(x);
+        }).abnd(h)(x).always(st1);
 
         Latte.A(f).abnd(function(x){
-            return Latte.A(g).abnd(h).ap(x);
-        }).ap(x).always(st2);
+            return Latte.A(g).abnd(h)(x);
+        })(x).always(st2);
 
         assert.equal(st1.count, st2.count);
         assert.equal(st1.args[0], st2.args[0]);
@@ -944,7 +944,7 @@ describe('Latte', function(){
             return Latte(x + 'b');
         }).abnd(function(x){
             return Latte(x + 'c');
-        }).ap('a').always(st);
+        })('a').always(st);
 
         assert.equal(st.args[0], 'abc');
     });
@@ -956,7 +956,7 @@ describe('Latte', function(){
             return Latte(Latte.E('e'));
         }).abnd(function(x){
             return Latte(x + 'c');
-        }).ap('a').always(st);
+        })('a').always(st);
 
         assert.equal(st.args[0](), 'e');
     });
@@ -968,7 +968,7 @@ describe('Latte', function(){
             return x + 'b';
         }).alift(function(x){
             return x + 'c';
-        }).ap('a').always(st);
+        })('a').always(st);
 
         assert.equal(st.args[0], 'abc');
     });
@@ -980,7 +980,7 @@ describe('Latte', function(){
             return Latte.E('e');
         }).alift(function(x){
             return x + 'c';
-        }).ap('a').always(st);
+        })('a').always(st);
 
         assert.equal(st.args[0](), 'e');
     });
@@ -994,7 +994,7 @@ describe('Latte', function(){
             return Latte(x + 'c');
         }).alift(function(x){
             return x + 'd';
-        }).ap('a').always(st);
+        })('a').always(st);
 
         assert.equal(st.args[0], 'abcd');
     });
@@ -1008,7 +1008,7 @@ describe('Latte', function(){
             return Latte(Latte.E('e'));
         }).alift(function(x){
             return x + 'd';
-        }).ap('a').always(st);
+        })('a').always(st);
 
         assert.equal(st.args[0](), 'e');
     });

@@ -172,25 +172,26 @@
 
     Latte.A = function(f){
 
-        return {
+        function A_(v){
+            return f(v);
+        }
 
-            abnd : function(g){
-                return Latte.A(function(v){
-                    return f(v).bnd(g);
-                });
-            },
-
-            alift : function(g){
-                return Latte.A(function(v){
-                    return f(v).lift(g);
-                });
-            },
-
-            ap : f
+        A_.abnd = function(g){
+            return Latte.A(function(v){
+                return f(v).bnd(g);
+            });
         };
+
+        A_.alift = function(g){
+            return Latte.A(function(v){
+                return f(v).lift(g);
+            });
+        };
+
+        return A_;
     };
 
-    Latte.version = '3.0.0';
+    Latte.version = '1.4.0';
 
     return Latte;
 }));
