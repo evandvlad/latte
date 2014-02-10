@@ -240,14 +240,14 @@
 Помимо монады, также реализована простая стрелка, выполняющую обратную композию функций с помощью методов alift и abnd,
 и работающая напрямую с монадами. Конструктор стрелки принимает функцию, которая принимает значение и возвращает монаду.
 
-    // (a -> Latte b) -> Latte.A Latte b
+    // (a -> Latte b) -> Latte.A a Latte b
     Latte.A(function(value){
         return Latte(value);
     });
 
 Чтобы передать значение на вычисление, стрелку необходимо вызвать как функцию, результатом работы будет монада.
 
-    // Latte.A Latte a -> b -> Latte b
+    // Latte.A a Latte b -> a -> Latte b
     Latte.A(function(value){
         return Latte(value);
     })('value');
@@ -256,7 +256,7 @@
 которое будет помещено в монаду, метод возвращает новую стрелку. Если предыдущим значением было значение E,
 то функция не будет вызвана.
 
-    // Latte.A Latte a -> (a -> b) -> Latte.A Latte b
+    // Latte.A a Latte b -> (b -> c) -> Latte.A b Latte c
     Latte.A(Latte).alift(function(a){
         return a + 1;
     });
@@ -264,7 +264,7 @@
 Метод abnd принимает функцию, принимающую значение предыдущего вычисления и возвращающую новое монадическое значение,
 метод возвращает новую стрелку. Если предыдущим значением было значение E, то функция не будет вызвана.
 
-    // Latte.A Latte a -> (a -> Latte b) -> Latte.A Latte b
+    // Latte.A a Latte b -> (b -> Latte c) -> Latte.A b Latte c
     Latte.A(Latte).abnd(function(a){
         return Latte(a + 1);
     });
