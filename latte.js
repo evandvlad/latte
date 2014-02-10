@@ -107,7 +107,7 @@
                 raise : function(f){
                     return Latte.Later(function(c){
                         lt(function(v){
-                            Latte.isE(v) ? Latte(f(v)).always(c) : c(v);
+                            Latte.isE(v) ? Latte(Latte.E(f(v))).always(c) : c(v);
                         });
                     });
                 },
@@ -128,18 +128,6 @@
                 return Latte.isE(acc) ? acc : (Latte.isE(v) ? v : (acc.push(v) && acc));
             }, []));
         });
-    };
-
-    Latte.mp = function(f, ms){
-        return Latte.fold(function(acc, v){
-            return acc.push(f(v)) && acc;
-        }, [], ms);
-    };
-
-    Latte.flter = function(f, ms){
-        return Latte.fold(function(acc, v){
-            return !!f(v) ? (acc.push(v) && acc) : acc;
-        }, [], ms);
     };
 
     Latte.fold = function(f, init, ms){
@@ -191,7 +179,7 @@
         return A_;
     };
 
-    Latte.version = '1.4.0';
+    Latte.version = '1.5.0';
 
     return Latte;
 }));

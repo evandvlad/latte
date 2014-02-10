@@ -714,7 +714,7 @@ describe('Latte', function(){
             st2 = stub();
 
         Latte(Latte.E('e')).raise(function(e){
-            return Latte.E('new ' + e());
+            return 'new ' + e();
         }).fail(st).always(st2);
 
         assert.equal(st.args[0](), 'new e');
@@ -775,66 +775,6 @@ describe('Latte', function(){
             assert.deepEqual(st.args[0], [1,2,3]);
             done();
         }, 100);
-    });
-
-    it('flter', function(){
-        var st = stub();
-
-        Latte.flter(function(v){
-            return v > 2;
-        }, [Latte(1), Latte(2), Latte(3)]).always(st);
-
-        assert.deepEqual(st.args[0], [3]);
-    });
-
-    it('flter пустой массив', function(){
-        var st = stub();
-
-        Latte.flter(function(v){
-            return v > 2;
-        }, []).always(st);
-
-        assert.deepEqual(st.args[0], []);
-    });
-
-    it('flter co значением E в массиве', function(){
-        var st = stub();
-
-        Latte.flter(function(v){
-            return v > 2;
-        }, [Latte(1), Latte(Latte.E('e')), Latte(3)]).always(st);
-
-        assert.equal(st.args[0](), 'e');
-    });
-
-    it('mp', function(){
-        var st = stub();
-
-        Latte.mp(function(v){
-            return v + 2;
-        }, [Latte(1), Latte(2), Latte(3)]).always(st);
-
-        assert.deepEqual(st.args[0], [3,4,5]);
-    });
-
-    it('mp пустой массив', function(){
-        var st = stub();
-
-        Latte.mp(function(v){
-            return v + 2;
-        }, []).always(st);
-
-        assert.deepEqual(st.args[0], []);
-    });
-
-    it('mp co значением E в массиве', function(){
-        var st = stub();
-
-        Latte.mp(function(v){
-            return v + 2;
-        }, [Latte(1), Latte(Latte.E('e')), Latte(3)]).always(st);
-
-        assert.equal(st.args[0](), 'e');
     });
 
     it('fold', function(){
