@@ -59,7 +59,7 @@ describe('Monadic Laws', function(){
             st1 = stub(),
             st2 = stub();
 
-        Latte.A(f).abnd(Latte)(x).always(st1);
+        Latte.A(f).bnd(Latte)(x).always(st1);
         f(x).always(st2);
 
         assert.equal(st1.count, st2.count);
@@ -74,7 +74,7 @@ describe('Monadic Laws', function(){
             st1 = stub(),
             st2 = stub();
 
-        Latte.A(Latte).abnd(f)(x).always(st1);
+        Latte.A(Latte).bnd(f)(x).always(st1);
         f(x).always(st2);
 
         assert.equal(st1.count, st2.count);
@@ -140,11 +140,11 @@ describe('Monadic Laws', function(){
             };
 
         Latte.A(function(x){
-            return Latte.A(f).abnd(g)(x);
-        }).abnd(h)(x).always(st1);
+            return Latte.A(f).bnd(g)(x);
+        }).bnd(h)(x).always(st1);
 
-        Latte.A(f).abnd(function(x){
-            return Latte.A(g).abnd(h)(x);
+        Latte.A(f).bnd(function(x){
+            return Latte.A(g).bnd(h)(x);
         })(x).always(st2);
 
         assert.equal(st1.count, st2.count);
@@ -154,17 +154,17 @@ describe('Monadic Laws', function(){
 
 describe('Latte', function(){
 
-    it('проверка Latte', function(){
-        assert.equal(Latte.isLatte(), false);
-        assert.equal(Latte.isLatte(''), false);
-        assert.equal(Latte.isLatte(0), false);
-        assert.equal(Latte.isLatte(NaN), false);
-        assert.equal(Latte.isLatte(null), false);
-        assert.equal(Latte.isLatte({}), false);
-        assert.equal(Latte.isLatte(function(){}), false);
+    it('проверка Latte.M', function(){
+        assert.equal(Latte.isM(), false);
+        assert.equal(Latte.isM(''), false);
+        assert.equal(Latte.isM(0), false);
+        assert.equal(Latte.isM(NaN), false);
+        assert.equal(Latte.isM(null), false);
+        assert.equal(Latte.isM({}), false);
+        assert.equal(Latte.isM(function(){}), false);
 
-        assert.equal(Latte.isLatte(Latte(1)), true);
-        assert.equal(Latte.isLatte(Latte(Latte.E('e'))), true);
+        assert.equal(Latte.isM(Latte(1)), true);
+        assert.equal(Latte.isM(Latte(Latte.E('e'))), true);
     });
 
     it('проверка E', function(){
@@ -877,76 +877,76 @@ describe('Latte', function(){
         assert.equal(st.args[0](), 'e');
     });
 
-    it('Arrow A abnd', function(){
+    it('Arrow A bnd', function(){
         var st = stub();
 
-        Latte.A(Latte).abnd(function(x){
+        Latte.A(Latte).bnd(function(x){
             return Latte(x + 'b');
-        }).abnd(function(x){
+        }).bnd(function(x){
             return Latte(x + 'c');
         })('a').always(st);
 
         assert.equal(st.args[0], 'abc');
     });
 
-    it('Arrow A abnd со значением E', function(){
+    it('Arrow A bnd со значением E', function(){
         var st = stub();
 
-        Latte.A(Latte).abnd(function(x){
+        Latte.A(Latte).bnd(function(x){
             return Latte(Latte.E('e'));
-        }).abnd(function(x){
+        }).bnd(function(x){
             return Latte(x + 'c');
         })('a').always(st);
 
         assert.equal(st.args[0](), 'e');
     });
 
-    it('Arrow A alift', function(){
+    it('Arrow A lift', function(){
         var st = stub();
 
-        Latte.A(Latte).alift(function(x){
+        Latte.A(Latte).lift(function(x){
             return x + 'b';
-        }).alift(function(x){
+        }).lift(function(x){
             return x + 'c';
         })('a').always(st);
 
         assert.equal(st.args[0], 'abc');
     });
 
-    it('Arrow A alift со значением E', function(){
+    it('Arrow A lift со значением E', function(){
         var st = stub();
 
-        Latte.A(Latte).alift(function(x){
+        Latte.A(Latte).lift(function(x){
             return Latte.E('e');
-        }).alift(function(x){
+        }).lift(function(x){
             return x + 'c';
         })('a').always(st);
 
         assert.equal(st.args[0](), 'e');
     });
 
-    it('Arrow A alift и abnd', function(){
+    it('Arrow A lift и bnd', function(){
         var st = stub();
 
-        Latte.A(Latte).alift(function(x){
+        Latte.A(Latte).lift(function(x){
             return x + 'b';
-        }).abnd(function(x){
+        }).bnd(function(x){
             return Latte(x + 'c');
-        }).alift(function(x){
+        }).lift(function(x){
             return x + 'd';
         })('a').always(st);
 
         assert.equal(st.args[0], 'abcd');
     });
 
-    it('Arrow A alift и abnd cо значением E', function(){
+    it('Arrow A lift и bnd cо значением E', function(){
         var st = stub();
 
-        Latte.A(Latte).alift(function(x){
+        Latte.A(Latte).lift(function(x){
             return x + 'b';
-        }).abnd(function(x){
+        }).bnd(function(x){
             return Latte(Latte.E('e'));
-        }).alift(function(x){
+        }).lift(function(x){
             return x + 'd';
         })('a').always(st);
 

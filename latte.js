@@ -16,7 +16,7 @@
 
 }(this, function(){
 
-    var LATTE_PROP = '___LATTE',
+    var M_PROP = '___M',
         E_PROP = '___E';
 
     function defineConstProp_(o, prop, v){
@@ -55,8 +55,8 @@
         });
     }
 
-    Latte.isLatte = function(v){
-        return !!(typeof v === 'object' && v && v[LATTE_PROP]);
+    Latte.isM = function(v){
+        return !!(typeof v === 'object' && v && v[M_PROP]);
     };
 
     Latte.E = function(v){
@@ -117,7 +117,7 @@
                 }
             };
 
-        defineConstProp_(self, LATTE_PROP, true);
+        defineConstProp_(self, M_PROP, true);
 
         return self;
     };
@@ -164,13 +164,13 @@
             return f(v);
         }
 
-        A_.abnd = function(g){
+        A_.bnd = function(g){
             return Latte.A(function(v){
                 return f(v).bnd(g);
             });
         };
 
-        A_.alift = function(g){
+        A_.lift = function(g){
             return Latte.A(function(v){
                 return f(v).lift(g);
             });
@@ -179,7 +179,7 @@
         return A_;
     };
 
-    Latte.version = '1.5.0';
+    Latte.version = '1.6.0';
 
     return Latte;
 }));
