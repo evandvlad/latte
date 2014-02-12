@@ -100,8 +100,8 @@
                     });
                 },
 
-                lift : function(f, ms){
-                    return Latte.lift(f, [self].concat(ms || []));
+                lift : function(f){
+                    return Latte.lift(f, [self]);
                 },
 
                 raise : function(f){
@@ -153,7 +153,7 @@
     };
 
     Latte.lift = function(f, ms){
-        return Latte.seq(Array.isArray(ms) ? ms : [ms]).bnd(function(vs){
+        return Latte.seq(ms).bnd(function(vs){
             return Latte(f.apply(null, vs));
         });
     };
@@ -179,7 +179,7 @@
         return A_;
     };
 
-    Latte.version = '1.6.0';
+    Latte.version = '1.7.0';
 
     return Latte;
 }));

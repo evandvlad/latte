@@ -604,111 +604,6 @@ describe('Latte', function(){
         assert.equal(st.called, false);
     });
 
-    it('lift метод c дополнительным аргументом', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            m = Latte(1);
-
-        m.lift(function(a, b){
-            return a + b;
-        }, m).always(st1);
-
-        m.always(st2);
-
-        assert.equal(st1.args[0], 2);
-        assert.equal(st2.args[0], 1);
-    });
-
-    it('lift c дополнительным массивом значений', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            m = Latte(1);
-
-        m.lift(function(a, b, c, d){
-            return a + b + c + d;
-        }, [m,m,m]).always(st1);
-
-        m.always(st2);
-
-        assert.equal(st1.args[0], 4);
-        assert.equal(st2.args[0], 1);
-    });
-
-    it('lift c пустым массивом значений', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            m = Latte(1);
-
-        m.lift(function(a, b, c, d){
-            return a;
-        }, []).always(st1);
-
-        m.always(st2);
-
-        assert.equal(st1.args[0], 1);
-        assert.equal(st2.args[0], 1);
-    });
-
-    it('lift первое значение - E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-
-            m1 = Latte(Latte.E('error')),
-            m2 = Latte(2);
-
-        m1.lift(function(a, b){
-            return a + b;
-        }, m2).always(st1);
-
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0](), 'error');
-        assert.equal(st2.args[0](), 'error');
-        assert.equal(st3.args[0], 2);
-    });
-
-    it('lift второе значение - E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-
-            m1 = Latte(1),
-            m2 = Latte(Latte.E('error'));
-
-        m1.lift(function(a, b){
-            return a + b;
-        }, m2).always(st1);
-
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0](), 'error');
-        assert.equal(st2.args[0], 1);
-        assert.equal(st3.args[0](), 'error');
-    });
-
-    it('lift оба значения - E', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-
-            m1 = Latte(Latte.E('error-1')),
-            m2 = Latte(Latte.E('error-2'));
-
-        m1.lift(function(a, b){
-            return a + b;
-        }, m2).always(st1);
-
-        m1.always(st2);
-        m2.always(st3);
-
-        assert.equal(st1.args[0](), 'error-1');
-        assert.equal(st2.args[0](), 'error-1');
-        assert.equal(st3.args[0](), 'error-2');
-    });
-
     it('raise', function(){
         var st = stub(),
             st2 = stub();
@@ -838,16 +733,6 @@ describe('Latte', function(){
     });
 
     it('static lift', function(){
-        var st = stub();
-
-        Latte.lift(function(a){
-            return a + '!!!';
-        }, Latte('test')).always(st);
-
-        assert.equal(st.args[0], 'test!!!');
-    });
-
-    it('static lift массив с одним элементом', function(){
         var st = stub();
 
         Latte.lift(function(a){
