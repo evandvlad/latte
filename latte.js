@@ -17,7 +17,12 @@
 }(this, function(){
 
     var M_PROP = '___M',
-        E_PROP = '___E';
+        E_PROP = '___E',
+        A_PROP = '___A',
+
+        Latte = {
+            version : '1.8.0'
+        };
 
     function defineConstProp_(o, prop, v){
         return Object.defineProperty(o, prop, {
@@ -27,37 +32,6 @@
             value : v
         });
     }
-
-    function Later_(ctor){
-        var cbs = [],
-            isval = false,
-            v;
-
-        ctor(function(val){
-            if(!isval){
-                v = val;
-                isval = true;
-
-                while(cbs.length){
-                    cbs.shift()(v);
-                }
-            }
-        });
-
-        return function(f){
-            isval ? f(v) : cbs.push(f);
-        };
-    }
-
-    function Latte(v){
-        return Latte.Later(function(f){
-            f(v);
-        });
-    }
-
-    Latte.isM = function(v){
-        return !!(typeof v === 'object' && v && v[M_PROP]);
-    };
 
     Latte.E = function(v){
         return defineConstProp_(function E_(){
@@ -69,93 +43,127 @@
         return !!(Object.prototype.toString.call(v) === "[object Function]" && v[E_PROP]);
     };
 
-    Latte.Later = function(ctor){
+    Latte.M = (function(Latte){
 
-        var lt = Later_(ctor),
+        function M(v){
+            return M.Later(function(f){
+                f(v);
+            });
+        }
 
-            self = {
+        function later_(ctor){
+            var cbs = [],
+                isval = false,
+                v;
 
-                always : function(f){
-                    lt(f);
-                    return self;
-                },
+            ctor(function(val){
+                if(!isval){
+                    v = val;
+                    isval = true;
 
-                next : function(f){
-                    return self.always(function(v){
-                        !Latte.isE(v) && f(v);
-                    });
-                },
-
-                fail : function(f){
-                    return self.always(function(v){
-                        Latte.isE(v) && f(v);
-                    });
-                },
-
-                bnd : function(f){
-                    return Latte.Later(function(c){
-                        lt(function(v){
-                            !Latte.isE(v) ? f(v).always(c) : c(v);
-                        });
-                    });
-                },
-
-                lift : function(f){
-                    return Latte.lift(f, [self]);
-                },
-
-                raise : function(f){
-                    return Latte.Later(function(c){
-                        lt(function(v){
-                            Latte.isE(v) ? Latte(Latte.E(f(v))).always(c) : c(v);
-                        });
-                    });
-                },
-
-                seq : function(ms){
-                    return Latte.seq([self].concat(ms));
+                    while(cbs.length){
+                        cbs.shift()(v);
+                    }
                 }
+            });
+
+            return function(f){
+                isval ? f(v) : cbs.push(f);
             };
+        }
 
-        defineConstProp_(self, M_PROP, true);
+        M.Later = function(ctor){
+            var lt = later_(ctor),
 
-        return self;
-    };
+                self = {
 
-    Latte.seq = function(ms){
-        return Latte.allseq(ms).bnd(function(vs){
-            return Latte(vs.reduce(function(acc, v){
-                return Latte.isE(acc) ? acc : (Latte.isE(v) ? v : (acc.push(v) && acc));
-            }, []));
-        });
-    };
+                    always : function(f){
+                        lt(f);
+                        return self;
+                    },
 
-    Latte.fold = function(f, init, ms){
-        return Latte.seq(ms).lift(function(vs){
-            return vs.reduce(f, init);
-        });
-    };
+                    next : function(f){
+                        return self.always(function(v){
+                            !Latte.isE(v) && f(v);
+                        });
+                    },
 
-    Latte.allseq = function(ms){
-        var ticks = ms.length,
-            processed = 0;
+                    fail : function(f){
+                        return self.always(function(v){
+                            Latte.isE(v) && f(v);
+                        });
+                    },
 
-        return ticks ? Latte.Later(function(h){
-            ms.reduce(function(acc, m, i){
-                m.always(function(v){
-                    acc[i] = v;
-                    ++processed === ticks && h(acc);
-                });
+                    bnd : function(f){
+                        return M.Later(function(c){
+                            lt(function(v){
+                                !Latte.isE(v) ? f(v).always(c) : c(v);
+                            });
+                        });
+                    },
 
-                return acc;
-            }, []);
-        }) : Latte([]);
-    };
+                    lift : function(f){
+                        return M.lift(f, [self]);
+                    },
 
-    Latte.lift = function(f, ms){
-        return Latte.seq(ms).bnd(function(vs){
-            return Latte(f.apply(null, vs));
-        });
+                    raise : function(f){
+                        return M.Later(function(c){
+                            lt(function(v){
+                                Latte.isE(v) ? M(Latte.E(f(v))).always(c) : c(v);
+                            });
+                        });
+                    },
+
+                    seq : function(ms){
+                        return M.seq([self].concat(ms));
+                    }
+                };
+
+            return defineConstProp_(self, M_PROP, true);
+        };
+
+        M.seq = function(ms){
+            return M.allseq(ms).bnd(function(vs){
+                return M(vs.reduce(function(acc, v){
+                    return Latte.isE(acc) ? acc : (Latte.isE(v) ? v : (acc.push(v) && acc));
+                }, []));
+            });
+        };
+
+        M.fold = function(f, init, ms){
+            return M.seq(ms).lift(function(vs){
+                return vs.reduce(f, init);
+            });
+        };
+
+        M.allseq = function(ms){
+            var ticks = ms.length,
+                processed = 0;
+
+            return ticks ? M.Later(function(h){
+                ms.reduce(function(acc, m, i){
+                    m.always(function(v){
+                        acc[i] = v;
+                        ++processed === ticks && h(acc);
+                    });
+
+                    return acc;
+                }, []);
+            }) : M([]);
+        };
+
+        M.lift = function(f, ms){
+            return M.seq(ms).bnd(function(vs){
+                return M(f.apply(null, vs));
+            });
+        };
+
+        return M;
+
+    }(Latte));
+
+    Latte.isM = function(v){
+        return !!(typeof v === 'object' && v && v[M_PROP]);
     };
 
     Latte.A = function(f){
@@ -176,10 +184,12 @@
             });
         };
 
-        return A_;
+        return defineConstProp_(A_, A_PROP, true);
     };
 
-    Latte.version = '1.7.0';
+    Latte.isA = function(v){
+        return !!(Object.prototype.toString.call(v) === "[object Function]" && v[A_PROP]);
+    };
 
     return Latte;
 }));

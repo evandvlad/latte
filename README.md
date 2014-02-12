@@ -6,52 +6,40 @@
     var x = 'test';
 
     function f(v){
-        return Latte('[' + v + ']');
+        return Latte.M('[' + v + ']');
     }
 
     function g(v){
-        return Latte('<' + v + '>');
+        return Latte.M('<' + v + '>');
     }
 
     function h(v){
-        return Latte('{' + v + '}');
+        return Latte.M('{' + v + '}');
     }
 
 
     // Left identity: (return x) >>= f == f x
-    Latte(x).bnd(f) == f(x);
+    Latte.M(x).bnd(f) == f(x);
 
     // Right identity: m >>= return == m
-    Latte(x).bnd(Latte) == Latte(x);
+    Latte.M(x).bnd(Latte.M) == Latte.M(x);
 
     // Associativity: (m >>= f) >>= g == m >>= (\x -> f x >>= g)
-    Latte(x).bnd(f).bnd(g) == Latte(x).bnd(function(x){ return f(x).bnd(g); });
-
-
-    // Alternative
-    // f <=< return == f
-    Latte.A(f).bnd(Latte) == f;
-
-    // return <=< f == f
-    Latte.A(Latte).bnd(f) == f;
-
-    // (f <=< g) <=< h == f <=< (g <=< h)
-    Latte.A(function(x){ return Latte.A(f).bnd(g)(x); }).bnd(h) ==
-        Latte.A(f).bnd(function(x){ return Latte.A(g).bnd(h)(x); })
+    Latte.M(x).bnd(f).bnd(g) == Latte.M(x).bnd(function(x){ return f(x).bnd(g); });
 
 #### Создание монады ####
-Монада создается с помощью одного из двух конструкторов: Latte или Latte.Later
+Монада создается с помощью одного из двух конструкторов: Latte.M или Latte.M.Later
 
-С помощью конструктора Latte создается монада с заранее известным значением,
+С помощью конструктора Latte.M создается монада с заранее известным значением,
 аналог функции return с типом (a -> m a)
 
-    // a -> Latte a
-    Latte('value');
+    // a -> Latte.M a
+    Latte.M('value');
 
-С помощью конструктора Latte.Later создается монада, значение которой будет вычислено позднее.
+С помощью конструктора Latte.M.Later создается монада, значение которой будет вычислено позднее.
 
-    // ((a -> ()) -> ()) -> Latte a
-    Latte.Later(function(handle){
+    // ((a -> ()) -> ()) -> Latte.M a
+    Latte.M.Later(function(handle){
         setTimeout(function(){
             handle('value');
         }, 2000);
@@ -61,7 +49,7 @@
 
     // a -> Bool
     Latte.isM('a') === false;
-    Latte.isM(Latte('a')) === true;
+    Latte.isM(Latte.M('a')) === true;
 
 #### Значение E ####
 Значение E может трактоваться как пустое значение или ошибка
@@ -69,7 +57,7 @@
 Значение E создается с помощью конструктора Latte.E, с опциональным параметром. Чтобы получить переданное в конструктор значение,
 возвращенное конструктором значение нужно вызвать как функцию.
 
-    // a -> Latte.E a
+    // a -> Latte.M E a
     var errorVal = Latte.E('error');
     var nothingVal = Latte.E();
 
@@ -92,12 +80,12 @@
 как закончился процесс вычисления этого значения (значение обычного типа или типа E).
 Возвращаемое методом значение игнорируется.
 
-    // Latte a -> (a -> ()) -> Latte a
-    Latte('value').always(function(value){
+    // Latte.M a -> (a -> ()) -> Latte.M a
+    Latte.M('value').always(function(value){
         console.log(value);
     });
 
-    Latte(Latte.E('error')).always(function(value){
+    Latte.M(Latte.E('error')).always(function(value){
         if(Latte.isE(value)){
             console.log('some error: ' + value());
         }
@@ -109,24 +97,24 @@
 Метод next принимает функцию, которой передается монадическое значение успешного вычисления (не типа E).
 Возвращаемое методом значение игнорируется.
 
-    // Latte a -> (a -> ()) -> Latte a
-    Latte('value').next(function(value){
+    // Latte.M a -> (a -> ()) -> Latte.M a
+    Latte.M('value').next(function(value){
         console.log(value);
     });
 
-    Latte(Latte.E('error')).next(function(value){
+    Latte.M(Latte.E('error')).next(function(value){
         // функция не будет вызвана!
     });
 
 Метод fail принимает функцию, которой передается монадическое значение типа E.
 Возвращаемое методом значение игнорируется.
 
-    // Latte a -> (a -> ()) -> Latte a
-    Latte('value').fail(function(value){
+    // Latte.M a -> (a -> ()) -> Latte.M a
+    Latte.M('value').fail(function(value){
         // функция не будет вызвана!
     });
 
-    Latte(Latte.E('error')).fail(function(value){
+    Latte.M(Latte.E('error')).fail(function(value){
         console.log('error: ' + value());
     });
 
@@ -135,12 +123,12 @@
 текущее монадическое значение и возвращающую новую монаду. Если текущим монадическим значение является значение типа E,
 то метод не вызывается и по цепочке будет передано это значение типа E.
 
-    // Latte a -> (a -> Latte b) -> Latte b
-    Latte('value').bnd(function(value){
-        return Latte('new ' + value);
+    // Latte.M a -> (a -> Latte.M b) -> Latte.M b
+    Latte.M('value').bnd(function(value){
+        return Latte.M('new ' + value);
     });
 
-    Latte(Latte.E('error')).bnd(function(){
+    Latte.M(Latte.E('error')).bnd(function(){
         // функция не будет вызвана!
     });
 
@@ -148,12 +136,12 @@
 передается монадическое значение и возвращает новое значение, которое упаковывается в монаду. Если текущим монадическим
 значение является значение типа E, то метод не вызывается и по цепочке будет передано это значение типа E.
 
-    // Latte a -> (a -> b) -> Latte b
-    Latte('value').lift(function(value){
+    // Latte.M a -> (a -> b) -> Latte.M b
+    Latte.M('value').lift(function(value){
         return 'new ' + value;
     });
 
-    Latte(Latte.E('error')).lift(function(){
+    Latte.M(Latte.E('error')).lift(function(){
         // функция не будет вызвана!
     });
 
@@ -161,82 +149,82 @@
 возвращащую значение, которое будет обернуто в тип E. Если текущим монадическим значение не является значение типа E,
 то метод не вызывается.
 
-    // Latte a -> (a -> b) -> Latte b
-    Latte('value').raise(function(){
+    // Latte.M a -> (a -> b) -> Latte.M b
+    Latte.M('value').raise(function(){
         // функция не будет вызвана!
     });
 
-    Latte(Latte.E('error')).raise(function(e){
+    Latte.M(Latte.E('error')).raise(function(e){
         return 'error: ' + e();
     });
 
 #### Методы для работы со списком монад ####
-Для работы со списком монад реализованы, как ряд методов объекта монады, так и статических методов Latte.
+Для работы со списком монад реализованы, как ряд методов объекта монады, так и статических методов Latte.M.
 К методом объекта относится метод seq.
 
 Метод seq принимает массив монад, к текущей монаде добавляется этот массив и все монадические значения собираются
 в одну монаду - список всех монадических значений, если одним из значений будет тип E, то возвращается это монадическое
 значение.
 
-    // Latte a -> [Latte a] -> Latte [a]
-    Latte(1).seq([Latte(2), Latte(3)]);
+    // Latte.M a -> [Latte.M a] -> Latte.M [a]
+    Latte.M(1).seq([Latte.M(2), Latte.M(3)]);
 
-Статический метод Latte.lift принимает функцию преобразования и список монад, все монадические значения передаются в
+Статический метод Latte.M.lift принимает функцию преобразования и список монад, все монадические значения передаются в
 качестве аргументов в функцию преобразования. Функция преобразования возвращает значение, которое будет преобразовано
 в монаду. Если одним из значений будет тип E, то функция не будет вызвана.
 
-    // (a -> a -> ... -> c) -> [Latte a] -> Latte с
-    Latte.lift(function(a, b){
+    // (a -> a -> ... -> c) -> [Latte.M a] -> Latte.M с
+    Latte.M.lift(function(a, b){
         return a + b;
-    }, [Latte(1), Latte(2)]);
+    }, [Latte.M(1), Latte.M(2)]);
 
-Статический метод Latte.seq работают аналогичным, как и метод объекта образом.
+Статический метод seq работают аналогичным, как и метод объекта образом.
 
-    // [Latte a] -> Latte [a]
-    Latte.seq([Latte(1), Latte(2)]);
+    // [Latte.M a] -> Latte.M [a]
+    Latte.M.seq([Latte(1), Latte(2)]);
 
 Метод allseq аналогичен методу seq, за исключением того, что он возвращает весь список значений, также и с типами E.
 
-    // [Latte a] -> Latte [a]
-    Latte.allseq([Latte(1), Latte(Latte.E('error'))]);
+    // [Latte.M a] -> Latte.M [a]
+    Latte.M.allseq([Latte.M(1), Latte.M(Latte.E('error'))]);
 
 Метод fold производит свертку списка монад и возвращает монаду с одним значением. Метод принимает функцию свертки,
 начальное значение и список монад. Если одним из значений будет тип E, то возвращается это монадическое значение.
 
-    // (a -> b -> a) -> a -> [Latte b] -> Latte a
-    Latte.fold(function(acc, v){
+    // (a -> b -> a) -> a -> [Latte.M b] -> Latte.M a
+    Latte.M.fold(function(acc, v){
         return acc += v;
-    }, 0, [Latte(1), Latte(2)]);
+    }, 0, [Latte.M(1), Latte.M(2)]);
 
 #### Arrow Latte.A ####
 Помимо монады, также реализована простая стрелка, выполняющую обратную композию функций с помощью методов lift и bnd,
 и работающая напрямую с монадами. Конструктор стрелки принимает функцию, которая принимает значение и возвращает монаду.
 
-    // (a -> Latte b) -> Latte.A a Latte b
+    // (a -> Latte.M b) -> Latte.A a Latte.M b
     Latte.A(function(value){
-        return Latte(value);
+        return Latte.M(value);
     });
 
 Чтобы передать значение на вычисление, стрелку необходимо вызвать как функцию, результатом работы будет монада.
 
-    // Latte.A a Latte b -> a -> Latte b
+    // Latte.A a Latte.M b -> a -> Latte.M b
     Latte.A(function(value){
-        return Latte(value);
+        return Latte.M(value);
     })('value');
 
 Метод lift принимает функцию, принимающую значение предыдущего вычисления и возвращающую новое значение,
 которое будет помещено в монаду, метод возвращает новую стрелку. Если предыдущим значением было значение E,
 то функция не будет вызвана.
 
-    // Latte.A a Latte b -> (b -> c) -> Latte.A b Latte c
-    Latte.A(Latte).lift(function(a){
+    // Latte.A a Latte.M b -> (b -> c) -> Latte.A b Latte.M c
+    Latte.A(Latte.M).lift(function(a){
         return a + 1;
     });
 
 Метод bnd принимает функцию, принимающую значение предыдущего вычисления и возвращающую новое монадическое значение,
 метод возвращает новую стрелку. Если предыдущим значением было значение E, то функция не будет вызвана.
 
-    // Latte.A a Latte b -> (b -> Latte c) -> Latte.A b Latte c
-    Latte.A(Latte).bnd(function(a){
-        return Latte(a + 1);
+    // Latte.A a Latte.M b -> (b -> Latte.M c) -> Latte.A b Latte.M c
+    Latte.A(Latte.M).bnd(function(a){
+        return Latte.M(a + 1);
     });
