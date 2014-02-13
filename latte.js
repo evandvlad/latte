@@ -21,7 +21,7 @@
         A_PROP = '___A',
 
         Latte = {
-            version : '1.9.0'
+            version : '1.9.1'
         };
 
     function defineConstProp(o, prop, v){
@@ -31,6 +31,12 @@
             writable : false,
             value : v
         });
+    }
+
+    function curryLift(v){
+        return function(f){
+            return f(v);
+        };
     }
 
     function isFunction(v){
@@ -50,9 +56,7 @@
     Latte.M = (function(Latte){
 
         function M(v){
-            return M.Later(function(f){
-                f(v);
-            });
+            return M.Later(curryLift(v));
         }
 
         function later(ctor){
@@ -172,12 +176,6 @@
 
     Latte.A = (function(Latte){
 
-        function execArrows(as, v){
-            return as.map(function(a){
-                return a(v);
-            });
-        }
-
         function A(f){
 
             function A_(v){
@@ -222,9 +220,7 @@
 
             A_.radd = function(a){
                 return A(function(v){
-                    return f(v).bnd(function(v){
-                        return a(v);
-                    });
+                    return f(v).bnd(a);
                 });
             };
 
@@ -241,25 +237,25 @@
 
         A.seq = function(as){
             return A(function(v){
-                return Latte.M.seq(execArrows(as, v));
+                return Latte.M.seq(as.map(curryLift(v)));
             });
         };
 
         A.allseq = function(as){
             return A(function(v){
-                return Latte.M.allseq(execArrows(as, v));
+                return Latte.M.allseq(as.map(curryLift(v)));
             });
         };
 
         A.fold = function(f, init, as){
             return A(function(v){
-                return Latte.M.fold(f, init, execArrows(as, v));
+                return Latte.M.fold(f, init, as.map(curryLift(v)));
             });
         };
 
         A.lift = function(f, as){
             return A(function(v){
-                return Latte.M.lift(f, execArrows(as, v));
+                return Latte.M.lift(f, as.map(curryLift(v)));
             });
         };
 
