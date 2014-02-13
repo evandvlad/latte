@@ -21,10 +21,10 @@
         A_PROP = '___A',
 
         Latte = {
-            version : '1.8.0'
+            version : '1.9.0'
         };
 
-    function defineConstProp_(o, prop, v){
+    function defineConstProp(o, prop, v){
         return Object.defineProperty(o, prop, {
             enumerable : false,
             configurable : false,
@@ -33,14 +33,18 @@
         });
     }
 
+    function isFunction(v){
+        return Object.prototype.toString.call(v) === "[object Function]";
+    }
+
     Latte.E = function(v){
-        return defineConstProp_(function E_(){
+        return defineConstProp(function E_(){
             return v;
         }, E_PROP, true);
     };
 
     Latte.isE = function(v){
-        return !!(Object.prototype.toString.call(v) === "[object Function]" && v[E_PROP]);
+        return !!(isFunction(v) && v[E_PROP]);
     };
 
     Latte.M = (function(Latte){
@@ -51,7 +55,7 @@
             });
         }
 
-        function later_(ctor){
+        function later(ctor){
             var cbs = [],
                 isval = false,
                 v;
@@ -73,7 +77,7 @@
         }
 
         M.Later = function(ctor){
-            var lt = later_(ctor),
+            var lt = later(ctor),
 
                 self = {
 
@@ -119,7 +123,7 @@
                     }
                 };
 
-            return defineConstProp_(self, M_PROP, true);
+            return defineConstProp(self, M_PROP, true);
         };
 
         M.seq = function(ms){
@@ -127,12 +131,6 @@
                 return M(vs.reduce(function(acc, v){
                     return Latte.isE(acc) ? acc : (Latte.isE(v) ? v : (acc.push(v) && acc));
                 }, []));
-            });
-        };
-
-        M.fold = function(f, init, ms){
-            return M.seq(ms).lift(function(vs){
-                return vs.reduce(f, init);
             });
         };
 
@@ -152,6 +150,12 @@
             }) : M([]);
         };
 
+        M.fold = function(f, init, ms){
+            return M.seq(ms).lift(function(vs){
+                return vs.reduce(f, init);
+            });
+        };
+
         M.lift = function(f, ms){
             return M.seq(ms).bnd(function(vs){
                 return M(f.apply(null, vs));
@@ -166,29 +170,105 @@
         return !!(typeof v === 'object' && v && v[M_PROP]);
     };
 
-    Latte.A = function(f){
+    Latte.A = (function(Latte){
 
-        function A_(v){
-            return f(v);
+        function execArrows(as, v){
+            return as.map(function(a){
+                return a(v);
+            });
         }
 
-        A_.bnd = function(g){
-            return Latte.A(function(v){
-                return f(v).bnd(g);
+        function A(f){
+
+            function A_(v){
+                return f(v);
+            }
+
+            A_.always = function(g){
+                return A(function(v){
+                    return f(v).always(g);
+                });
+            };
+
+            A_.next = function(g){
+                return A(function(v){
+                    return f(v).next(g);
+                });
+            };
+
+            A_.fail = function(g){
+                return A(function(v){
+                    return f(v).fail(g);
+                });
+            };
+
+            A_.bnd = function(g){
+                return A(function(v){
+                    return f(v).bnd(g);
+                });
+            };
+
+            A_.lift = function(g){
+                return A(function(v){
+                    return f(v).lift(g);
+                });
+            };
+
+            A_.raise = function(g){
+                return A(function(v){
+                    return f(v).raise(g);
+                });
+            };
+
+            A_.radd = function(a){
+                return A(function(v){
+                    return f(v).bnd(function(v){
+                        return a(v);
+                    });
+                });
+            };
+
+            A_.ladd = function(a){
+                return a.radd(f);
+            };
+
+            A_.seq = function(as){
+                return A.seq([f].concat(as));
+            };
+
+            return defineConstProp(A_, A_PROP, true);
+        }
+
+        A.seq = function(as){
+            return A(function(v){
+                return Latte.M.seq(execArrows(as, v));
             });
         };
 
-        A_.lift = function(g){
-            return Latte.A(function(v){
-                return f(v).lift(g);
+        A.allseq = function(as){
+            return A(function(v){
+                return Latte.M.allseq(execArrows(as, v));
             });
         };
 
-        return defineConstProp_(A_, A_PROP, true);
-    };
+        A.fold = function(f, init, as){
+            return A(function(v){
+                return Latte.M.fold(f, init, execArrows(as, v));
+            });
+        };
+
+        A.lift = function(f, as){
+            return A(function(v){
+                return Latte.M.lift(f, execArrows(as, v));
+            });
+        };
+
+        return A;
+
+    }(Latte));
 
     Latte.isA = function(v){
-        return !!(Object.prototype.toString.call(v) === "[object Function]" && v[A_PROP]);
+        return !!(isFunction(v) && v[A_PROP]);
     };
 
     return Latte;

@@ -51,36 +51,6 @@ describe('Monadic Laws', function(){
         assert.equal(st1.args[0], st2.args[0]);
     });
 
-    it('f <=< return == f --Alternative Identity', function(){
-        var x = 'test',
-            f = function(v){
-                return Latte.M(v + '!!!');
-            },
-            st1 = stub(),
-            st2 = stub();
-
-        Latte.A(f).bnd(Latte.M)(x).always(st1);
-        f(x).always(st2);
-
-        assert.equal(st1.count, st2.count);
-        assert.equal(st1.args[0], st2.args[0]);
-    });
-
-    it('return <=< f == f --Alternative Identity 2', function(){
-        var x = 'test',
-            f = function(v){
-                return Latte.M(v + '!!!');
-            },
-            st1 = stub(),
-            st2 = stub();
-
-        Latte.A(Latte.M).bnd(f)(x).always(st1);
-        f(x).always(st2);
-
-        assert.equal(st1.count, st2.count);
-        assert.equal(st1.args[0], st2.args[0]);
-    });
-
     it('m >>= return == m --Right identity', function(){
         var x = 'test',
             st1 = stub(),
@@ -124,37 +94,11 @@ describe('Monadic Laws', function(){
         assert.equal(st1.count, st2.count);
         assert.equal(st1.args[0], st2.args[0]);
     });
-
-    it('(f <=< g) <=< h == f <=< (g <=< h) --Alternative Associativity', function(){
-        var x = Latte.M('test'),
-            st1 = stub(),
-            st2 = stub(),
-            f = function(x){
-                return Latte.M('[' + x + ']');
-            },
-            g = function(x){
-                return Latte.M('<' + x + '>');
-            },
-            h = function(x){
-                return Latte.M('{' + x + '}');
-            };
-
-        Latte.A(function(x){
-            return Latte.A(f).bnd(g)(x);
-        }).bnd(h)(x).always(st1);
-
-        Latte.A(f).bnd(function(x){
-            return Latte.A(g).bnd(h)(x);
-        })(x).always(st2);
-
-        assert.equal(st1.count, st2.count);
-        assert.equal(st1.args[0], st2.args[0]);
-    });
 });
 
 describe('Latte Monad', function(){
 
-    it('Later вызов с задержкой', function(done){
+    it('Later с задержкой', function(done){
         var st = stub();
 
         Latte.M.Later(function(h){
@@ -172,7 +116,7 @@ describe('Latte Monad', function(){
         }, 20);
     });
 
-    it('Later вызов с задержкой и E', function(done){
+    it('Later с задержкой и значением E', function(done){
         var st = stub();
 
         Latte.M.Later(function(h){
@@ -201,7 +145,7 @@ describe('Latte Monad', function(){
         assert.equal(st.args[0], 'test');
     });
 
-    it('Later немедленный вызов c E', function(){
+    it('Later немедленный вызов cо значением E', function(){
         var st = stub();
 
         Latte.M.Later(function(h){
@@ -297,7 +241,7 @@ describe('Latte Monad', function(){
         assert.equal(Latte.isE(st.args[0]), true);
     });
 
-    it('always метод', function(){
+    it('always', function(){
         var st1 = stub(),
             st2 = stub();
 
@@ -348,7 +292,7 @@ describe('Latte Monad', function(){
         }, 20);
     });
 
-    it('next метод', function(){
+    it('next', function(){
         var st1 = stub(),
             st2 = stub();
 
@@ -399,7 +343,7 @@ describe('Latte Monad', function(){
         }, 20);
     });
 
-    it('fail метод', function(){
+    it('fail', function(){
         var st1 = stub(),
             st2 = stub();
 
@@ -492,7 +436,7 @@ describe('Latte Monad', function(){
         }, 20);
     });
 
-    it('bnd метод', function(){
+    it('bnd', function(){
         var st = stub();
 
         Latte.M('test').bnd(function(v){
@@ -544,7 +488,7 @@ describe('Latte Monad', function(){
         assert.equal(st4.args[0], '<[test!]>');
     });
 
-    it('lift метод', function(){
+    it('lift', function(){
         var st = stub();
 
         Latte.M('test').lift(function(v){
@@ -737,14 +681,122 @@ describe('Latte Monad', function(){
 
 describe('Latte Arrow', function(){
 
+    it('always', function(){
+        var st1 = stub(),
+            st2 = stub();
+
+        Latte.A(function(v){
+            return Latte.M(v + '!!!');
+        }).always(st1)('test').always(st2);
+
+        assert.equal(st1.args[0], 'test!!!');
+        assert.equal(st2.args[0], 'test!!!');
+    });
+
+    it('always и значение E', function(){
+        var st1 = stub(),
+            st2 = stub();
+
+        Latte.A(function(v){
+            return Latte.M(Latte.E('e'));
+        }).always(st1)('test').always(st2);
+
+        assert.equal(st1.args[0](), 'e');
+        assert.equal(st2.args[0](), 'e');
+    });
+
+    it('always не переопределяет значение', function(){
+        var st = stub();
+
+        Latte.A(function(v){
+            return Latte.M(v + '!!!');
+        }).always(function(v){
+            return Latte.M('rest');
+        })('test').always(st);
+
+        assert.equal(st.args[0], 'test!!!');
+    });
+
+    it('next', function(){
+        var st1 = stub(),
+            st2 = stub();
+
+        Latte.A(function(v){
+            return Latte.M(v + '!!!');
+        }).next(st1)('test').always(st2);
+
+        assert.equal(st1.args[0], 'test!!!');
+        assert.equal(st2.args[0], 'test!!!');
+    });
+
+    it('next и значение E', function(){
+        var st1 = stub(),
+            st2 = stub();
+
+        Latte.A(function(v){
+            return Latte.M(Latte.E('e'));
+        }).next(st1)('test').always(st2);
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.args[0](), 'e');
+    });
+
+    it('next не переопределяет значение', function(){
+        var st = stub();
+
+        Latte.A(function(v){
+            return Latte.M(v + '!!!');
+        }).next(function(v){
+            return Latte.M('rest');
+        })('test').always(st);
+
+        assert.equal(st.args[0], 'test!!!');
+    });
+
+    it('fail', function(){
+        var st1 = stub(),
+            st2 = stub();
+
+        Latte.A(function(v){
+            return Latte.M(v + '!!!');
+        }).fail(st1)('test').always(st2);
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.args[0], 'test!!!');
+    });
+
+    it('fail и значение E', function(){
+        var st1 = stub(),
+            st2 = stub();
+
+        Latte.A(function(v){
+            return Latte.M(Latte.E('e'));
+        }).fail(st1)('test').always(st2);
+
+        assert.equal(st1.args[0](), 'e');
+        assert.equal(st2.args[0](), 'e');
+    });
+
+    it('fail не переопределяет значение', function(){
+        var st = stub();
+
+        Latte.A(function(v){
+            return Latte.M(Latte.E('e'));
+        }).fail(function(v){
+            return Latte.M(Latte.E('new e'));
+        })('test').always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
     it('bnd', function(){
         var st = stub();
 
         Latte.A(Latte.M).bnd(function(x){
             return Latte.M(x + 'b');
         }).bnd(function(x){
-                return Latte.M(x + 'c');
-            })('a').always(st);
+            return Latte.M(x + 'c');
+        })('a').always(st);
 
         assert.equal(st.args[0], 'abc');
     });
@@ -755,8 +807,8 @@ describe('Latte Arrow', function(){
         Latte.A(Latte.M).bnd(function(x){
             return Latte.M(Latte.E('e'));
         }).bnd(function(x){
-                return Latte.M(x + 'c');
-            })('a').always(st);
+            return Latte.M(x + 'c');
+        })('a').always(st);
 
         assert.equal(st.args[0](), 'e');
     });
@@ -767,8 +819,8 @@ describe('Latte Arrow', function(){
         Latte.A(Latte.M).lift(function(x){
             return x + 'b';
         }).lift(function(x){
-                return x + 'c';
-            })('a').always(st);
+            return x + 'c';
+        })('a').always(st);
 
         assert.equal(st.args[0], 'abc');
     });
@@ -779,8 +831,8 @@ describe('Latte Arrow', function(){
         Latte.A(Latte.M).lift(function(x){
             return Latte.E('e');
         }).lift(function(x){
-                return x + 'c';
-            })('a').always(st);
+            return x + 'c';
+        })('a').always(st);
 
         assert.equal(st.args[0](), 'e');
     });
@@ -791,10 +843,10 @@ describe('Latte Arrow', function(){
         Latte.A(Latte.M).lift(function(x){
             return x + 'b';
         }).bnd(function(x){
-                return Latte.M(x + 'c');
-            }).lift(function(x){
-                return x + 'd';
-            })('a').always(st);
+            return Latte.M(x + 'c');
+        }).lift(function(x){
+            return x + 'd';
+        })('a').always(st);
 
         assert.equal(st.args[0], 'abcd');
     });
@@ -805,10 +857,361 @@ describe('Latte Arrow', function(){
         Latte.A(Latte.M).lift(function(x){
             return x + 'b';
         }).bnd(function(x){
+            return Latte.M(Latte.E('e'));
+        }).lift(function(x){
+            return x + 'd';
+        })('a').always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('raise', function(){
+        var st1 = stub(),
+            st2 = stub();
+
+        Latte.A(function(v){
+            return Latte.M(v + '!!!');
+        }).raise(st1)('test').always(st2);
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.args[0], 'test!!!');
+    });
+
+    it('raise и значение E', function(){
+        var st = stub();
+
+        Latte.A(function(v){
+            return Latte.M(Latte.E('e'));
+        }).raise(function(e){
+            return 'new ' + e();
+        })('test').always(st);
+
+        assert.equal(st.args[0](), 'new e');
+    });
+
+    it('radd', function(){
+        var st = stub();
+
+        Latte.A(function(v){
+            return Latte.M(v + '!');
+        }).radd(Latte.A(function(v){
+            return Latte.M(v + '?');
+        }))('test').always(st);
+
+        assert.equal(st.args[0], 'test!?');
+    });
+
+    it('radd c E значением', function(){
+        var st = stub();
+
+        Latte.A(function(v){
+            return Latte.M(Latte.E('e'));
+        }).radd(Latte.A(function(v){
+            return Latte.M(v + '?');
+        }))('test').always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('radd несколько вызовов по цепочке', function(){
+        var st = stub(),
+            st1 = stub(),
+            st2 = stub(),
+            st3 = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 'b');
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(v + 'c');
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 'd');
+            });
+
+        Latte.A(Latte.M).radd(a1).radd(a2).radd(a3)('a').always(st);
+
+        a1('a').always(st1);
+        a2('a').always(st2);
+        a3('a').always(st3);
+
+        assert.equal(st.args[0], 'abcd');
+
+        assert.equal(st1.args[0], 'ab');
+        assert.equal(st2.args[0], 'ac');
+        assert.equal(st3.args[0], 'ad');
+    });
+
+    it('ladd', function(){
+        var st1 = stub(),
+            st2 = stub(),
+            a = Latte.A(function(v){
+                return Latte.M(v + '?');
+            });
+
+        Latte.A(function(v){
+            return Latte.M(v + '!');
+        }).ladd(a)('test').always(st1);
+
+        a('test').always(st2);
+
+        assert.equal(st1.args[0], 'test?!');
+        assert.equal(st2.args[0], 'test?');
+    });
+
+    it('ladd c E значением', function(){
+        var st = stub();
+
+        Latte.A(function(v){
+            return Latte.M(Latte.E('e'));
+        }).ladd(Latte.A(function(v){
+            return Latte.M(v + '?');
+        }))('test').always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('ladd несколько вызовов в цепочке', function(){
+        var st = stub(),
+            st1 = stub(),
+            st2 = stub(),
+            st3 = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 'd');
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(v + 'c');
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 'b');
+            });
+
+        Latte.A(Latte.M).ladd(a1).ladd(a2).ladd(a3)('a').always(st);
+
+        a1('a').always(st1);
+        a2('a').always(st2);
+        a3('a').always(st3);
+
+        assert.equal(st.args[0], 'abcd');
+
+        assert.equal(st1.args[0], 'ad');
+        assert.equal(st2.args[0], 'ac');
+        assert.equal(st3.args[0], 'ab');
+    });
+
+    it('seq', function(){
+        var st = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 1);
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(v + 2);
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 3);
+            });
+
+        a1.seq([a2, a3])(0).always(st);
+
+        assert.deepEqual(st.args[0], [1,2,3]);
+    });
+
+    it('seq со значением E', function(){
+        var st = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 1);
+            }),
+            a2 = Latte.A(function(v){
                 return Latte.M(Latte.E('e'));
-            }).lift(function(x){
-                return x + 'd';
-            })('a').always(st);
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 3);
+            });
+
+        a1.seq([a2, a3])(0).always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('static seq', function(){
+        var st = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 1);
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(v + 2);
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 3);
+            });
+
+        Latte.A.seq([a1, a2, a3])(0).always(st);
+
+        assert.deepEqual(st.args[0], [1,2,3]);
+    });
+
+    it('static seq от пустого массива', function(){
+        var st = stub();
+
+        Latte.A.seq([])(0).always(st);
+
+        assert.deepEqual(st.args[0], []);
+    });
+
+    it('static seq со значением E', function(){
+        var st = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 1);
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(Latte.E('e'));
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 3);
+            });
+
+        Latte.A.seq([a1, a2, a3])(0).always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('allseq', function(){
+        var st = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 1);
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(v + 2);
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 3);
+            });
+
+        Latte.A.allseq([a1, a2, a3])(0).always(st);
+        assert.deepEqual(st.args[0], [1,2,3]);
+    });
+
+    it('allseq пустой массив', function(){
+        var st = stub();
+        Latte.A.allseq([])(0).always(st);
+        assert.deepEqual(st.args[0], []);
+    });
+
+    it('allseq co значением E в массиве', function(){
+        var st = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 1);
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(Latte.E('e'));
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 3);
+            });
+
+        Latte.A.allseq([a1, a2, a3])(0).always(st);
+
+        assert.equal(st.args[0].length, 3);
+
+        assert.equal(st.args[0][0], 1);
+        assert.equal(st.args[0][1](), 'e');
+        assert.equal(st.args[0][2], 3);
+    });
+
+    it('fold', function(){
+        var st = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 1);
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(v + 2);
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 3);
+            });
+
+        Latte.A.fold(function(acc, v){
+            return acc += v;
+        }, 0, [a1, a2, a3])(0).always(st);
+
+        assert.equal(st.args[0], 6);
+    });
+
+    it('fold пустой массив', function(){
+        var st = stub();
+
+        Latte.A.fold(function(acc, v){
+            return acc += v;
+        }, 0, [])(1).always(st);
+
+        assert.equal(st.args[0], 0);
+    });
+
+    it('fold co значением E в массиве', function(){
+        var st = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 1);
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(Latte.E('e'));
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 3);
+            });
+
+        Latte.A.fold(function(acc, v){
+            return acc += v;
+        }, 0, [a1, a2, a3])(0).always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('static lift', function(){
+        var st = stub(),
+            a = Latte.A(function(v){
+                return Latte.M(v + 'st');
+            });
+
+        Latte.A.lift(function(a){
+            return a + '!!!';
+        }, [a])('te').always(st);
+
+        assert.equal(st.args[0], 'test!!!');
+    });
+
+    it('static lift массив с несколькими элементами', function(){
+        var st = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 'test');
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(v + ' ');
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 'Latte');
+            });
+
+        Latte.A.lift(function(a, b, c){
+            return a + b + c;
+        }, [a1, a2, a3])('').always(st);
+
+        assert.equal(st.args[0], 'test Latte');
+    });
+
+    it('static lift массив с несколькими элементами и значением E', function(){
+        var st = stub(),
+            a1 = Latte.A(function(v){
+                return Latte.M(v + 'test');
+            }),
+            a2 = Latte.A(function(v){
+                return Latte.M(Latte.E('e'));
+            }),
+            a3 = Latte.A(function(v){
+                return Latte.M(v + 'Latte');
+            });
+
+        Latte.A.lift(function(a, b, c){
+            return a + b + c;
+        }, [a1, a2, a3])('').always(st);
 
         assert.equal(st.args[0](), 'e');
     });
