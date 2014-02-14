@@ -20,18 +20,18 @@
 
 ### Монада ###
 
-Монада создается с помощью одного из двух конструкторов: Latte.M или Latte.M.Later
+Монада создается с помощью одного из двух конструкторов: Latte.M или Latte.Mv
 
-С помощью конструктора Latte.M создается монада с заранее известным значением,
+С помощью конструктора Latte.Mv создается монада с заранее известным значением,
 аналог функции return с типом (a -> m a)
 
     // a -> Latte.M a
-    Latte.M('value');
+    Latte.Mv('value');
 
-С помощью конструктора Latte.M.Later создается монада, значение которой будет вычислено позднее.
+С помощью конструктора Latte.M создается монада, значение которой будет вычислено позднее.
 
     // ((a -> ()) -> ()) -> Latte.M a
-    Latte.M.Later(function(handle){
+    Latte.M(function(handle){
         setTimeout(function(){
             handle('value');
         }, 2000);
@@ -41,12 +41,11 @@
 
     // a -> Bool
     Latte.isM('a') === false;
-    Latte.isM(Latte.M('a')) === true;
+    Latte.isM(Latte.Mv('a')) === true;
 
 ### Методы монады ###
 
-Определены как методы объекта монады, так и статические методы (вызовы от объекта Latte.M);
-Latte.M яляется пространством имен монады.
+Определены как методы объекта монады, так и статические методы (вызовы от объекта Latte.M).
 
 ### Методы объекта ###
 
@@ -56,11 +55,11 @@ Latte.M яляется пространством имен монады.
 Возвращаемое методом значение игнорируется.
 
     // Latte.M a -> (a -> ()) -> Latte.M a
-    Latte.M('value').always(function(value){
+    Latte.Mv('value').always(function(value){
         console.log(value);
     });
 
-    Latte.M(Latte.E('error')).always(function(value){
+    Latte.Mv(Latte.E('error')).always(function(value){
         if(Latte.isE(value)){
             console.log('some error: ' + value());
         }
@@ -74,11 +73,11 @@ Latte.M яляется пространством имен монады.
 Возвращаемое методом значение игнорируется.
 
     // Latte.M a -> (a -> ()) -> Latte.M a
-    Latte.M('value').next(function(value){
+    Latte.Mv('value').next(function(value){
         console.log(value);
     });
 
-    Latte.M(Latte.E('error')).next(function(value){
+    Latte.Mv(Latte.E('error')).next(function(value){
         // функция не будет вызвана!
     });
 
@@ -87,11 +86,11 @@ Latte.M яляется пространством имен монады.
 Возвращаемое методом значение игнорируется.
 
     // Latte.M a -> (a -> ()) -> Latte.M a
-    Latte.M('value').fail(function(value){
+    Latte.Mv('value').fail(function(value){
         // функция не будет вызвана!
     });
 
-    Latte.M(Latte.E('error')).fail(function(value){
+    Latte.Mv(Latte.E('error')).fail(function(value){
         console.log('error: ' + value());
     });
 
@@ -101,11 +100,11 @@ Latte.M яляется пространством имен монады.
 текущее успешное монадическое значение и возвращающую новую монаду.
 
     // Latte.M a -> (a -> Latte.M b) -> Latte.M b
-    Latte.M('value').bnd(function(value){
-        return Latte.M('new ' + value);
+    Latte.Mv('value').bnd(function(value){
+        return Latte.Mv('new ' + value);
     });
 
-    Latte.M(Latte.E('error')).bnd(function(){
+    Latte.Mv(Latte.E('error')).bnd(function(){
         // функция не будет вызвана!
     });
 
@@ -114,11 +113,11 @@ Latte.M яляется пространством имен монады.
 передается успешное монадическое значение и возвращает новое значение, которое упаковывается в монаду.
 
     // Latte.M a -> (a -> b) -> Latte.M b
-    Latte.M('value').lift(function(value){
+    Latte.Mv('value').lift(function(value){
         return 'new ' + value;
     });
 
-    Latte.M(Latte.E('error')).lift(function(){
+    Latte.Mv(Latte.E('error')).lift(function(){
         // функция не будет вызвана!
     });
 
@@ -127,11 +126,11 @@ Latte.M яляется пространством имен монады.
 возвращащую значение, которое будет обернуто в тип E.
 
     // Latte.M a -> (a -> b) -> Latte.M b
-    Latte.M('value').raise(function(){
+    Latte.Mv('value').raise(function(){
         // функция не будет вызвана!
     });
 
-    Latte.M(Latte.E('error')).raise(function(e){
+    Latte.Mv(Latte.E('error')).raise(function(e){
         return 'error: ' + e();
     });
 
@@ -142,7 +141,7 @@ Latte.M яляется пространством имен монады.
 если хотя бы одно из значений в монадах было типа E.
 
     // Latte.M a -> [Latte.M a] -> Latte.M [a]
-    Latte.M('value').seq([Latte.M('other value')]);
+    Latte.Mv('value').seq([Latte.Mv('other value')]);
 
 ### Методы Latte.M ###
 
@@ -150,13 +149,13 @@ Latte.M яляется пространством имен монады.
 Метод работает аналогичным, как и метод объекта образом.
 
     // [Latte.M a] -> Latte.M [a]
-    Latte.M.seq([Latte(1), Latte(2)]);
+    Latte.M.seq([Latte.Mv(1), Latte.Mv(2)]);
 
 #### allseq ####
 Метод аналогичен методу seq, за исключением того, что он возвращает весь список значений, также и с типами E.
 
     // [Latte.M a] -> Latte.M [a]
-    Latte.M.allseq([Latte.M(1), Latte.M(Latte.E('error'))]);
+    Latte.M.allseq([Latte.Mv(1), Latte.Mv(Latte.E('error'))]);
 
 #### fold ####
 Метод производит свертку списка монад и возвращает монаду с одним значением. Метод принимает функцию свертки,
@@ -165,7 +164,7 @@ Latte.M яляется пространством имен монады.
     // (a -> b -> a) -> a -> [Latte.M b] -> Latte.M a
     Latte.M.fold(function(acc, v){
         return acc += v;
-    }, 0, [Latte.M(1), Latte.M(2)]);
+    }, 0, [Latte.Mv(1), Latte.Mv(2)]);
 
 #### lift ####
 Метод принимает функцию преобразования и список монад, все монадические значения передаются в
@@ -175,33 +174,33 @@ Latte.M яляется пространством имен монады.
     // (a -> a -> ... -> c) -> [Latte.M a] -> Latte.M с
     Latte.M.lift(function(a, b){
         return a + b;
-    }, [Latte.M(1), Latte.M(2)]);
+    }, [Latte.Mv(1), Latte.Mv(2)]);
 
 ### Monad laws ###
 
     var x = 'test';
 
     function f(v){
-        return Latte.M('[' + v + ']');
+        return Latte.Mv('[' + v + ']');
     }
 
     function g(v){
-        return Latte.M('<' + v + '>');
+        return Latte.Mv('<' + v + '>');
     }
 
     function h(v){
-        return Latte.M('{' + v + '}');
+        return Latte.Mv('{' + v + '}');
     }
 
 
     // Left identity: (return x) >>= f == f x
-    Latte.M(x).bnd(f) == f(x);
+    Latte.Mv(x).bnd(f) == f(x);
 
     // Right identity: m >>= return == m
-    Latte.M(x).bnd(Latte.M) == Latte.M(x);
+    Latte.Mv(x).bnd(Latte.M) == Latte.Mv(x);
 
     // Associativity: (m >>= f) >>= g == m >>= (\x -> f x >>= g)
-    Latte.M(x).bnd(f).bnd(g) == Latte.M(x).bnd(function(x){ return f(x).bnd(g); });
+    Latte.Mv(x).bnd(f).bnd(g) == Latte.Mv(x).bnd(function(x){ return f(x).bnd(g); });
 
 
 ### Стрелка ###
@@ -215,21 +214,21 @@ Latte.M яляется пространством имен монады.
 
     // (a -> Latte.M b) -> Latte.A a Latte.M b
     Latte.A(function(value){
-        return Latte.M(value);
+        return Latte.Mv(value);
     });
 
 Вычисление:
 
     // Latte.A a Latte.M b -> a -> Latte.M b
     Latte.A(function(value){
-        return Latte.M(value);
+        return Latte.Mv(value);
     })('value');
 
 Для проверки, что значение является стрелкой, предоставлен метод - Latte.isA
 
     // a -> Bool
     Latte.isA('a') === false;
-    Latte.isA(Latte.A(Latte.M)) === true;
+    Latte.isA(Latte.A(Latte.Mv)) === true;
 
 ### Методы стрелки ###
 
@@ -244,7 +243,7 @@ Latte.A яляется пространством имен стрелки.
 Возвращаемое методом значение игнорируется.
 
     // Latte.A a Latte.M b -> (b -> ()) -> Latte.A a Latte.M b
-    Latte.A(Latte.M).always(function(value){
+    Latte.A(Latte.Mv).always(function(value){
         console.log(value);
     });
 
@@ -253,7 +252,7 @@ Latte.A яляется пространством имен стрелки.
 Возвращаемое методом значение игнорируется.
 
     // Latte.A a Latte.M b -> (b -> ()) -> Latte.A a Latte.M b
-    Latte.A(Latte.M).next(function(value){
+    Latte.A(Latte.Mv).next(function(value){
         console.log(value);
     });
 
@@ -262,11 +261,11 @@ Latte.A яляется пространством имен стрелки.
 Возвращаемое методом значение игнорируется.
 
     // Latte.A a Latte.M b -> (b -> ()) -> Latte.A a Latte.M b
-    Latte.M('value').fail(function(value){
+    Latte.Mv('value').fail(function(value){
         // функция не будет вызвана!
     });
 
-    Latte.M(Latte.E('error')).fail(function(value){
+    Latte.Mv(Latte.E('error')).fail(function(value){
         console.log('error: ' + value());
     });
 
@@ -274,8 +273,8 @@ Latte.A яляется пространством имен стрелки.
 Метод принимает функцию, принимающую значение предыдущего вычисления и возвращающую новое монадическое значение.
 
     // Latte.A a Latte.M b -> (b -> Latte.M c) -> Latte.A b Latte.M c
-    Latte.A(Latte.M).bnd(function(a){
-        return Latte.M(a + 1);
+    Latte.A(Latte.Mv).bnd(function(a){
+        return Latte.Mv(a + 1);
     });
 
 #### lift ####
@@ -283,7 +282,7 @@ Latte.A яляется пространством имен стрелки.
 которое будет помещено в монаду.
 
     // Latte.A a Latte.M b -> (b -> c) -> Latte.A b Latte.M c
-    Latte.A(Latte.M).lift(function(a){
+    Latte.A(Latte.Mv).lift(function(a){
         return a + 1;
     });
 
@@ -292,30 +291,30 @@ Latte.A яляется пространством имен стрелки.
 возвращащую значение, которое будет обернуто в тип E.
 
     // Latte.A a Latte.M b -> (b -> c) -> Latte.A b Latte.M c
-    Latte.A(Latte.M).raise(function(){
+    Latte.A(Latte.Mv).raise(function(){
         // функция не будет вызвана!
     });
 
 #### seq ####
 Метод используется для объединения стрелок.
 
-    // Latte.A a Latte.M b -> [Latte.A a Latte.M b] -> Latte.A a [Latte M b]
-    Latte.A(Latte.M).seq([Latte.A(Latte.M)]);
+    // Latte.A a Latte.M b -> [Latte.A a Latte.M b] -> Latte.A a [Latte.M b]
+    Latte.A(Latte.Mv).seq([Latte.A(Latte.Mv)]);
 
 #### ladd ####
 Метод принимает другую стрелку и добавляет ее перед текущей в вычислениях.
 
     // Latte.A a Latte.M b -> Latte.A d Latte.M a -> Latte.A b Latte.M c
-    Latte.A(Latte.M).ladd(Latte.A(function(v){
-        return Latte.M('add before ' + v);
+    Latte.A(Latte.Mv).ladd(Latte.A(function(v){
+        return Latte.Mv('add before ' + v);
     }));
 
 #### radd ####
 Метод принимает другую стрелку и добавляет ее после текущей в вычислениях.
 
     // Latte.A a Latte.M b -> Latte.A b Latte.M c -> Latte.A c Latte.M d
-    Latte.A(Latte.M).radd(Latte.A(function(v){
-        return Latte.M('add after ' + v);
+    Latte.A(Latte.Mv).radd(Latte.A(function(v){
+        return Latte.Mv('add after ' + v);
     }));
 
 
