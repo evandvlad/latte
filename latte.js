@@ -22,7 +22,7 @@
         S_PROP = '___S',
 
         Latte = {
-            version : '1.10.0'
+            version : '1.10.1'
         };
 
     function defineConstProp(o, prop, v){
@@ -124,10 +124,11 @@
 
         M.allseq = function(ms){
             var mlen = ms.length,
-                tick = 0;
+                tick = 0,
+                acc = [];
 
             return mlen ? this(function(h){
-                ms.reduce(function(acc, m, i){
+                ms.forEach(function(m, i){
                     m.always(function(v){
                         acc[i] = v;
 
@@ -136,9 +137,7 @@
                             tick = 0;
                         }
                     });
-
-                    return acc;
-                }, []);
+                });
             }) : this(curryLift([]));
         };
 
@@ -220,6 +219,22 @@
 
         defineConstProp(S.prototype, S_PROP, true);
 
+        S.prototype.any = function(ss){
+            return this.constructor.any([this].concat(ss || []));
+        };
+
+        S.any = function(ss){
+            if(!ss.length){
+                throw Error('empty list');
+            }
+
+            return this(function(h){
+                ss.forEach(function(s){
+                    s.always(h);
+                });
+            });
+        };
+
         return S;
 
     }());
@@ -272,6 +287,10 @@
                 });
             };
 
+            A_.seq = function(as){
+                return A.seq([f].concat(as || []));
+            };
+
             A_.radd = function(a){
                 return A(function(v){
                     return f(v).bnd(a);
@@ -280,10 +299,6 @@
 
             A_.ladd = function(a){
                 return a.radd(f);
-            };
-
-            A_.seq = function(as){
-                return A.seq([f].concat(as || []));
             };
 
             return defineConstProp(A_, A_PROP, true);

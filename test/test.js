@@ -1558,6 +1558,64 @@ describe('Latte Stream', function(){
         assert.equal(st.args[0](), 'err');
     });
 
+    it('any', function(){
+        var st = stub(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.S(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.S(function(h){
+                handle2 = h;
+            }),
+            s3 = Latte.S(function(h){
+                handle3 = h;
+            });
+
+        s1.any([s2, s3]).always(st);
+
+        handle1('test');
+        assert.equal(st.args[0], 'test');
+
+        handle2('test 2');
+        assert.equal(st.args[0], 'test 2');
+
+        handle1('test 3');
+        assert.equal(st.args[0], 'test 3');
+
+        handle3('test 4');
+        assert.equal(st.args[0], 'test 4');
+
+        handle2(Latte.E('e'));
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('any пустой список', function(){
+        var st = stub(),
+            handle1,
+            s1 = Latte.S(function(h){
+                handle1 = h;
+            });
+
+        s1.any([]).always(st);
+
+        handle1('test');
+        assert.equal(st.args[0], 'test');
+
+        handle1('test 2');
+        assert.equal(st.args[0], 'test 2');
+
+        handle1('test 3');
+        assert.equal(st.args[0], 'test 3');
+
+        handle1('test 4');
+        assert.equal(st.args[0], 'test 4');
+
+        handle1(Latte.E('e'));
+        assert.equal(st.args[0](), 'e');
+    });
+
     it('static seq', function(){
         var st = stub(),
             handle1,
@@ -1826,6 +1884,45 @@ describe('Latte Stream', function(){
 
         handle3(1);
         assert.equal(st.args[0](), 'err');
+    });
+
+    it('static any пустой список', function(){
+        assert.throws(function(){
+            Latte.S.any([]);
+        }, Error);
+    });
+
+    it('static any', function(){
+        var st = stub(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.S(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.S(function(h){
+                handle2 = h;
+            }),
+            s3 = Latte.S(function(h){
+                handle3 = h;
+            });
+
+        Latte.S.any([s1, s2, s3]).always(st);
+
+        handle1('test');
+        assert.equal(st.args[0], 'test');
+
+        handle2('test 2');
+        assert.equal(st.args[0], 'test 2');
+
+        handle1('test 3');
+        assert.equal(st.args[0], 'test 3');
+
+        handle3('test 4');
+        assert.equal(st.args[0], 'test 4');
+
+        handle2(Latte.E('e'));
+        assert.equal(st.args[0](), 'e');
     });
 
 });
