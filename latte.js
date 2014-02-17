@@ -22,7 +22,7 @@
         S_PROP = '___S',
 
         Latte = {
-            version : '1.10.1'
+            version : '1.11.0'
         };
 
     function defineConstProp(o, prop, v){
@@ -44,14 +44,14 @@
         return Object.prototype.toString.call(v) === '[object Function]';
     }
 
-    function MCreator(fstate){
+    function MCreator(notifier){
 
         function M(ctor){
             if(!(this instanceof M)){
                 return new M(ctor);
             }
 
-            this.st = fstate(ctor);
+            this.notifier = notifier(ctor);
         }
 
         M.prototype = {
@@ -59,7 +59,7 @@
             constructor : M,
 
             always : function(f){
-                this.st(f);
+                this.notifier(f);
                 return this;
             },
 
@@ -79,7 +79,7 @@
                 var self = this;
 
                 return new this.constructor(function(c){
-                    self.st(function(v){
+                    self.notifier(function(v){
                         !Latte.isE(v) ? f(v).always(c) : c(v);
                     });
                 });
@@ -89,7 +89,7 @@
                 var self = this;
 
                 return new this.constructor(function(c){
-                    self.st(function(v){
+                    self.notifier(function(v){
                         !Latte.isE(v) ? new self.constructor(function(h){
                             [h, c].forEach(curryLift(f(v)));
                         }) : c(v);
@@ -101,7 +101,7 @@
                 var self = this;
 
                 return new this.constructor(function(c){
-                    self.st(function(v){
+                    self.notifier(function(v){
                         Latte.isE(v) ? new self.constructor(function(h){
                             [h, c].forEach(curryLift(Latte.E(f(v))));
                         }) : c(v);
@@ -123,11 +123,12 @@
         };
 
         M.allseq = function(ms){
-            var mlen = ms.length,
-                tick = 0,
-                acc = [];
 
-            return mlen ? this(function(h){
+            return ms.length ? this(function(h){
+                var mlen = ms.length,
+                    acc = [],
+                    tick = 0;
+
                 ms.forEach(function(m, i){
                     m.always(function(v){
                         acc[i] = v;
@@ -138,6 +139,7 @@
                         }
                     });
                 });
+                
             }) : this(curryLift([]));
         };
 
@@ -205,19 +207,46 @@
 
     Latte.S = (function(){
 
-        var S = MCreator(function(ctor){
-            var cbs = [];
+        var notifier = function(ctor){
+                var cbs = [];
 
-            ctor(function(v){
-                cbs.forEach(curryLift(v));
-            });
+                ctor(function(v){
+                    cbs.forEach(curryLift(v));
+                });
 
-            return function(f){
-                cbs.push(f);
-            };
-        });
+                return function(f){
+                    cbs.push(f);
+                };
+            },
+
+            S = MCreator(notifier),
+            S_ = MCreator(notifier);
 
         defineConstProp(S.prototype, S_PROP, true);
+        defineConstProp(S_.prototype, S_PROP, true);
+
+        S.pallseq = S_.allseq = function(ss){
+            return ss.length ? this(function(h){
+                var mlen = ss.length,
+                    acc = [];
+
+                ss.forEach(function(s, i){
+                    s.always(function(v){
+                        acc[i] = v;
+                        Object.keys(acc).length === mlen && h(acc);
+                    });
+                });
+
+            }) : this(curryLift([]));
+        };
+
+        S.pseq = S_.seq = S.seq.bind(S_);
+        S.pfold = S.fold.bind(S_);
+        S.plift = S.lift.bind(S_);
+
+        S.prototype.pseq = function(ss){
+            return this.constructor.pseq([this].concat(ss || []));
+        };
 
         S.prototype.any = function(ss){
             return this.constructor.any([this].concat(ss || []));
