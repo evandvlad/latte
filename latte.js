@@ -20,9 +20,10 @@
         E_PROP = '___E',
         A_PROP = '___A',
         S_PROP = '___S',
+        PS_PROP = '___PS',
 
         Latte = {
-            version : '1.11.0'
+            version : '1.12.0'
         };
 
     function defineConstProp(o, prop, v){
@@ -363,6 +364,71 @@
 
     Latte.isA = function(v){
         return !!(isFunction(v) && v[A_PROP]);
+    };
+
+    Latte.PS = (function(){
+
+        function PS(){
+            if(!(this instanceof PS)){
+                return new PS();
+            }
+
+            this.sbs = {};
+        }
+
+        PS.prototype = {
+
+            constructor : PS,
+
+            pub : function(e, v){
+                return (this.sbs[e] || []).map(curryLift(v));
+            },
+
+            sub : function(e, f){
+                (this.sbs[e] = this.sbs[e] || []).push(f);
+                return this;
+            },
+
+            once : function(e, f){
+                var self = this;
+
+                this.sub(e, function _f(v){
+                    self.unsub(e, _f);
+                    return f(v);
+                });
+
+                return this;
+            },
+
+            unsub : function(e, f){
+               this.sbs[e] = (this.sbs[e] || []).filter(function(c){
+                   return c !== f;
+               });
+
+               return this;
+            },
+
+            unsuball : function(e){
+                delete this.sbs[e];
+                return this;
+            }
+        };
+
+        defineConstProp(PS.prototype, PS_PROP, true);
+
+        Object.keys(PS.prototype).forEach(function(prop){
+            PS[prop] = PS.prototype[prop];
+        });
+
+        defineConstProp(PS, 'sbs', {});
+        defineConstProp(PS, PS_PROP, true);
+
+        return PS;
+
+    }());
+
+    Latte.isPS = function(v){
+        return !!(((typeof v === 'object' && v) || isFunction(v)) && v[PS_PROP]);
     };
 
     return Latte;

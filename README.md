@@ -358,3 +358,85 @@ always, next, fail, bnd, lift, raise, seq, any, pseq.
 
 seq, pseq, any, lift, plift, fold, pfold, allseq, pallseq.
 
+### PubSub Latte.PS ###
+
+Реализация Publisher/Subscriber (PubSub) паттерна. Конструктор возращает PS экземпляр.
+
+    // () -> Latte PS
+    var ps = Latte.PS();
+
+Для проверки, что значение является экземпляром PS, предоставлен метод - Latte.isPS
+
+    // a -> Bool
+    Latte.isPS('a') === false;
+    Latte.isPS(Latte.PS()) === true;
+
+### Методы объекты ###
+
+Метода объекта: pub, sub, once, unsub, unsuball.
+
+#### pub ####
+
+Публикация события. Метод принимает имя события и значение, извещает всех подписчиков данного события, если таковые имеются и
+возвращает массив их результатов.
+
+    // Latte.PS -> String -> a -> [b]
+    var ps = Latte.PS();
+    ps.pub('event', 'value');
+
+#### sub ####
+
+Подписка на событие. Метод принимает имя события и callback функцию, принимающую значение которое будет в нее передано при
+вызове pub метода.
+
+    // Latte.PS -> String -> (a -> b) -> Latte.PS
+    var ps = Latte.PS();
+    ps.sub('event', function(v){
+        console.log(v);
+        return v;
+    });
+
+#### once ####
+
+Подписка только на одно извещение указанного события.
+
+    // Latte.PS -> String -> (a -> b) -> Latte.PS
+    var ps = Latte.PS();
+    ps.once('event', function(v){
+        console.log(v);
+        return v;
+    });
+
+#### unsub ####
+
+Метод позволяющий отписаться от определенного события. Метод принимает имя события и функцию, которая была ранее зарегистрирована
+в качестве подписчика.
+
+    // Latte.PS -> String -> (a -> b) -> Latte.PS
+    var ps = Latte.PD();
+    var sf = function(v){
+        console.log(v);
+        return v;
+    };
+
+    ps.sub('event', sf);
+    ps.unsub('event', sf);
+
+#### unsuball ####
+
+Метод отписывающий всех подписчиков определенного события.
+
+    // Latte.PS -> String -> Latte.PS
+    var ps = Latte.PD();
+    var sf = function(v){
+        console.log(v);
+        return v;
+    };
+
+    ps.sub('event', sf);
+    ps.unsub('event');
+
+### Методы Latte.PS ###
+
+Кроме того, что можно создавать экземпляры PS, Latte.PS сам может быть использован как глобальный PubSub, поскольку также
+для него определены аналогичные методы, что и для объекта - pub, sub, once, unsub и unsuball.

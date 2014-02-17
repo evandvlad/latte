@@ -2368,6 +2368,267 @@ describe('Latte Stream', function(){
 
 });
 
+describe('Latte PubSub', function(){
+
+    it('pub/sub', function(){
+        var ps = Latte.PS(),
+            st1 = stub(),
+            st2 = stub();
+
+        ps.sub('a', st1);
+        ps.sub('a', st2);
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.called, false);
+
+        ps.pub('a', 1);
+        assert.equal(st1.args[0], 1);
+        assert.equal(st2.args[0], 1);
+
+        ps.pub('a', 'test');
+        assert.equal(st1.args[0], 'test');
+        assert.equal(st2.args[0], 'test');
+    });
+
+    it('pub результат', function(){
+        var ps = Latte.PS(),
+            f1 = function(v){
+                return v + '!';
+            },
+            f2 = function(v){
+                return v + '.';
+            },
+            f3 = function(v){
+                return v + '?';
+            };
+
+        ps.sub('a', f1);
+        ps.sub('a', f2);
+        ps.sub('a', f3);
+
+        assert.deepEqual(ps.pub('a', 'value'), ['value!', 'value.', 'value?']);
+        assert.deepEqual(ps.pub('a', 'test'), ['test!', 'test.', 'test?']);
+
+        ps.unsub('a', f2);
+        assert.deepEqual(ps.pub('a', 'rest'), ['rest!', 'rest?']);
+    });
+
+    it('pub результат без подписчиков', function(){
+        var ps = Latte.PS();
+        assert.deepEqual(ps.pub('a', 'value'), []);
+    });
+
+    it('pub/sub разные события', function(){
+        var ps = Latte.PS(),
+            st1 = stub(),
+            st2 = stub();
+
+        ps.sub('a', st1);
+        ps.sub('b', st2);
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.called, false);
+
+        ps.pub('a', 1);
+        assert.equal(st1.args[0], 1);
+        assert.equal(st2.called, false);
+        st1.reset();
+
+        ps.pub('b', 'test');
+        assert.equal(st1.called, false);
+        assert.equal(st2.args[0], 'test');
+    });
+
+    it('once', function(){
+        var ps = Latte.PS(),
+            st = stub('return');
+
+        ps.once('a', st);
+
+        assert.deepEqual(ps.pub('a', 'test'), ['return']);
+        assert.equal(st.args[0], 'test');
+        st.reset();
+
+        ps.pub('a', 'rest');
+        assert.equal(st.called, false);
+    });
+
+    it('unsub', function(){
+        var ps = Latte.PS(),
+            st1 = stub(),
+            st2 = stub();
+
+        ps.sub('a', st1);
+        ps.sub('b', st2);
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.called, false);
+
+        ps.pub('a', 1);
+        assert.equal(st1.args[0], 1);
+        assert.equal(st2.called, false);
+        st1.reset();
+
+        ps.pub('b', 'test');
+        assert.equal(st1.called, false);
+        assert.equal(st2.args[0], 'test');
+        st1.reset();
+        st2.reset();
+
+        ps.unsub('a', st1);
+        ps.unsub('b', st2);
+
+        ps.pub('a', 12);
+        ps.pub('b', 'qwerty');
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.called, false);
+    });
+
+    it('unsub для незарегистрированного события', function(){
+        var ps = Latte.PS();
+        ps.unsub('a', function(){});
+    });
+
+    it('unsuball', function(){
+        var ps = Latte.PS(),
+            st1 = stub(),
+            st2 = stub();
+
+        ps.sub('a', st1).sub('a', st2);
+
+        ps.pub('a', 'test');
+
+        assert.equal(st1.args[0], 'test');
+        assert.equal(st2.args[0], 'test');
+        st1.reset();
+        st2.reset();
+
+        ps.unsuball('a');
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.called, false);
+    });
+
+    it('unsuball без подписчиков', function(){
+        var ps = Latte.PS();
+        ps.unsuball('qwerty');
+    });
+
+    it('pub если нет подписчиков', function(){
+        var ps = Latte.PS();
+        ps.pub('a', 555);
+    });
+
+    it('global pub/sub', function(){
+        var st1 = stub(),
+            st2 = stub();
+
+        Latte.PS.sub('a', st1);
+        Latte.PS.sub('a', st2);
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.called, false);
+
+        Latte.PS.pub('a', 1);
+        assert.equal(st1.args[0], 1);
+        assert.equal(st2.args[0], 1);
+
+        Latte.PS.pub('a', 'test');
+        assert.equal(st1.args[0], 'test');
+        assert.equal(st2.args[0], 'test');
+
+        Latte.PS.unsub('a', st1);
+        Latte.PS.unsub('a', st2);
+    });
+
+    it('global pub результат', function(){
+        var f1 = function(v){
+                return v + '!';
+            },
+            f2 = function(v){
+                return v + '.';
+            },
+            f3 = function(v){
+                return v + '?';
+            };
+
+        Latte.PS.sub('a', f1);
+        Latte.PS.sub('a', f2);
+        Latte.PS.sub('a', f3);
+
+        assert.deepEqual(Latte.PS.pub('a', 'value'), ['value!', 'value.', 'value?']);
+        assert.deepEqual(Latte.PS.pub('a', 'test'), ['test!', 'test.', 'test?']);
+
+        Latte.PS.unsub('a', f2);
+        assert.deepEqual(Latte.PS.pub('a', 'rest'), ['rest!', 'rest?']);
+
+        Latte.PS.unsub('a', f1);
+        Latte.PS.unsub('a', f3);
+
+        assert.deepEqual(Latte.PS.pub('a', 'west'), []);
+    });
+
+    it('global pub/sub разные события', function(){
+        var st1 = stub(),
+            st2 = stub();
+
+        Latte.PS.sub('a', st1);
+        Latte.PS.sub('b', st2);
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.called, false);
+
+        Latte.PS.pub('a', 1);
+        assert.equal(st1.args[0], 1);
+        assert.equal(st2.called, false);
+        st1.reset();
+
+        Latte.PS.pub('b', 'test');
+        assert.equal(st1.called, false);
+        assert.equal(st2.args[0], 'test');
+
+        Latte.PS.unsub('a', st1);
+        Latte.PS.unsub('b', st2);
+    });
+
+    it('global once', function(){
+        var st = stub('return');
+
+        Latte.PS.once('a', st);
+
+        assert.deepEqual(Latte.PS.pub('a', 'test'), ['return']);
+        assert.equal(st.args[0], 'test');
+        st.reset();
+
+        Latte.PS.pub('a', 'rest');
+        assert.equal(st.called, false);
+    });
+
+    it('global unsuball', function(){
+        var st1 = stub(),
+            st2 = stub();
+
+        Latte.PS.sub('a', st1).sub('a', st2);
+
+        Latte.PS.pub('a', 'test');
+
+        assert.equal(st1.args[0], 'test');
+        assert.equal(st2.args[0], 'test');
+        st1.reset();
+        st2.reset();
+
+        Latte.PS.unsuball('a');
+
+        assert.equal(st1.called, false);
+        assert.equal(st2.called, false);
+    });
+
+    it('unsuball без подписчиков', function(){
+        Latte.PS.unsuball('qwerty');
+    });
+});
+
 describe('Latte общие', function(){
 
     it('проверка M', function(){
@@ -2419,5 +2680,102 @@ describe('Latte общие', function(){
 
         assert.equal(Latte.isS(Latte.S.pseq([Latte.S(function(){}), Latte.S(function(){})])), true);
         assert.equal(Latte.isS(Latte.S.plift(function(){}, [Latte.S(function(){}), Latte.S(function(){})])), true);
+    });
+
+    it('проверка PS', function(){
+        assert.equal(Latte.isPS(), false);
+        assert.equal(Latte.isPS({}), false);
+        assert.equal(Latte.isPS(function(){}), false);
+        assert.equal(Latte.isPS(null), false);
+        assert.equal(Latte.isPS(undefined), false);
+
+        assert.equal(Latte.isPS(Latte.PS()), true);
+        assert.equal(Latte.isPS(Latte.PS), true);
+    });
+});
+
+describe('Latte PubSub & Latte Arrow', function(){
+
+    it('PubSub и Arrow', function(){
+        var ps = Latte.PS(),
+            st = stub();
+
+        ps.sub('a', Latte.A(function(v){
+            return Latte.Mv(v + '!!!');
+        })).sub('a', Latte.A(function(v){
+            return Latte.Mv(v + '???');
+        }));
+
+        Latte.M.seq(ps.pub('a', 'test')).always(st);
+
+        assert.deepEqual(st.args[0], ['test!!!', 'test???']);
+    });
+
+    it('PubSub и Arrow со значением E', function(){
+        var ps = Latte.PS(),
+            st = stub();
+
+        ps.sub('a', Latte.A(function(v){
+            return Latte.Mv(v + '!!!');
+        })).sub('a', Latte.A(function(v){
+            return Latte.Mv(Latte.E('e'));
+        }));
+
+        Latte.M.seq(ps.pub('a', 'test')).always(st);
+
+        assert.deepEqual(st.args[0](), 'e');
+    });
+});
+
+describe('Latte PubSub & Latte Stream', function(){
+
+    it('PubSub и Stream', function(){
+        var st = stub();
+
+        Latte.S(function(h){
+            Latte.PS.sub('a', h);
+        }).lift(function(v){
+            return v > 5 ? 'ok' : Latte.E('e');
+        }).next(st);
+
+        assert.equal(st.called, false);
+
+        assert.deepEqual(Latte.PS.pub('a', 12), [undefined]);
+
+        assert.equal(st.args[0], 'ok');
+        st.reset();
+
+        Latte.PS.pub('a', 2);
+        assert.equal(st.called, false);
+        st.reset();
+
+        Latte.PS.pub('a', 222);
+        assert.equal(st.args[0], 'ok');
+        st.reset();
+
+        Latte.PS.unsuball('a');
+    });
+
+    it('PubSub once и Stream', function(){
+        var st = stub();
+
+        Latte.S(function(h){
+            Latte.PS.once('a', h);
+        }).lift(function(v){
+            return v > 5 ? 'ok' : Latte.E('e');
+        }).next(st);
+
+        assert.equal(st.called, false);
+
+        assert.deepEqual(Latte.PS.pub('a', 12), [undefined]);
+
+        assert.equal(st.args[0], 'ok');
+        st.reset();
+
+        Latte.PS.pub('a', 2);
+        assert.equal(st.called, false);
+
+        Latte.PS.pub('a', 222);
+        assert.equal(st.called, false);
     });
 });
