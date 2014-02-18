@@ -23,7 +23,7 @@
         PS_PROP = '___PS',
 
         Latte = {
-            version : '1.12.0'
+            version : '1.12.1'
         };
 
     function defineConstProp(o, prop, v){
@@ -43,6 +43,10 @@
 
     function isFunction(v){
         return Object.prototype.toString.call(v) === '[object Function]';
+    }
+
+    function isObject(v){
+        return !!(typeof v === 'object' && v);
     }
 
     function MCreator(notifier){
@@ -113,6 +117,7 @@
             seq : function(ms){
                 return this.constructor.seq([this].concat(ms || []));
             }
+
         };
 
         M.seq = function(ms){
@@ -124,13 +129,11 @@
         };
 
         M.allseq = function(ms){
-
             return ms.length ? this(function(h){
                 var mlen = ms.length,
-                    acc = [],
                     tick = 0;
 
-                ms.forEach(function(m, i){
+                ms.reduce(function(acc, m, i){
                     m.always(function(v){
                         acc[i] = v;
 
@@ -139,7 +142,9 @@
                             tick = 0;
                         }
                     });
-                });
+
+                    return acc;
+                }, []);
                 
             }) : this(curryLift([]));
         };
@@ -203,7 +208,7 @@
     };
 
     Latte.isM = function(v){
-        return !!(typeof v === 'object' && v && v[M_PROP]);
+        return !!(isObject(v) && v[M_PROP]);
     };
 
     Latte.S = (function(){
@@ -270,7 +275,7 @@
     }());
 
     Latte.isS = function(v){
-        return !!(typeof v === 'object' && v && v[S_PROP]);
+        return !!(isObject(v) && v[S_PROP]);
     };
 
     Latte.A = (function(Latte){
@@ -428,7 +433,7 @@
     }());
 
     Latte.isPS = function(v){
-        return !!(((typeof v === 'object' && v) || isFunction(v)) && v[PS_PROP]);
+        return !!((isObject(v) || isFunction(v)) && v[PS_PROP]);
     };
 
     return Latte;

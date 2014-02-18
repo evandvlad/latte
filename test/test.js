@@ -494,8 +494,8 @@ describe('Latte Monad', function(){
         Latte.Mv('test').lift(function(v){
             return v + '!!';
         }).lift(function(v){
-                return v + '!';
-            }).next(st);
+            return v + '!';
+        }).next(st);
 
         assert.equal(st.args[0], 'test!!!');
     });
