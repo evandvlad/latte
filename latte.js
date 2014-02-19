@@ -23,7 +23,7 @@
         PS_PROP = '___PS',
 
         Latte = {
-            version : '1.12.1'
+            version : '1.12.2'
         };
 
     function defineConstProp(o, prop, v){
@@ -282,61 +282,57 @@
 
         function A(f){
 
-            function A_(v){
-                return f(v);
-            }
-
-            A_.always = function(g){
+            f.always = function(g){
                 return A(function(v){
-                    return f(v).always(g);
-                });
+                    return this(v).always(g);
+                }.bind(this));
             };
 
-            A_.next = function(g){
+            f.next = function(g){
                 return A(function(v){
-                    return f(v).next(g);
-                });
+                    return this(v).next(g);
+                }.bind(this));
             };
 
-            A_.fail = function(g){
+            f.fail = function(g){
                 return A(function(v){
-                    return f(v).fail(g);
-                });
+                    return this(v).fail(g);
+                }.bind(this));
             };
 
-            A_.bnd = function(g){
+            f.bnd = function(g){
                 return A(function(v){
-                    return f(v).bnd(g);
-                });
+                    return this(v).bnd(g);
+                }.bind(this));
             };
 
-            A_.lift = function(g){
+            f.lift = function(g){
                 return A(function(v){
-                    return f(v).lift(g);
-                });
+                    return this(v).lift(g);
+                }.bind(this));
             };
 
-            A_.raise = function(g){
+            f.raise = function(g){
                 return A(function(v){
-                    return f(v).raise(g);
-                });
+                    return this(v).raise(g);
+                }.bind(this));
             };
 
-            A_.seq = function(as){
-                return A.seq([f].concat(as || []));
+            f.seq = function(as){
+                return A.seq([this].concat(as || []));
             };
 
-            A_.radd = function(a){
+            f.radd = function(a){
                 return A(function(v){
-                    return f(v).bnd(a);
-                });
+                    return this(v).bnd(a);
+                }.bind(this));
             };
 
-            A_.ladd = function(a){
-                return a.radd(f);
+            f.ladd = function(a){
+                return a.radd(this);
             };
 
-            return defineConstProp(A_, A_PROP, true);
+            return defineConstProp(f, A_PROP, true);
         }
 
         A.seq = function(as){
