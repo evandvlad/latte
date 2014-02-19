@@ -23,7 +23,7 @@
         PS_PROP = '___PS',
 
         Latte = {
-            version : '1.12.2'
+            version : '1.12.3'
         };
 
     function defineConstProp(o, prop, v){
@@ -117,7 +117,6 @@
             seq : function(ms){
                 return this.constructor.seq([this].concat(ms || []));
             }
-
         };
 
         M.seq = function(ms){
@@ -200,7 +199,6 @@
         defineConstProp(M.prototype, M_PROP, true);
 
         return M;
-
     }());
 
     Latte.Mv = function(v){
@@ -323,9 +321,7 @@
             };
 
             f.radd = function(a){
-                return A(function(v){
-                    return this(v).bnd(a);
-                }.bind(this));
+                return this.bnd(a);
             };
 
             f.ladd = function(a){
