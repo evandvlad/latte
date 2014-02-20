@@ -130,21 +130,18 @@
         M.allseq = function(ms){
             return ms.length ? this(function(h){
                 var mlen = ms.length,
-                    tick = 0;
+                    acc = [];
 
-                ms.reduce(function(acc, m, i){
+                ms.forEach(function(m, i){
                     m.always(function(v){
                         acc[i] = v;
 
-                        if(++tick === mlen){
+                        if(Object.keys(acc).length === mlen){
                             h(acc);
-                            tick = 0;
+                            acc = [];
                         }
                     });
-
-                    return acc;
-                }, []);
-                
+                });
             }) : this(curryLift([]));
         };
 
