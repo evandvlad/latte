@@ -890,13 +890,14 @@ describe('Latte Arrow', function(){
     });
 
     it('radd', function(){
-        var st = stub();
+        var st = stub(),
+            a = Latte.A(function(v){
+                return Latte.Mv(v + '?');
+            });
 
         Latte.A(function(v){
             return Latte.Mv(v + '!');
-        }).radd(Latte.A(function(v){
-            return Latte.Mv(v + '?');
-        }))('test').always(st);
+        }).radd(a)('test').always(st);
 
         assert.equal(st.args[0], 'test!?');
     });
@@ -2691,6 +2692,28 @@ describe('Latte общие', function(){
 
         assert.equal(Latte.isPS(Latte.PS()), true);
         assert.equal(Latte.isPS(Latte.PS), true);
+    });
+
+    it('Latte.Aloop', function(){
+        var st = stub(),
+            vals = ['0', '5', '2', Latte.E('e'), '76', Latte.E('e2')],
+            out = [];
+
+        Latte.Aloop(Latte.A(function(v){
+
+            return Latte.M(function(h){
+                h(v);
+            }).lift(function(v){
+                return Number(v);
+            });
+
+        }), function(v){
+            out.push(v);
+            return Latte.Mv(vals[out.length - 1]);
+        })(vals.shift()).fail(st);
+
+        assert.deepEqual(out, [0,5,2]);
+        assert.equal(st.args[0](), 'e');
     });
 });
 

@@ -23,7 +23,7 @@
         PS_PROP = '___PS',
 
         Latte = {
-            version : '1.12.3'
+            version : '1.13.0'
         };
 
     function defineConstProp(o, prop, v){
@@ -355,6 +355,22 @@
         return A;
 
     }(Latte));
+
+    Latte.Aloop = function(a, f){
+        var na = a.next(function(v){
+                f(v).always(na);
+            }).fail(function(e){
+                ef(e);
+            }),
+            ef;
+
+        return function(v){
+            return Latte.M(function(h){
+                ef = h;
+                na(v);
+            });
+        };
+    };
 
     Latte.isA = function(v){
         return !!(isFunction(v) && v[A_PROP]);
