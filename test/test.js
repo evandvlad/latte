@@ -2715,6 +2715,28 @@ describe('Latte общие', function(){
         assert.deepEqual(out, [0,5,2]);
         assert.equal(st.args[0](), 'e');
     });
+
+    it('Latte.Aloop начальное значение E', function(){
+        var st = stub(),
+            vals = [Latte.E('e'), '0', '5', '2', '76', Latte.E('e2')],
+            out = [];
+
+        Latte.Aloop(Latte.A(function(v){
+
+            return Latte.M(function(h){
+                h(v);
+            });
+
+        }).lift(function(v){
+            return Number(v);
+        }), function(v){
+            out.push(v);
+            return Latte.Mv(vals[out.length - 1]);
+        })(vals.shift()).fail(st);
+
+        assert.deepEqual(out, []);
+        assert.equal(st.args[0](), 'e');
+    });
 });
 
 describe('Latte PubSub & Latte Arrow', function(){
