@@ -23,22 +23,20 @@
         PS_PROP = '___PS',
 
         Latte = {
-            version : '1.13.1'
+            version : '1.14.0'
         };
-
-    function defineConstProp(o, prop, v){
-        return Object.defineProperty(o, prop, {
-            enumerable : false,
-            configurable : false,
-            writable : false,
-            value : v
-        });
-    }
 
     function curryLift(v){
         return function(f){
             return f(v);
         };
+    }
+
+    function mix(o1, o2){
+        return (o2 ? Object.keys(o2) : []).reduce(function(acc, prop){
+            acc[prop] = o2[prop];
+            return acc;
+        }, o1);
     }
 
     function isFunction(v){
@@ -49,7 +47,7 @@
         return !!(typeof v === 'object' && v);
     }
 
-    function MCreator(notifier){
+    function mcreate(notifier, ext){
 
         function M(ctor){
             if(!(this instanceof M)){
@@ -119,6 +117,13 @@
             }
         };
 
+        mix(M.prototype, ext);
+
+        return M;
+    }
+
+    function msextend(M, ext){
+
         M.seq = function(ms){
             return this.allseq(ms).lift(function(vs){
                 return vs.reduce(function(acc, v){
@@ -157,13 +162,19 @@
             });
         };
 
+        mix(M, ext);
+
         return M;
     }
 
     Latte.E = function(v){
-        return defineConstProp(function E_(){
+        function E_(){
             return v;
-        }, E_PROP, true);
+        }
+
+        E_[E_PROP] = true;
+
+        return E_;
     };
 
     Latte.isE = function(v){
@@ -172,7 +183,7 @@
 
     Latte.M = (function(){
 
-        var M = MCreator(function(ctor){
+        var M = mcreate(function(ctor){
             var cbs = [],
                 isval = false,
                 v;
@@ -193,7 +204,8 @@
             };
         });
 
-        defineConstProp(M.prototype, M_PROP, true);
+        msextend(M);
+        M.prototype[M_PROP] = true;
 
         return M;
     }());
@@ -208,7 +220,7 @@
 
     Latte.S = (function(){
 
-        var notifier = function(ctor){
+        var S = mcreate(function(ctor){
                 var cbs = [];
 
                 ctor(function(v){
@@ -218,52 +230,67 @@
                 return function(f){
                     cbs.push(f);
                 };
+            }, {
+
+                pseq : function(ss){
+                    return this.constructor.pseq([this].concat(ss || []));
+                },
+
+                any : function(ss){
+                    return this.constructor.any([this].concat(ss || []));
+                }
+            }),
+
+            S_ = {
+
+                allseq : function(ss){
+                    return ss.length ? S(function(h){
+                        var mlen = ss.length,
+                            acc = [];
+
+                        ss.forEach(function(s, i){
+                            s.always(function(v){
+                                acc[i] = v;
+                                Object.keys(acc).length === mlen && h(acc);
+                            });
+                        });
+
+                    }) : S(curryLift([]));
+                },
+
+                seq : function(){
+                    return S.seq.apply(S_, arguments);
+                }
+            };
+
+        msextend(S, {
+
+            pallseq : S_.allseq,
+
+            pseq : S_.seq,
+
+            pfold : function(){
+                return this.fold.apply(S_, arguments);
             },
 
-            S = MCreator(notifier),
-            S_ = MCreator(notifier);
+            plift : function(){
+                return this.lift.apply(S_, arguments);
+            },
 
-        defineConstProp(S.prototype, S_PROP, true);
-        defineConstProp(S_.prototype, S_PROP, true);
+            any : function(ss){
+                if(!ss.length){
+                    throw Error('empty list');
+                }
 
-        S.pallseq = S_.allseq = function(ss){
-            return ss.length ? this(function(h){
-                var mlen = ss.length,
-                    acc = [];
-
-                ss.forEach(function(s, i){
-                    s.always(function(v){
-                        acc[i] = v;
-                        Object.keys(acc).length === mlen && h(acc);
+                return this(function(h){
+                    ss.forEach(function(s){
+                        s.always(h);
                     });
                 });
-
-            }) : this(curryLift([]));
-        };
-
-        S.pseq = S_.seq = S.seq.bind(S_);
-        S.pfold = S.fold.bind(S_);
-        S.plift = S.lift.bind(S_);
-
-        S.prototype.pseq = function(ss){
-            return this.constructor.pseq([this].concat(ss || []));
-        };
-
-        S.prototype.any = function(ss){
-            return this.constructor.any([this].concat(ss || []));
-        };
-
-        S.any = function(ss){
-            if(!ss.length){
-                throw Error('empty list');
             }
+        });
 
-            return this(function(h){
-                ss.forEach(function(s){
-                    s.always(h);
-                });
-            });
-        };
+        S.prototype[S_PROP] = true;
 
         return S;
 
@@ -325,7 +352,9 @@
                 return a.radd(this);
             };
 
-            return defineConstProp(f, A_PROP, true);
+            f[A_PROP] = true;
+
+            return f;
         }
 
         A.seq = function(as){
@@ -420,14 +449,9 @@
             }
         };
 
-        defineConstProp(PS.prototype, PS_PROP, true);
-
-        Object.keys(PS.prototype).forEach(function(prop){
-            PS[prop] = PS.prototype[prop];
-        });
-
-        defineConstProp(PS, 'sbs', {});
-        defineConstProp(PS, PS_PROP, true);
+        PS.prototype[PS_PROP] = true;
+        mix(PS, PS.prototype);
+        PS.sbs = {};
 
         return PS;
 
