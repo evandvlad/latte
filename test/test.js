@@ -542,52 +542,6 @@ describe('Latte Monad', function(){
         assert.equal(st2.args[0], 'test');
     });
 
-    it('seq', function(){
-        var st = stub();
-        Latte.Mv(1).seq([Latte.Mv(2), Latte.Mv(3)]).always(st);
-        assert.deepEqual(st.args[0], [1,2,3]);
-    });
-
-    it('seq c пустым массивом', function(){
-        var st = stub();
-        Latte.Mv(1).seq([]).always(st);
-        assert.deepEqual(st.args[0], [1]);
-    });
-
-    it('seq co значением E в массиве', function(){
-        var st = stub();
-        Latte.Mv(1).seq([Latte.Mv(Latte.E('e')), Latte.Mv(3)]).always(st);
-        assert.equal(st.args[0](), 'e');
-    });
-
-    it('seq от значения E', function(){
-        var st = stub();
-        Latte.Mv(Latte.E('e')).seq([Latte.Mv(1), Latte.Mv(2)]).always(st);
-        assert.equal(st.args[0](), 'e');
-    });
-
-    it('seq последовательность результатов', function(done){
-        var st = stub(),
-            m1 = Latte.M(function(h){
-                setTimeout(function(){
-                    h(1);
-                }, 20);
-            }),
-            m2 = Latte.Mv(2),
-            m3 = Latte.M(function(h){
-                setTimeout(function(){
-                    h(3);
-                }, 10);
-            });
-
-        m1.seq([m2, m3]).always(st);
-
-        setTimeout(function(){
-            assert.deepEqual(st.args[0], [1,2,3]);
-            done();
-        }, 100);
-    });
-
     it('fold', function(){
         var st = stub();
 
@@ -999,40 +953,6 @@ describe('Latte Arrow', function(){
         assert.equal(st3.args[0], 'ab');
     });
 
-    it('seq', function(){
-        var st = stub(),
-            a1 = Latte.A(function(v){
-                return Latte.Mv(v + 1);
-            }),
-            a2 = Latte.A(function(v){
-                return Latte.Mv(v + 2);
-            }),
-            a3 = Latte.A(function(v){
-                return Latte.Mv(v + 3);
-            });
-
-        a1.seq([a2, a3])(0).always(st);
-
-        assert.deepEqual(st.args[0], [1,2,3]);
-    });
-
-    it('seq со значением E', function(){
-        var st = stub(),
-            a1 = Latte.A(function(v){
-                return Latte.Mv(v + 1);
-            }),
-            a2 = Latte.A(function(v){
-                return Latte.Mv(Latte.E('e'));
-            }),
-            a3 = Latte.A(function(v){
-                return Latte.Mv(v + 3);
-            });
-
-        a1.seq([a2, a3])(0).always(st);
-
-        assert.equal(st.args[0](), 'e');
-    });
-
     it('static seq', function(){
         var st = stub(),
             a1 = Latte.A(function(v){
@@ -1226,7 +1146,10 @@ describe('Latte Stream', function(){
 
         Latte.S(function(h){
             handle = h;
+            h(1);
         }).always(st);
+
+        assert.equal(st.called, false);
 
         handle(2);
         assert.equal(st.args[0], 2);
@@ -1238,6 +1161,30 @@ describe('Latte Stream', function(){
         assert.equal(st.args[0](), 'e');
 
         assert.equal(st.count, 3);
+    });
+
+    it('SH always', function(){
+        var st = stub(),
+            handle;
+
+        Latte.SH(function(h){
+            handle = h;
+            h(1);
+        }).always(st);
+
+        assert.equal(st.args[0], 1);
+
+        handle(2);
+        assert.equal(st.args[0], 2);
+
+        handle(24);
+        assert.equal(st.args[0], 24);
+
+        handle(Latte.E('e'));
+        assert.equal(st.args[0](), 'e');
+
+        assert.equal(st.count, 4);
+
     });
 
     it('always от одного объекта', function(){
@@ -1323,7 +1270,33 @@ describe('Latte Stream', function(){
 
         Latte.S(function(h){
             handle = h;
+            h(Latte.E('error'));
         }).fail(st);
+
+        assert.equal(st.called, false);
+
+        handle(2);
+        assert.equal(st.called, false);
+
+        handle(24);
+        assert.equal(st.called, false);
+
+        handle(Latte.E('e'));
+
+        assert.equal(st.args[0](), 'e');
+    });
+
+    it('SH fail', function(){
+        var st = stub(),
+            handle;
+
+        Latte.SH(function(h){
+            handle = h;
+            h(Latte.E('error'));
+        }).fail(st);
+
+        assert.equal(st.args[0](), 'error');
+        st.reset();
 
         handle(2);
         assert.equal(st.called, false);
@@ -1385,6 +1358,26 @@ describe('Latte Stream', function(){
         assert.equal(st.args[0](), 'e');
     });
 
+    it('SH bnd', function(){
+        var st = stub(),
+            handle;
+
+        Latte.SH(function(h){
+            handle = h;
+            h(1);
+        }).bnd(function(v){
+            return Latte.Mv(v + 5);
+        }).always(st);
+
+        assert.equal(st.args[0], 6);
+
+        handle('t');
+        assert.equal(st.args[0], 't5');
+
+        handle(Latte.E('e'));
+        assert.equal(st.args[0](), 'e');
+    });
+
     it('bnd генерирует значение E', function(){
         var st = stub(),
             handle;
@@ -1427,6 +1420,28 @@ describe('Latte Stream', function(){
         assert.equal(st.args[0](), 'e');
     });
 
+    it('SH bnd вложенные вызовы', function(){
+        var st = stub(),
+            handle;
+
+        Latte.SH(function(h){
+            handle = h;
+            h(1);
+        }).bnd(function(v){
+            return Latte.Mv(v).bnd(function(nv){
+                return Latte.Mv('[' + nv + ']');
+            });
+        }).always(st);
+
+        assert.equal(st.args[0], '[1]');
+
+        handle('t');
+        assert.equal(st.args[0], '[t]');
+
+        handle(Latte.E('e'));
+        assert.equal(st.args[0](), 'e');
+    });
+
     it('lift', function(){
         var st = stub(),
             handle;
@@ -1449,6 +1464,28 @@ describe('Latte Stream', function(){
         assert.equal(st.args[0](), 'e');
     });
 
+    it('SH lift', function(){
+        var st = stub(),
+            handle;
+
+        Latte.SH(function(h){
+            handle = h;
+            h(1);
+        }).lift(function(v){
+            return v + 5;
+        }).lift(function(v){
+            return '(' + v + ')';
+        }).always(st);
+
+        assert.equal(st.args[0], '(6)');
+
+        handle('t');
+        assert.equal(st.args[0], '(t5)');
+
+        handle(Latte.E('e'));
+        assert.equal(st.args[0](), 'e');
+    });
+
     it('raise', function(){
         var st = stub(),
             handle;
@@ -1460,6 +1497,26 @@ describe('Latte Stream', function(){
         }).always(st);
 
         handle(1);
+        assert.equal(st.args[0], 1);
+
+        handle('t');
+        assert.equal(st.args[0], 't');
+
+        handle(Latte.E('e'));
+        assert.equal(st.args[0](), 'err: e');
+    });
+
+    it('SH raise', function(){
+        var st = stub(),
+            handle;
+
+        Latte.SH(function(h){
+            handle = h;
+            handle(1);
+        }).raise(function(e){
+            return 'err: ' + e();
+        }).always(st);
+
         assert.equal(st.args[0], 1);
 
         handle('t');
@@ -1495,225 +1552,6 @@ describe('Latte Stream', function(){
         assert.equal(st.args[0](), 'err: e');
     });
 
-    it('seq', function(){
-        var st = stub(),
-            handle1,
-            handle2,
-            handle3,
-            s1 = Latte.S(function(h){
-                handle1 = h;
-            }),
-            s2 = Latte.S(function(h){
-                handle2 = h;
-            });
-
-        Latte.S(function(h){
-            handle3 = h;
-        }).seq([s1,s2]).always(st);
-
-        handle1(2);
-        assert.equal(st.called, false);
-
-        handle2(3);
-        assert.equal(st.called, false);
-
-        handle3(1);
-        assert.deepEqual(st.args[0], [1,2,3]);
-    });
-
-    it('seq пустой список', function(){
-        var st = stub(),
-            handle;
-
-        Latte.S(function(h){
-            handle = h;
-        }).seq([]).always(st);
-
-        handle(2);
-        assert.deepEqual(st.args[0], [2]);
-    });
-
-    it('seq и значение E', function(){
-        var st = stub(),
-            handle1,
-            handle2,
-            handle3,
-            s1 = Latte.S(function(h){
-                handle1 = h;
-            }),
-            s2 = Latte.S(function(h){
-                handle2 = h;
-            });
-
-        Latte.S(function(h){
-            handle3 = h;
-        }).seq([s1,s2]).always(st);
-
-        handle1(2);
-        assert.equal(st.called, false);
-
-        handle2(Latte.E('err'));
-        assert.equal(st.called, false);
-
-        handle3(1);
-        assert.equal(st.args[0](), 'err');
-    });
-
-    it('any', function(){
-        var st = stub(),
-            handle1,
-            handle2,
-            handle3,
-            s1 = Latte.S(function(h){
-                handle1 = h;
-            }),
-            s2 = Latte.S(function(h){
-                handle2 = h;
-            }),
-            s3 = Latte.S(function(h){
-                handle3 = h;
-            });
-
-        s1.any([s2, s3]).always(st);
-
-        handle1('test');
-        assert.equal(st.args[0], 'test');
-
-        handle2('test 2');
-        assert.equal(st.args[0], 'test 2');
-
-        handle1('test 3');
-        assert.equal(st.args[0], 'test 3');
-
-        handle3('test 4');
-        assert.equal(st.args[0], 'test 4');
-
-        handle2(Latte.E('e'));
-        assert.equal(st.args[0](), 'e');
-    });
-
-    it('any пустой список', function(){
-        var st = stub(),
-            handle1,
-            s1 = Latte.S(function(h){
-                handle1 = h;
-            });
-
-        s1.any([]).always(st);
-
-        handle1('test');
-        assert.equal(st.args[0], 'test');
-
-        handle1('test 2');
-        assert.equal(st.args[0], 'test 2');
-
-        handle1('test 3');
-        assert.equal(st.args[0], 'test 3');
-
-        handle1('test 4');
-        assert.equal(st.args[0], 'test 4');
-
-        handle1(Latte.E('e'));
-        assert.equal(st.args[0](), 'e');
-    });
-
-    it('pseq', function(){
-        var st = stub(),
-            handle1,
-            handle2,
-            handle3,
-            s1 = Latte.S(function(h){
-                handle1 = h;
-            }),
-            s2 = Latte.S(function(h){
-                handle2 = h;
-            });
-
-        Latte.S(function(h){
-            handle3 = h;
-        }).pseq([s1,s2]).always(st);
-
-        handle3(1);
-        assert.equal(st.called, false);
-
-        handle2(3);
-        assert.equal(st.called, false);
-
-        handle1(2);
-        assert.deepEqual(st.args[0], [1,2,3]);
-
-        handle1(6);
-        assert.deepEqual(st.args[0], [1,6,3]);
-
-        handle2(12);
-        assert.deepEqual(st.args[0], [1,6,12]);
-
-        handle3(0);
-        assert.deepEqual(st.args[0], [0,6,12]);
-    });
-
-    it('pseq пустой список', function(){
-        var st = stub(),
-            handle;
-
-        Latte.S(function(h){
-            handle = h;
-        }).pseq([]).always(st);
-
-        handle(2);
-        assert.deepEqual(st.args[0], [2]);
-
-        handle(12);
-        assert.deepEqual(st.args[0], [12]);
-    });
-
-    it('pseq и значение E', function(){
-        var st = stub(),
-            handle1,
-            handle2,
-            handle3,
-            s1 = Latte.S(function(h){
-                handle1 = h;
-            }),
-            s2 = Latte.S(function(h){
-                handle2 = h;
-            });
-
-        Latte.S(function(h){
-            handle3 = h;
-        }).pseq([s1,s2]).always(st);
-
-        handle3(1);
-        assert.equal(st.called, false);
-
-        handle2(3);
-        assert.equal(st.called, false);
-
-        handle1(2);
-        assert.deepEqual(st.args[0], [1,2,3]);
-
-        handle1(6);
-        assert.deepEqual(st.args[0], [1,6,3]);
-
-        handle2(12);
-        assert.deepEqual(st.args[0], [1,6,12]);
-
-        handle3(0);
-        assert.deepEqual(st.args[0], [0,6,12]);
-
-        handle2(Latte.E('err'));
-        assert.equal(st.args[0](), 'err');
-
-        handle1(1);
-        assert.equal(st.args[0](), 'err');
-
-        handle3(3);
-        assert.equal(st.args[0](), 'err');
-
-        handle2(2);
-        assert.deepEqual(st.args[0], [3,1,2]);
-    });
-
     it('static seq', function(){
         var st = stub(),
             handle1,
@@ -1736,6 +1574,131 @@ describe('Latte Stream', function(){
 
         handle2(2);
         assert.equal(st.called, false);
+
+        handle3(3);
+        assert.deepEqual(st.args[0], [1,2,3]);
+    });
+
+    it('SH и static seq', function(){
+        var st = stub(),
+            st1 = stub(),
+            st2 = stub(),
+            st3 = stub(),
+            s1 = Latte.SH(function(h){
+                h(1);
+            }).always(st1),
+            s2 = Latte.SH(function(h){
+                h(2);
+            }).always(st2),
+            s3 = Latte.SH(function(h){
+                h(3);
+            }).always(st3);
+
+        Latte.S.seq([s1,s2,s3]).always(st);
+
+        assert.deepEqual(st.called, false);
+
+        assert.equal(st1.args[0], 1);
+        assert.equal(st2.args[0], 2);
+        assert.equal(st3.args[0], 3);
+    });
+
+    it('SH и static SH seq', function(){
+        var st = stub(),
+            s1 = Latte.SH(function(h){
+                h(1);
+            }),
+            s2 = Latte.SH(function(h){
+                h(2);
+            }),
+            s3 = Latte.SH(function(h){
+                h(3);
+            });
+
+        Latte.SH.seq([s1,s2,s3]).always(st);
+
+        assert.deepEqual(st.args[0], [1,2,3]);
+    });
+
+    it('S и static SH seq', function(){
+        var st = stub(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.S(function(h){
+                handle1 = h;
+                h(1);
+            }),
+            s2 = Latte.S(function(h){
+                handle2 = h;
+                h(2);
+            }),
+            s3 = Latte.S(function(h){
+                handle3 = h;
+                h(3);
+            });
+
+        Latte.SH.seq([s1,s2,s3]).always(st);
+
+        assert.deepEqual(st.called, false);
+
+        handle1(1);
+        handle2(2);
+        assert.deepEqual(st.called, false);
+
+        handle3(3);
+        assert.deepEqual(st.args[0], [1,2,3]);
+    });
+
+    it('S и SH и static SH seq', function(){
+        var st = stub(),
+            handle1,
+            handle3,
+            s1 = Latte.S(function(h){
+                handle1 = h;
+                h(1);
+            }),
+            s2 = Latte.SH(function(h){
+                h(2);
+            }),
+            s3 = Latte.S(function(h){
+                handle3 = h;
+                h(3);
+            });
+
+        Latte.SH.seq([s1,s2,s3]).always(st);
+
+        assert.deepEqual(st.called, false);
+
+        handle1(1);
+        assert.deepEqual(st.called, false);
+
+        handle3(3);
+        assert.deepEqual(st.args[0], [1,2,3]);
+    });
+
+    it('S и SH и static S seq', function(){
+        var st = stub(),
+            handle1,
+            handle3,
+            s1 = Latte.S(function(h){
+                handle1 = h;
+                h(1);
+            }),
+            s2 = Latte.SH(function(h){
+                h(2);
+            }),
+            s3 = Latte.S(function(h){
+                handle3 = h;
+                h(3);
+            });
+
+        Latte.S.seq([s1,s2,s3]).always(st);
+
+        assert.deepEqual(st.called, false);
+
+        handle1(1);
+        assert.deepEqual(st.called, false);
 
         handle3(3);
         assert.deepEqual(st.args[0], [1,2,3]);
@@ -1792,6 +1755,23 @@ describe('Latte Stream', function(){
         assert.equal(st.called, false);
 
         handle3(3);
+        assert.deepEqual(st.args[0], [1,2,3]);
+    });
+
+    it('SH static allseq', function(){
+        var st = stub(),
+            s1 = Latte.SH(function(h){
+                h(1);
+            }),
+            s2 = Latte.SH(function(h){
+                h(2);
+            }),
+            s3 = Latte.SH(function(h){
+                h(3);
+            });
+
+        Latte.SH.allseq([s1,s2,s3]).always(st);
+
         assert.deepEqual(st.args[0], [1,2,3]);
     });
 
@@ -1896,6 +1876,38 @@ describe('Latte Stream', function(){
         assert.equal(st.args[0], 9);
     });
 
+    it('SH static fold', function(){
+        var st = stub(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.SH(function(h){
+                handle1 = h;
+                h(1);
+            }),
+            s2 = Latte.SH(function(h){
+                handle2 = h;
+                h(2);
+            }),
+            s3 = Latte.SH(function(h){
+                handle3 = h;
+                h(3);
+            });
+
+        Latte.SH.fold(function(acc, v){
+            return acc += v;
+        }, 0, [s1,s2,s3]).always(st);
+
+        assert.equal(st.args[0], 6);
+
+        handle1(2);
+        assert.equal(st.args[0], 6);
+        handle2(3);
+        assert.equal(st.args[0], 6);
+        handle3(4);
+        assert.equal(st.args[0], 9);
+    });
+
     it('static fold и значение E', function(){
         var st = stub(),
             handle1,
@@ -1952,6 +1964,25 @@ describe('Latte Stream', function(){
         assert.equal(st.called, false);
 
         handle3(3);
+        assert.deepEqual(st.args[0], 6);
+    });
+
+    it('SH static lift', function(){
+        var st = stub(),
+            s1 = Latte.SH(function(h){
+                h(1);
+            }),
+            s2 = Latte.SH(function(h){
+                h(2);
+            }),
+            s3 = Latte.SH(function(h){
+                h(3);
+            });
+
+        Latte.SH.lift(function(a,b,c){
+            return a + b + c;
+        }, [s1,s2,s3]).always(st);
+
         assert.deepEqual(st.args[0], 6);
     });
 
@@ -2023,6 +2054,42 @@ describe('Latte Stream', function(){
         assert.equal(st.args[0](), 'e');
     });
 
+    it('SH static any', function(){
+        var st = stub(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.SH(function(h){
+                h('first');
+                handle1 = h;
+            }),
+            s2 = Latte.SH(function(h){
+                handle2 = h;
+            }),
+            s3 = Latte.SH(function(h){
+                handle3 = h;
+            });
+
+        Latte.SH.any([s1, s2, s3]).always(st);
+
+        assert.equal(st.args[0], 'first');
+
+        handle1('test');
+        assert.equal(st.args[0], 'test');
+
+        handle2('test 2');
+        assert.equal(st.args[0], 'test 2');
+
+        handle1('test 3');
+        assert.equal(st.args[0], 'test 3');
+
+        handle3('test 4');
+        assert.equal(st.args[0], 'test 4');
+
+        handle2(Latte.E('e'));
+        assert.equal(st.args[0](), 'e');
+    });
+
     it('static pallseq', function(){
         var st = stub(),
             handle1,
@@ -2044,6 +2111,50 @@ describe('Latte Stream', function(){
         assert.equal(st.called, false);
 
         handle3(3);
+        assert.equal(st.called, false);
+
+        handle1(1);
+        assert.equal(st.called, false);
+
+        handle2(2);
+        assert.deepEqual(st.args[0], [1,2,3]);
+        st.reset();
+
+        handle1(11);
+        assert.deepEqual(st.args[0], [11,2,3]);
+
+        handle2(1);
+        assert.deepEqual(st.args[0], [11,1,3]);
+
+        handle2(7);
+        assert.deepEqual(st.args[0], [11,7,3]);
+
+        handle3(9);
+        assert.deepEqual(st.args[0], [11,7,9]);
+
+        handle1(1);
+        assert.deepEqual(st.args[0], [1,7,9]);
+    });
+
+    it('SH static pallseq', function(){
+        var st = stub(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.SH(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.SH(function(h){
+                handle2 = h;
+            }),
+            s3 = Latte.SH(function(h){
+                handle3 = h;
+                h(3);
+            });
+
+        Latte.SH.pallseq([s1,s2,s3]).always(st);
+
+        handle1(11);
         assert.equal(st.called, false);
 
         handle1(1);
@@ -2160,6 +2271,50 @@ describe('Latte Stream', function(){
         assert.deepEqual(st.args[0], [1,7,9]);
     });
 
+    it('SH static pseq', function(){
+        var st = stub(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.SH(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.SH(function(h){
+                handle2 = h;
+                h(2);
+            }),
+            s3 = Latte.SH(function(h){
+                handle3 = h;
+            });
+
+        Latte.SH.pseq([s1,s2,s3]).always(st);
+
+        handle1(11);
+        assert.equal(st.called, false);
+
+        handle1(1);
+        assert.equal(st.called, false);
+
+        handle3(3);
+        assert.deepEqual(st.args[0], [1,2,3]);
+        st.reset();
+
+        handle1(11);
+        assert.deepEqual(st.args[0], [11,2,3]);
+
+        handle2(1);
+        assert.deepEqual(st.args[0], [11,1,3]);
+
+        handle2(7);
+        assert.deepEqual(st.args[0], [11,7,3]);
+
+        handle3(9);
+        assert.deepEqual(st.args[0], [11,7,9]);
+
+        handle1(1);
+        assert.deepEqual(st.args[0], [1,7,9]);
+    });
+
     it('static pseq и значение E', function(){
         var st = stub(),
             handle1,
@@ -2226,6 +2381,42 @@ describe('Latte Stream', function(){
         assert.equal(st.called, false);
 
         handle2(2);
+        assert.equal(st.called, false);
+
+        handle3(3);
+        assert.equal(st.args[0], 6);
+
+        handle1(2);
+        assert.equal(st.args[0], 7);
+
+        handle2(3);
+        assert.equal(st.args[0], 8);
+
+        handle3(4);
+        assert.equal(st.args[0], 9);
+    });
+
+    it('SH static pfold', function(){
+        var st = stub(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.SH(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.SH(function(h){
+                handle2 = h;
+                h(2);
+            }),
+            s3 = Latte.SH(function(h){
+                handle3 = h;
+            });
+
+        Latte.SH.pfold(function(acc, v){
+            return acc += v;
+        }, 0, [s1,s2,s3]).always(st);
+
+        handle1(1);
         assert.equal(st.called, false);
 
         handle3(3);
@@ -2308,6 +2499,42 @@ describe('Latte Stream', function(){
         assert.equal(st.called, false);
 
         handle2(2);
+        assert.equal(st.called, false);
+
+        handle3(3);
+        assert.equal(st.args[0], 6);
+
+        handle2('+');
+        assert.equal(st.args[0], '1+3');
+
+        handle1('v');
+        assert.equal(st.args[0], 'v+3');
+
+        handle3('w');
+        assert.equal(st.args[0], 'v+w');
+    });
+
+    it('SH static plift', function(){
+        var st = stub(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.SH(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.SH(function(h){
+                handle2 = h;
+                h(2);
+            }),
+            s3 = Latte.SH(function(h){
+                handle3 = h;
+            });
+
+        Latte.SH.plift(function(a,b,c){
+            return a + b + c;
+        }, [s1,s2,s3]).always(st);
+
+        handle1(1);
         assert.equal(st.called, false);
 
         handle3(3);
@@ -2681,6 +2908,8 @@ describe('Latte общие', function(){
 
         assert.equal(Latte.isS(Latte.S.pseq([Latte.S(function(){}), Latte.S(function(){})])), true);
         assert.equal(Latte.isS(Latte.S.plift(function(){}, [Latte.S(function(){}), Latte.S(function(){})])), true);
+
+        assert.equal(Latte.isS(Latte.SH(function(){})), true);
     });
 
     it('проверка PS', function(){
