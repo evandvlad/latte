@@ -23,7 +23,7 @@
         PS_PROP = '___PS',
 
         Latte = {
-            version : '1.15.0'
+            version : '1.15.1'
         };
 
     function curryLift(v){
@@ -47,7 +47,24 @@
         return !!(typeof v === 'object' && v);
     }
 
-    function defineConstProp(o, prop, v){
+    function isObjectOrFunction(v){
+        return isObject(v) || isFunction(v);
+    }
+
+    function isEntity(f, prop){
+        return function(v){
+            return !!(f(v) && v[prop]);
+        };
+    }
+
+    function implementByTmpl(ofrom, oto, proc){
+        return Object.keys(ofrom).reduce(function(acc, prop){
+            isFunction(ofrom[prop]) && (acc[prop] = proc(prop));
+            return acc;
+        }, oto);
+    }
+
+    function setConstProp(o, prop, v){
         return Object.defineProperty(o, prop, {
             enumerable : false,
             configurable : false,
@@ -66,68 +83,61 @@
             this.notifier = notifier(ctor);
         }
 
-        M.prototype = {
-
-            constructor : M,
-
-            always : function(f){
-                this.notifier(f);
-                return this;
-            },
-
-            next : function(f){
-                return this.always(function(v){
-                    !Latte.isE(v) && f(v);
-                });
-            },
-
-            fail : function(f){
-                return this.always(function(v){
-                    Latte.isE(v) && f(v);
-                });
-            },
-
-            bnd : function(f){
-                var self = this;
-
-                return new this.constructor(function(c){
-                    self.notifier(function(v){
-                        !Latte.isE(v) ? f(v).always(c) : c(v);
-                    });
-                });
-            },
-
-            lift : function(f){
-                var self = this;
-
-                return new this.constructor(function(c){
-                    self.notifier(function(v){
-                        !Latte.isE(v) ? new self.constructor(function(h){
-                            [h, c].forEach(curryLift(f(v)));
-                        }) : c(v);
-                    });
-                });
-            },
-
-            raise : function(f){
-                var self = this;
-
-                return new this.constructor(function(c){
-                    self.notifier(function(v){
-                        Latte.isE(v) ? new self.constructor(function(h){
-                            [h, c].forEach(curryLift(Latte.E(f(v))));
-                        }) : c(v);
-                    });
-                });
-            }
+        M.prototype.always = function(f){
+            this.notifier(f);
+            return this;
         };
 
-        defineConstProp(M.prototype, mkey, true);
+        M.prototype.next = function(f){
+            return this.always(function(v){
+                !Latte.isE(v) && f(v);
+            });
+        };
+
+        M.prototype.fail = function(f){
+            return this.always(function(v){
+                Latte.isE(v) && f(v);
+            });
+        };
+
+        M.prototype.bnd = function(f){
+            var self = this;
+
+            return new this.constructor(function(c){
+                self.notifier(function(v){
+                    !Latte.isE(v) ? f(v).always(c) : c(v);
+                });
+            });
+        };
+
+        M.prototype.lift = function(f){
+            var self = this;
+
+            return new this.constructor(function(c){
+                self.notifier(function(v){
+                    !Latte.isE(v) ? c(f(v)) : c(v);
+                });
+            });
+        };
+
+        M.prototype.raise = function(f){
+            var self = this;
+
+            return new this.constructor(function(c){
+                self.notifier(function(v){
+                    Latte.isE(v) ? c(Latte.E(f(v))) : c(v);
+                });
+            });
+        };
+
+        setConstProp(M.prototype, mkey, true);
 
         return M;
     }
 
     function msextend(M, ext){
+
+        M.allseq = allseqTmpl(true);
 
         M.seq = function(ms){
             return this.allseq(ms).lift(function(vs){
@@ -136,8 +146,6 @@
                 }, []);
             });
         };
-
-        M.allseq = allseqTmpl(true);
 
         M.fold = function(f, init, ms){
             return this.seq(ms).lift(function(vs){
@@ -151,13 +159,10 @@
             });
         };
 
-        mix(M, ext);
-
-        return M;
+        return mix(M, ext);
     }
 
     function allseqTmpl(isResetAcc){
-
         return function(xs){
             return xs.length ? this(function(h){
                 var len = xs.length,
@@ -179,46 +184,37 @@
     }
 
     Latte.E = function(v){
-        return defineConstProp(function E_(){
+        return setConstProp(function E_(){
             return v;
         }, E_PROP, true);
     };
 
-    Latte.isE = function(v){
-        return !!(isFunction(v) && v[E_PROP]);
-    };
+    Latte.isE = isEntity(isFunction, E_PROP);
 
-    Latte.M = (function(){
+    Latte.M = msextend(mcreate(function(ctor){
+        var cbs = [],
+            isval = false,
+            val;
 
-        var M = mcreate(function(ctor){
-            var cbs = [],
-                isval = false,
-                val;
+        ctor(function(v){
+            if(!isval){
+                val = v;
+                isval = true;
+                cbs.forEach(curryLift(val));
+                cbs = [];
+            }
+        });
 
-            ctor(function(v){
-                if(!isval){
-                    val = v;
-                    isval = true;
-                    cbs.forEach(curryLift(val));
-                    cbs = [];
-                }
-            });
-
-            return function(f){
-                isval ? f(val) : cbs.push(f);
-            };
-        }, M_PROP);
-
-        return msextend(M);
-    }());
+        return function(f){
+            isval ? f(val) : cbs.push(f);
+        };
+    }, M_PROP));
 
     Latte.Mv = function(v){
         return Latte.M(curryLift(v));
     };
 
-    Latte.isM = function(v){
-        return !!(isObject(v) && v[M_PROP]);
-    };
+    Latte.isM = isEntity(isObject, M_PROP);
 
     Latte.S = (function(){
 
@@ -259,7 +255,7 @@
 
             any : function(ss){
                 if(!ss.length){
-                    throw Error('empty list');
+                    throw Error('Latte [method: any] error: Empty list');
                 }
 
                 return this(function(h){
@@ -271,114 +267,61 @@
         });
     }());
 
-    Latte.SH = (function(Latte){
+    Latte.SH = mix(mcreate(function(ctor){
+        var cbs = [],
+            isval = false,
+            val;
 
-        return mix(mcreate(function(ctor){
-            var cbs = [],
-                isval = false,
-                val;
+        ctor(function(v){
+            isval = true;
+            val = v;
+            cbs.forEach(curryLift(val));
+        });
 
-            ctor(function(v){
-                isval = true;
-                val = v;
-                cbs.forEach(curryLift(val));
-            });
+        return function(f){
+            cbs.push(f);
+            isval && f(val);
+        };
+    }, S_PROP), Latte.S);
 
-            return function(f){
-                cbs.push(f);
-                isval && f(val);
-            };
-        }, S_PROP), Latte.S);
+    Latte.isS = isEntity(isObject, S_PROP);
 
-    }(Latte));
+    Latte.A = mix(function A(f){
 
-    Latte.isS = function(v){
-        return !!(isObject(v) && v[S_PROP]);
-    };
+        implementByTmpl(Latte.M.prototype, f, function(prop){
+            return function(g){
+                var self = this;
 
-    Latte.A = (function(Latte){
-
-        return mix(function A(f){
-
-            f.always = function(g){
                 return A(function(v){
-                    return this(v).always(g);
-                }.bind(this));
-            };
-
-            f.next = function(g){
-                return A(function(v){
-                    return this(v).next(g);
-                }.bind(this));
-            };
-
-            f.fail = function(g){
-                return A(function(v){
-                    return this(v).fail(g);
-                }.bind(this));
-            };
-
-            f.bnd = function(g){
-                return A(function(v){
-                    return this(v).bnd(g);
-                }.bind(this));
-            };
-
-            f.lift = function(g){
-                return A(function(v){
-                    return this(v).lift(g);
-                }.bind(this));
-            };
-
-            f.raise = function(g){
-                return A(function(v){
-                    return this(v).raise(g);
-                }.bind(this));
-            };
-
-            f.radd = function(a){
-                return this.bnd(a);
-            };
-
-            f.ladd = function(a){
-                return a.radd(this);
-            };
-
-            return defineConstProp(f, A_PROP, true);
-        }, {
-
-            seq : function(as){
-                return this(function(v){
-                    return Latte.M.seq(as.map(curryLift(v)));
-                });
-            },
-
-            allseq : function(as){
-                return this(function(v){
-                    return Latte.M.allseq(as.map(curryLift(v)));
-                });
-            },
-
-            fold : function(f, init, as){
-                return this(function(v){
-                    return Latte.M.fold(f, init, as.map(curryLift(v)));
-                });
-            },
-
-            lift : function(f, as){
-                return this(function(v){
-                    return Latte.M.lift(f, as.map(curryLift(v)));
+                    return self(v)[prop](g);
                 });
             }
         });
-    }(Latte));
+
+        f.radd = f.bnd;
+
+        f.ladd = function(a){
+            return a.radd(this);
+        };
+
+        return setConstProp(f, A_PROP, true);
+
+    }, implementByTmpl(Latte.M, {}, function(prop){
+        return function(){
+            var args = Array.prototype.slice.call(arguments);
+
+            return this(function(v){
+                args.push(args.pop().map(curryLift(v)));
+                return Latte.M[prop].apply(Latte.M, args);
+            });
+        };
+    }));
 
     Latte.Aloop = function(a, f){
-
         return function(v){
             return Latte.M(function(h){
-                var na = a.next(function(vl){
-                    f(vl).always(na);
+                var na = a.next(function(val){
+                    f(val).always(na);
                 }).fail(h);
 
                 na(v);
@@ -386,9 +329,7 @@
         };
     };
 
-    Latte.isA = function(v){
-        return !!(isFunction(v) && v[A_PROP]);
-    };
+    Latte.isA = isEntity(isFunction, A_PROP);
 
     Latte.PS = (function(){
 
@@ -400,54 +341,45 @@
             this.sbs = {};
         }
 
-        PS.prototype = {
-
-            constructor : PS,
-
-            pub : function(e, v){
-                return (this.sbs[e] || []).map(curryLift(v));
-            },
-
-            sub : function(e, f){
-                (this.sbs[e] = this.sbs[e] || []).push(f);
-                return this;
-            },
-
-            once : function(e, f){
-                var self = this;
-
-                this.sub(e, function _f(v){
-                    self.unsub(e, _f);
-                    return f(v);
-                });
-
-                return this;
-            },
-
-            unsub : function(e, f){
-               this.sbs[e] = (this.sbs[e] || []).filter(function(c){
-                   return c !== f;
-               });
-
-               return this;
-            },
-
-            unsuball : function(e){
-                delete this.sbs[e];
-                return this;
-            }
+        PS.prototype.pub = function(e, v){
+            return (this.sbs[e] || []).map(curryLift(v));
         };
 
-        defineConstProp(PS.prototype, PS_PROP, true);
-        defineConstProp(PS, PS_PROP, true);
-        defineConstProp(PS, 'sbs', {});
+        PS.prototype.sub = function(e, f){
+            (this.sbs[e] = this.sbs[e] || []).push(f);
+            return this;
+        };
+
+        PS.prototype.once = function(e, f){
+            var self = this;
+
+            return this.sub(e, function _f(v){
+                self.unsub(e, _f);
+                return f(v);
+            });
+        };
+
+        PS.prototype.unsub = function(e, f){
+           this.sbs[e] = (this.sbs[e] || []).filter(function(c){
+               return c !== f;
+           });
+
+           return this;
+        };
+
+        PS.prototype.unsuball = function(e){
+            delete this.sbs[e];
+            return this;
+        };
+
+        setConstProp(PS.prototype, PS_PROP, true);
+        setConstProp(PS, PS_PROP, true);
+        setConstProp(PS, 'sbs', {});
 
         return mix(PS, PS.prototype);
     }());
 
-    Latte.isPS = function(v){
-        return !!((isObject(v) || isFunction(v)) && v[PS_PROP]);
-    };
+    Latte.isPS = isEntity(isObjectOrFunction, PS_PROP);
 
     return Latte;
 }));

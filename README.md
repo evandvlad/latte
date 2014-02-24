@@ -385,8 +385,31 @@ seq, pseq, any, lift, plift, fold, pfold, allseq, pallseq.
         // метод будет вызван, поскольку текущее значение удерживается, v = value
     });
 
-Поскольку Latte.S и Latte.SH реализуют один интерфейс и оба проходят Latte.isS проверку, то эти типы потоков можно при
-необходимости комбинировать в любых сочетаниях.
+Latte.S, Latte.SH реализуют один интерфейс, поэтому эти типы потоков можно при
+необходимости комбинировать в любых сочетаниях. Также, по той же причине можно комбинировать монады и потоки.
+
+    var s = Latte.S(function(h){
+        var x = 0;
+        setInterval(function(){
+            h(++x);
+        }, 5000);
+    });
+
+    var sh = Latte.SH(function(h){
+        var x = 0;
+
+        setInterval(function(){
+            h(++x);
+        }, 5000);
+
+        h(x);
+    });
+
+    var m = Latte.Mv(111);
+
+    Latte.S.pseq([s, sh, m]).always(function(v){
+        console.log(v);
+    });
 
 ### PubSub Latte.PS ###
 

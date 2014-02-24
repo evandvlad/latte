@@ -441,9 +441,13 @@ describe('Latte Monad', function(){
 
         Latte.Mv('test').bnd(function(v){
             return Latte.Mv(v + '!!!');
-        }).next(st);
+        }).bnd(function(v){
+            return Latte.Mv('[' + v + ']');
+        }).bnd(function(v){
+            return Latte.Mv('<' + v + '>');
+        }).always(st);
 
-        assert.equal(st.args[0], 'test!!!');
+        assert.equal(st.args[0], '<[test!!!]>');
     });
 
     it('bnd метод возвращает E', function(){
@@ -3052,4 +3056,33 @@ describe('Latte PubSub & Latte Stream', function(){
         Latte.PS.pub('a', 222);
         assert.equal(st.called, false);
     });
+});
+
+describe('Latte Stream & Latte Monad', function(){
+
+    it('Stream & Monad', function(){
+        var st = stub(),
+            handle1,
+            handle2,
+            sh = Latte.SH(function(h){
+                handle1 = h;
+                h(1);
+            }),
+            s = Latte.S(function(h){
+                handle2 = h;
+            }),
+            m = Latte.Mv(3);
+
+
+        Latte.S.pseq([sh, s, m]).always(st);
+
+        assert.equal(st.called, false);
+
+        handle2(2);
+        assert.deepEqual(st.args[0], [1,2,3]);
+
+        handle1(11);
+        assert.deepEqual(st.args[0], [11,2,3]);
+    });
+
 });
