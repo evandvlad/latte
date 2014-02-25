@@ -2687,9 +2687,7 @@ describe('Latte Stream & Latte Arrow', function(){
 
     it('Вызов стрелки из потока', function(){
         var st = stub(),
-            a = Latte.A(function(v){
-                return Latte.Mv(v + '!!');
-            }).lift(function(v){
+            a = Latte.A(Latte.Mv).lift(function(v){
                 return '[' + v + ']';
             });
 
@@ -2697,14 +2695,12 @@ describe('Latte Stream & Latte Arrow', function(){
             h('test');
         }).bnd(a).always(st);
 
-        assert.equal(st.args[0], '[test!!]');
+        assert.equal(st.args[0], '[test]');
     });
 
     it('Стрелка как инициализатор потока', function(){
         var st = stub(),
-            a = Latte.A(function(v){
-                return Latte.Mv(v + '!!');
-            }).lift(function(v){
+            a = Latte.A(Latte.Mv).lift(function(v){
                 return '[' + v + ']';
             });
 
@@ -2712,7 +2708,7 @@ describe('Latte Stream & Latte Arrow', function(){
             a('test').always(h);
         }).always(st);
 
-        assert.equal(st.args[0], '[test!!]');
+        assert.equal(st.args[0], '[test]');
     });
 
     it('Вызов потока хранящего состояние из стрелки', function(done){

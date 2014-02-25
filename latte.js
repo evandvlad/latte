@@ -10,12 +10,14 @@
 
     global.Latte = initializer();
 
-    typeof module !== 'undefined' && module.exports && (module.exports = global.Latte);
+    if(typeof module !== 'undefined' && module.exports){
+        module.exports = global.Latte;
+    }
 
 }(this, function(){
 
     var Latte = {
-            version : '1.16.0'
+            version : '1.16.1'
         },
 
         M_PROP = '___M',
@@ -26,6 +28,7 @@
         msmeta = {
 
             allseq : function(isResetAcc){
+
                 return function(xs){
                     var len = xs.length;
 
@@ -42,6 +45,7 @@
                                 }
                             });
                         });
+
                     }) : this(curryLift([]));
                 };
             },
@@ -106,10 +110,6 @@
         };
     }
 
-    function setConstProp(o, prop, v){
-        return Object.defineProperty(o, prop, {value : v});
-    }
-
     function mcreate(notifier, mkey){
 
         function M(ctor){
@@ -167,7 +167,7 @@
             });
         };
 
-        setConstProp(M.prototype, mkey, true);
+        Object.defineProperty(M.prototype, mkey, {value : true});
 
         return M;
     }
@@ -181,12 +181,10 @@
     }
 
     Latte.E = function(v){
-        return setConstProp(function E_(){
+        return Object.defineProperty(function E_(){
             return v;
-        }, E_PROP, true);
+        }, E_PROP, {value : true});
     };
-
-    Latte.isE = isEntity(isFunction, E_PROP);
 
     Latte.M = msextend(mcreate(function(ctor){
         var cbs = [],
@@ -210,8 +208,6 @@
     Latte.Mv = function(v){
         return Latte.M(curryLift(v));
     };
-
-    Latte.isM = isEntity(isObject, M_PROP);
 
     Latte.S = msextend(mcreate(function(ctor){
         var cbs = [];
@@ -260,8 +256,6 @@
         };
     }, S_PROP), Latte.S);
 
-    Latte.isS = isEntity(isObject, S_PROP);
-
     Latte.A = mixMethods(function A(f){
 
         mixMethodsByTmpl(f, Latte.M.prototype, function(prop){
@@ -280,9 +274,10 @@
             return a.radd(this);
         };
 
-        return setConstProp(f, A_PROP, true);
+        return Object.defineProperty(f, A_PROP, {value : true});
 
     }, mixMethodsByTmpl({}, Latte.M, function(prop){
+
         return function(){
             var args = Array.prototype.slice.call(arguments);
 
@@ -293,6 +288,9 @@
         };
     }));
 
+    Latte.isE = isEntity(isFunction, E_PROP);
+    Latte.isM = isEntity(isObject, M_PROP);
+    Latte.isS = isEntity(isObject, S_PROP);
     Latte.isA = isEntity(isFunction, A_PROP);
 
     return Latte;
