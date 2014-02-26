@@ -771,6 +771,18 @@ describe('Latte Arrow', function(){
         assert.equal(st.args[0](), 'e');
     });
 
+    it('bnd и другая стрелка', function(){
+        var st = stub();
+
+        Latte.A(Latte.Mv).bnd(function(x){
+            return Latte.Mv(x + 'b');
+        }).bnd(Latte.A(function(x){
+            return Latte.Mv(x + 'c');
+        }))('a').always(st);
+
+        assert.equal(st.args[0], 'abc');
+    });
+
     it('lift', function(){
         var st = stub();
 
@@ -845,116 +857,6 @@ describe('Latte Arrow', function(){
         })('test').always(st);
 
         assert.equal(st.args[0](), 'new e');
-    });
-
-    it('radd', function(){
-        var st = stub(),
-            a = Latte.A(function(v){
-                return Latte.Mv(v + '?');
-            });
-
-        Latte.A(function(v){
-            return Latte.Mv(v + '!');
-        }).radd(a)('test').always(st);
-
-        assert.equal(st.args[0], 'test!?');
-    });
-
-    it('radd c E значением', function(){
-        var st = stub();
-
-        Latte.A(function(v){
-            return Latte.Mv(Latte.E('e'));
-        }).radd(Latte.A(function(v){
-            return Latte.Mv(v + '?');
-        }))('test').always(st);
-
-        assert.equal(st.args[0](), 'e');
-    });
-
-    it('radd несколько вызовов по цепочке', function(){
-        var st = stub(),
-            st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            a1 = Latte.A(function(v){
-                return Latte.Mv(v + 'b');
-            }),
-            a2 = Latte.A(function(v){
-                return Latte.Mv(v + 'c');
-            }),
-            a3 = Latte.A(function(v){
-                return Latte.Mv(v + 'd');
-            });
-
-        Latte.A(Latte.Mv).radd(a1).radd(a2).radd(a3)('a').always(st);
-
-        a1('a').always(st1);
-        a2('a').always(st2);
-        a3('a').always(st3);
-
-        assert.equal(st.args[0], 'abcd');
-
-        assert.equal(st1.args[0], 'ab');
-        assert.equal(st2.args[0], 'ac');
-        assert.equal(st3.args[0], 'ad');
-    });
-
-    it('ladd', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            a = Latte.A(function(v){
-                return Latte.Mv(v + '?');
-            });
-
-        Latte.A(function(v){
-            return Latte.Mv(v + '!');
-        }).ladd(a)('test').always(st1);
-
-        a('test').always(st2);
-
-        assert.equal(st1.args[0], 'test?!');
-        assert.equal(st2.args[0], 'test?');
-    });
-
-    it('ladd c E значением', function(){
-        var st = stub();
-
-        Latte.A(function(v){
-            return Latte.Mv(Latte.E('e'));
-        }).ladd(Latte.A(function(v){
-            return Latte.Mv(v + '?');
-        }))('test').always(st);
-
-        assert.equal(st.args[0](), 'e');
-    });
-
-    it('ladd несколько вызовов в цепочке', function(){
-        var st = stub(),
-            st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            a1 = Latte.A(function(v){
-                return Latte.Mv(v + 'd');
-            }),
-            a2 = Latte.A(function(v){
-                return Latte.Mv(v + 'c');
-            }),
-            a3 = Latte.A(function(v){
-                return Latte.Mv(v + 'b');
-            });
-
-        Latte.A(Latte.Mv).ladd(a1).ladd(a2).ladd(a3)('a').always(st);
-
-        a1('a').always(st1);
-        a2('a').always(st2);
-        a3('a').always(st3);
-
-        assert.equal(st.args[0], 'abcd');
-
-        assert.equal(st1.args[0], 'ad');
-        assert.equal(st2.args[0], 'ac');
-        assert.equal(st3.args[0], 'ab');
     });
 
     it('static seq', function(){

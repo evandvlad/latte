@@ -297,23 +297,6 @@ Latte.A яляется пространством имен стрелки.
         // функция не будет вызвана!
     });
 
-##### ladd #####
-Метод принимает другую стрелку и добавляет ее перед текущей в вычислениях.
-
-    // Latte.A a Latte.M b -> Latte.A d Latte.M a -> Latte.A b Latte.M c
-    Latte.A(Latte.Mv).ladd(Latte.A(function(v){
-        return Latte.Mv('add before ' + v);
-    }));
-
-##### radd #####
-Метод принимает другую стрелку и добавляет ее после текущей в вычислениях.
-
-    // Latte.A a Latte.M b -> Latte.A b Latte.M c -> Latte.A c Latte.M d
-    Latte.A(Latte.Mv).radd(Latte.A(function(v){
-        return Latte.Mv('add after ' + v);
-    }));
-
-
 #### Методы Latte.A ####
 
 Определены методы: Latte.A.seq, Latte.A.allseq, Latte.A.fold, Latte.A.lift, они работают с группой стрелок,

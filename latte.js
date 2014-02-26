@@ -17,7 +17,7 @@
 }(this, function(){
 
     var Latte = {
-            version : '1.16.1'
+            version : '1.17.0'
         },
 
         M_PROP = '___M',
@@ -25,7 +25,7 @@
         A_PROP = '___A',
         S_PROP = '___S',
 
-        msmeta = {
+        staticMethodsMeta = {
 
             allseq : function(isResetAcc){
 
@@ -50,9 +50,9 @@
                 };
             },
 
-            seq : function(mname){
+            seq : function(methname){
                 return function(ms){
-                    return this[mname](ms).lift(function(vs){
+                    return this[methname](ms).lift(function(vs){
                         return vs.reduce(function(acc, v){
                             return Latte.isE(acc) ? acc : (Latte.isE(v) ? v : (acc.push(v) && acc));
                         }, []);
@@ -60,22 +60,28 @@
                 };
             },
 
-            fold : function(mname){
+            fold : function(methname){
                 return function(f, init, ms){
-                    return this[mname](ms).lift(function(vs){
+                    return this[methname](ms).lift(function(vs){
                         return vs.reduce(f, init);
                     });
                 };
             },
 
-            lift : function(mname){
+            lift : function(methname){
                 return function(f, ms){
-                    return this[mname](ms).lift(function(vs){
+                    return this[methname](ms).lift(function(vs){
                         return f.apply(null, vs);
                     });
                 };
             }
         };
+
+    function bind(f, context){
+        return function(){
+            return f.apply(context, arguments);
+        }
+    }
 
     function curryLift(v){
         return function(f){
@@ -84,12 +90,12 @@
     }
 
     function mixMethods(oto, ofrom){
-        return mixMethodsByTmpl(oto, ofrom, function(prop){
+        return mixMethodsWith(oto, ofrom, function(prop){
             return ofrom[prop];
         });
     }
 
-    function mixMethodsByTmpl(oto, ofrom, proc){
+    function mixMethodsWith(oto, ofrom, proc){
         return Object.keys(ofrom || []).reduce(function(acc, prop){
             isFunction(ofrom[prop]) && (acc[prop] = proc(prop));
             return acc;
@@ -110,7 +116,7 @@
         };
     }
 
-    function mcreate(notifier, mkey){
+    function CreateMonad(notifier, mkey){
 
         function M(ctor){
             if(!(this instanceof M)){
@@ -138,33 +144,27 @@
         };
 
         M.prototype.bnd = function(f){
-            var self = this;
-
-            return new this.constructor(function(c){
-                self.notifier(function(v){
+            return new this.constructor(bind(function(c){
+                this.notifier(function(v){
                     !Latte.isE(v) ? f(v).always(c) : c(v);
                 });
-            });
+            }, this));
         };
 
         M.prototype.lift = function(f){
-            var self = this;
-
-            return new this.constructor(function(c){
-                self.notifier(function(v){
+            return new this.constructor(bind(function(c){
+                this.notifier(function(v){
                     !Latte.isE(v) ? c(f(v)) : c(v);
                 });
-            });
+            }, this));
         };
 
         M.prototype.raise = function(f){
-            var self = this;
-
-            return new this.constructor(function(c){
-                self.notifier(function(v){
+            return new this.constructor(bind(function(c){
+                this.notifier(function(v){
                     Latte.isE(v) ? c(Latte.E(f(v))) : c(v);
                 });
-            });
+            }, this));
         };
 
         Object.defineProperty(M.prototype, mkey, {value : true});
@@ -172,11 +172,12 @@
         return M;
     }
 
-    function msextend(M, ext){
-        M.allseq = msmeta.allseq(true);
-        M.seq = msmeta.seq('allseq');
-        M.fold = msmeta.fold('seq');
-        M.lift = msmeta.lift('seq');
+    function extendMonadStaticMethods(M, ext){
+        M.allseq = staticMethodsMeta.allseq(true);
+        M.seq = staticMethodsMeta.seq('allseq');
+        M.fold = staticMethodsMeta.fold('seq');
+        M.lift = staticMethodsMeta.lift('seq');
+
         return mixMethods(M, ext);
     }
 
@@ -186,7 +187,7 @@
         }, E_PROP, {value : true});
     };
 
-    Latte.M = msextend(mcreate(function(ctor){
+    Latte.M = extendMonadStaticMethods(CreateMonad(function(ctor){
         var cbs = [],
             isval = false,
             val;
@@ -209,7 +210,7 @@
         return Latte.M(curryLift(v));
     };
 
-    Latte.S = msextend(mcreate(function(ctor){
+    Latte.S = extendMonadStaticMethods(CreateMonad(function(ctor){
         var cbs = [];
 
         ctor(function(v){
@@ -221,10 +222,10 @@
         };
     }, S_PROP), {
 
-        pallseq : msmeta.allseq(false),
-        pseq : msmeta.seq('pallseq'),
-        pfold : msmeta.fold('pseq'),
-        plift : msmeta.lift('pseq'),
+        pallseq : staticMethodsMeta.allseq(false),
+        pseq : staticMethodsMeta.seq('pallseq'),
+        pfold : staticMethodsMeta.fold('pseq'),
+        plift : staticMethodsMeta.lift('pseq'),
 
         any : function(ss){
             if(!ss.length){
@@ -239,7 +240,7 @@
         }
     });
 
-    Latte.SH = mixMethods(mcreate(function(ctor){
+    Latte.SH = mixMethods(CreateMonad(function(ctor){
         var cbs = [],
             isval = false,
             val;
@@ -258,25 +259,15 @@
 
     Latte.A = mixMethods(function A(f){
 
-        mixMethodsByTmpl(f, Latte.M.prototype, function(prop){
+        return Object.defineProperty(mixMethodsWith(f, Latte.M.prototype, function(prop){
             return function(g){
-                var self = this;
+                return A(bind(function(v){
+                    return this(v)[prop](g);
+                }, this));
+            };
+        }), A_PROP, {value : true});
 
-                return A(function(v){
-                    return self(v)[prop](g);
-                });
-            }
-        });
-
-        f.radd = f.bnd;
-
-        f.ladd = function(a){
-            return a.radd(this);
-        };
-
-        return Object.defineProperty(f, A_PROP, {value : true});
-
-    }, mixMethodsByTmpl({}, Latte.M, function(prop){
+    }, mixMethodsWith({}, Latte.M, function(prop){
 
         return function(){
             var args = Array.prototype.slice.call(arguments);
