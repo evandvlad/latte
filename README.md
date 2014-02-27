@@ -48,7 +48,7 @@
     // () -> { hand :: (a -> ()), inst :: Latte.M a }
     var mh = Latte.Mh();
 
-    mh.always(function(value){
+    mh.inst.always(function(value){
         console.log(value);
     });
 
