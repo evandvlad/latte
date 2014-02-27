@@ -241,6 +241,39 @@ describe('Latte Monad', function(){
         assert.equal(Latte.isE(st.args[0]), true);
     });
 
+    it('Mh', function(){
+        var st = stub(),
+            m = Latte.Mh();
+
+        m.hand('test');
+        m.inst.always(st);
+
+        assert.equal(st.args[0], 'test');
+    });
+
+    it('Mh вызов hand несколько раз', function(){
+        var st = stub(),
+            m = Latte.Mh();
+
+        m.inst.always(st);
+
+        m.hand('test');
+        m.hand('rest');
+        m.hand('west');
+
+        assert.equal(st.args[0], 'test');
+    });
+
+    it('Mh и значение E', function(){
+        var st = stub(),
+            m = Latte.Mh();
+
+        m.hand(Latte.E('e'));
+        m.inst.always(st);
+
+        assert.equal(st.args[0](), 'e');
+    });
+
     it('always', function(){
         var st1 = stub(),
             st2 = stub();
@@ -1091,6 +1124,49 @@ describe('Latte Stream', function(){
 
         assert.equal(st.count, 4);
 
+    });
+
+    it('Sh always', function(){
+        var st = stub(),
+            s = Latte.Sh();
+
+        s.inst.always(st);
+
+        s.hand(1);
+        assert.equal(st.args[0], 1);
+
+        s.hand(2);
+        assert.equal(st.args[0], 2);
+
+        s.hand(24);
+        assert.equal(st.args[0], 24);
+
+        s.hand(Latte.E('e'));
+        assert.equal(st.args[0](), 'e');
+
+        assert.equal(st.count, 4);
+
+    });
+
+    it('SHh always', function(){
+        var st = stub(),
+            s = Latte.SHh();
+
+        s.inst.always(st);
+
+        s.hand(1);
+        assert.equal(st.args[0], 1);
+
+        s.hand(2);
+        assert.equal(st.args[0], 2);
+
+        s.hand(24);
+        assert.equal(st.args[0], 24);
+
+        s.hand(Latte.E('e'));
+        assert.equal(st.args[0](), 'e');
+
+        assert.equal(st.count, 4);
     });
 
     it('always от одного объекта', function(){

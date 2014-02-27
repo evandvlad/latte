@@ -17,7 +17,7 @@
 }(this, function(){
 
     var Latte = {
-            version : '1.17.0'
+            version : '1.18.0'
         },
 
         M_PROP = '___M',
@@ -181,6 +181,18 @@
         return mixMethods(M, ext);
     }
 
+    function CreateHandMonad(M){
+        return function(){
+            var hm = {};
+
+            hm.inst = M(function(h){
+                hm.hand = h;
+            });
+
+            return hm;
+        };
+    }
+
     Latte.E = function(v){
         return Object.defineProperty(function E_(){
             return v;
@@ -278,6 +290,10 @@
             });
         };
     }));
+
+    Latte.Mh = CreateHandMonad(Latte.M);
+    Latte.Sh = CreateHandMonad(Latte.S);
+    Latte.SHh = CreateHandMonad(Latte.SH);
 
     Latte.isE = isEntity(isFunction, E_PROP);
     Latte.isM = isEntity(isObject, M_PROP);
