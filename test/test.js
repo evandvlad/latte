@@ -2584,6 +2584,7 @@ describe('Latte common', function(){
         assert.equal(Latte.isM(), false);
         assert.equal(Latte.isM(''), false);
         assert.equal(Latte.isM(0), false);
+        assert.equal(Latte.isM(/\*/), false);
         assert.equal(Latte.isM(NaN), false);
         assert.equal(Latte.isM(null), false);
         assert.equal(Latte.isM({}), false);

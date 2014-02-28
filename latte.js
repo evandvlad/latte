@@ -17,7 +17,7 @@
 }(this, function(){
 
     var Latte = {
-            version : '1.18.0'
+            version : '1.18.1'
         },
 
         M_PROP = '___M',
@@ -107,12 +107,12 @@
     }
 
     function isObject(v){
-        return !!(typeof v === 'object' && v);
+        return typeof v === 'object' && !!v;
     }
 
     function isEntity(f, prop){
         return function(v){
-            return !!(f(v) && v[prop]);
+            return f(v) && !!v[prop];
         };
     }
 
@@ -269,7 +269,7 @@
         };
     }, S_PROP), Latte.S);
 
-    Latte.A = mixMethods(function A(f){
+    Latte.A = mixMethodsWith(function A(f){
 
         return Object.defineProperty(mixMethodsWith(f, Latte.M.prototype, function(prop){
             return function(g){
@@ -279,7 +279,7 @@
             };
         }), A_PROP, {value : true});
 
-    }, mixMethodsWith({}, Latte.M, function(prop){
+    }, Latte.M, function(prop){
 
         return function(){
             var args = Array.prototype.slice.call(arguments);
@@ -289,7 +289,7 @@
                 return Latte.M[prop].apply(Latte.M, args);
             });
         };
-    }));
+    });
 
     Latte.Mh = CreateHandMonad(Latte.M);
     Latte.Sh = CreateHandMonad(Latte.S);
