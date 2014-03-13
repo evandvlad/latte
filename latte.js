@@ -17,7 +17,7 @@
 }(this, function(){
 
     var Latte = {
-            version : '1.18.1'
+            version : '1.18.2'
         },
 
         M_PROP = '___M',
@@ -32,7 +32,7 @@
                 return function(xs){
                     var len = xs.length;
 
-                    return len ? this(function(h){
+                    return this(len ? function(h){
                         var acc = [];
 
                         xs.forEach(function(x, i){
@@ -46,7 +46,7 @@
                             });
                         });
 
-                    }) : this(curryLift([]));
+                    } : curryLift([]));
                 };
             },
 
@@ -80,7 +80,7 @@
     function bind(f, context){
         return function(){
             return f.apply(context, arguments);
-        }
+        };
     }
 
     function curryLift(v){
@@ -194,7 +194,7 @@
     }
 
     Latte.E = function(v){
-        return Object.defineProperty(function E_(){
+        return Object.defineProperty(function E(){
             return v;
         }, E_PROP, {value : true});
     };
