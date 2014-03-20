@@ -6,33 +6,7 @@
 
 var assert = require("assert"),
     Latte = require("../latte.js"),
-
-    stub = function(ret){
-        var fn = function(){
-
-            fn.called = true;
-            fn.count += 1;
-            fn.args = arguments;
-
-            return typeof ret === 'function' ? ret({
-                args : arguments,
-                context : this,
-                self : fn
-            }) : ret;
-        };
-
-        fn.called = false;
-        fn.count = 0;
-        fn.args = null;
-
-        fn.reset = function(){
-            fn.called = false;
-            fn.count = 0;
-            fn.args = null;
-        };
-
-        return fn;
-    };
+    fspy = require("./fspy.js");
 
 describe('Monadic Laws', function(){
 
@@ -41,8 +15,8 @@ describe('Monadic Laws', function(){
             f = function(v){
                 return Latte.Mv(v + '!!!');
             },
-            st1 = stub(),
-            st2 = stub();
+            st1 = fspy(),
+            st2 = fspy();
 
         Latte.Mv(x).bnd(f).always(st1);
         f(x).always(st2);
@@ -53,8 +27,8 @@ describe('Monadic Laws', function(){
 
     it('m >>= return == m --Right identity', function(){
         var x = 'test',
-            st1 = stub(),
-            st2 = stub();
+            st1 = fspy(),
+            st2 = fspy();
 
         Latte.Mv(x).bnd(Latte.Mv).always(st1);
         Latte.Mv(x).always(st2);
@@ -65,8 +39,8 @@ describe('Monadic Laws', function(){
 
     it('m >>= return == m --Right Identity', function(){
         var x = 'test',
-            st1 = stub(),
-            st2 = stub();
+            st1 = fspy(),
+            st2 = fspy();
 
         Latte.Mv(x).bnd(Latte.Mv).always(st1);
         Latte.Mv(x).always(st2);
@@ -77,8 +51,8 @@ describe('Monadic Laws', function(){
 
     it('(m >>= f) >>= g == m >>= (λx -> f x >>= g) --Associativity', function(){
         var x = Latte.Mv('test'),
-            st1 = stub(),
-            st2 = stub(),
+            st1 = fspy(),
+            st2 = fspy(),
             f = function(x){
                 return Latte.Mv('[' + x + ']');
             },
@@ -99,7 +73,7 @@ describe('Monadic Laws', function(){
 describe('Latte Monad', function(){
 
     it('M с задержкой', function(done){
-        var st = stub();
+        var st = fspy();
 
         Latte.M(function(h){
             setTimeout(function(){
@@ -117,7 +91,7 @@ describe('Latte Monad', function(){
     });
 
     it('M с задержкой и значением E', function(done){
-        var st = stub();
+        var st = fspy();
 
         Latte.M(function(h){
             setTimeout(function(){
@@ -135,7 +109,7 @@ describe('Latte Monad', function(){
     });
 
     it('M немедленный вызов', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M(function(h){
             h('test');
@@ -146,7 +120,7 @@ describe('Latte Monad', function(){
     });
 
     it('M немедленный вызов cо значением E', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M(function(h){
             h(Latte.E('error'));
@@ -157,7 +131,7 @@ describe('Latte Monad', function(){
     });
 
     it('M игнорирование возвращаемого значения', function(done){
-        var st = stub();
+        var st = fspy();
 
         Latte.M(function(h){
             setTimeout(function(){
@@ -175,7 +149,7 @@ describe('Latte Monad', function(){
     });
 
     it('M игнорирование повторных вызовов обработчика', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M(function(h){
             h('test');
@@ -188,7 +162,7 @@ describe('Latte Monad', function(){
     });
 
     it('M вызов функции только один раз', function(){
-        var st = stub(),
+        var st = fspy(),
             f = function(){},
 
             l = Latte.M(function(h){
@@ -205,7 +179,7 @@ describe('Latte Monad', function(){
     });
 
     it('M немедленный вызов функции', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M(st);
 
@@ -213,7 +187,7 @@ describe('Latte Monad', function(){
     });
 
     it('M игнорирование контекста вызова', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M.call(null, function(h){
             h('test');
@@ -224,7 +198,7 @@ describe('Latte Monad', function(){
     });
 
     it('Mv создание значения', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.Mv('test').always(st);
 
@@ -233,7 +207,7 @@ describe('Latte Monad', function(){
     });
 
     it('Mv создание E значения', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.Mv(Latte.E('error')).always(st);
 
@@ -242,7 +216,7 @@ describe('Latte Monad', function(){
     });
 
     it('Mh', function(){
-        var st = stub(),
+        var st = fspy(),
             m = Latte.Mh();
 
         m.hand('test');
@@ -252,7 +226,7 @@ describe('Latte Monad', function(){
     });
 
     it('Mh вызов hand несколько раз', function(){
-        var st = stub(),
+        var st = fspy(),
             m = Latte.Mh();
 
         m.inst.always(st);
@@ -265,7 +239,7 @@ describe('Latte Monad', function(){
     });
 
     it('Mh и значение E', function(){
-        var st = stub(),
+        var st = fspy(),
             m = Latte.Mh();
 
         m.hand(Latte.E('e'));
@@ -275,8 +249,8 @@ describe('Latte Monad', function(){
     });
 
     it('always', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.Mv().always(st1);
         Latte.Mv(Latte.E()).always(st2);
@@ -286,8 +260,8 @@ describe('Latte Monad', function(){
     });
 
     it('always метод не переопределяет значение', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.Mv('test').always(function(v){
             return Latte.Mv('new ' + v);
@@ -307,10 +281,10 @@ describe('Latte Monad', function(){
                     h('test');
                 }, 10);
             }),
-            st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            st4 = stub();
+            st1 = fspy(),
+            st2 = fspy(),
+            st3 = fspy(),
+            st4 = fspy();
 
         m.always(st1).always(st2);
         m.always(st3).always(st4);
@@ -326,8 +300,8 @@ describe('Latte Monad', function(){
     });
 
     it('next', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.Mv().next(st1);
         Latte.Mv(Latte.E()).next(st2);
@@ -337,8 +311,8 @@ describe('Latte Monad', function(){
     });
 
     it('next метод не переопределяет значение', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.Mv('test').next(function(v){
             return Latte.Mv('new ' + v);
@@ -358,10 +332,10 @@ describe('Latte Monad', function(){
                     h('test');
                 }, 10);
             }),
-            st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            st4 = stub();
+            st1 = fspy(),
+            st2 = fspy(),
+            st3 = fspy(),
+            st4 = fspy();
 
         m.next(st1).next(st2);
         m.next(st3).next(st4);
@@ -377,8 +351,8 @@ describe('Latte Monad', function(){
     });
 
     it('fail', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.Mv().fail(st1);
         Latte.Mv(Latte.E()).fail(st2);
@@ -388,8 +362,8 @@ describe('Latte Monad', function(){
     });
 
     it('fail метод не переопределяет значение', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.Mv(Latte.E('error')).fail(function(v){
             return Latte.Mv(Latte.E('new ' + v()));
@@ -404,11 +378,11 @@ describe('Latte Monad', function(){
     });
 
     it('fail продолжения с bnd', function(){
-        var fret = stub(),
-            st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            st4 = stub();
+        var fret = fspy(),
+            st1 = fspy(),
+            st2 = fspy(),
+            st3 = fspy(),
+            st4 = fspy();
 
         Latte.Mv('test').bnd(function(v){
             return Latte.Mv(v).bnd(function(v){
@@ -429,9 +403,9 @@ describe('Latte Monad', function(){
     });
 
     it('fail продолжения с lift', function(){
-        var fid = stub(),
-            st1 = stub(),
-            st2 = stub();
+        var fid = fspy(),
+            st1 = fspy(),
+            st2 = fspy();
 
         Latte.Mv('test').lift(function(v){
             return Latte.E('error');
@@ -451,10 +425,10 @@ describe('Latte Monad', function(){
                     h(Latte.E('error'));
                 }, 10);
             }),
-            st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            st4 = stub();
+            st1 = fspy(),
+            st2 = fspy(),
+            st3 = fspy(),
+            st4 = fspy();
 
         m.fail(st1).fail(st2);
         m.fail(st3).fail(st4);
@@ -470,7 +444,7 @@ describe('Latte Monad', function(){
     });
 
     it('bnd', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.Mv('test').bnd(function(v){
             return Latte.Mv(v + '!!!');
@@ -484,7 +458,7 @@ describe('Latte Monad', function(){
     });
 
     it('bnd метод возвращает E', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.Mv('test').bnd(function(v){
             return Latte.Mv(Latte.E('error ' + v));
@@ -494,7 +468,7 @@ describe('Latte Monad', function(){
     });
 
     it('bnd не вызывается при E', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.Mv('test').bnd(function(v){
             return Latte.Mv(Latte.E('error'));
@@ -504,10 +478,10 @@ describe('Latte Monad', function(){
     });
 
     it('bnd вложенные вызовы', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
-            st4 = stub();
+        var st1 = fspy(),
+            st2 = fspy(),
+            st3 = fspy(),
+            st4 = fspy();
 
         Latte.Mv('test').bnd(function(v){
             return Latte.Mv(v + '!');
@@ -526,7 +500,7 @@ describe('Latte Monad', function(){
     });
 
     it('lift', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.Mv('test').lift(function(v){
             return v + '!!';
@@ -538,7 +512,7 @@ describe('Latte Monad', function(){
     });
 
     it('lift метод возвращает E', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.Mv('test').lift(function(v){
             return Latte.E('error ' + v);
@@ -548,7 +522,7 @@ describe('Latte Monad', function(){
     });
 
     it('lift метод не вызывается при E', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.Mv('test').lift(function(v){
             return Latte.E('error ' + v);
@@ -558,8 +532,8 @@ describe('Latte Monad', function(){
     });
 
     it('raise', function(){
-        var st = stub(),
-            st2 = stub();
+        var st = fspy(),
+            st2 = fspy();
 
         Latte.Mv(Latte.E('e')).raise(function(e){
             return 'new ' + e();
@@ -570,8 +544,8 @@ describe('Latte Monad', function(){
     });
 
     it('raise не вызывается при отсутствии E значения', function(){
-        var st = stub(),
-            st2 = stub();
+        var st = fspy(),
+            st2 = fspy();
 
         Latte.Mv('test').raise(st).always(st2);
 
@@ -580,7 +554,7 @@ describe('Latte Monad', function(){
     });
 
     it('fold', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M.fold(function(acc, v){
             return acc += v;
@@ -590,7 +564,7 @@ describe('Latte Monad', function(){
     });
 
     it('fold пустой массив', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M.fold(function(acc, v){
             return acc += v;
@@ -600,7 +574,7 @@ describe('Latte Monad', function(){
     });
 
     it('fold co значением E в массиве', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M.fold(function(acc, v){
             return acc += v;
@@ -610,25 +584,25 @@ describe('Latte Monad', function(){
     });
 
     it('static seq пустой массив', function(){
-        var st = stub();
+        var st = fspy();
         Latte.M.seq([]).always(st);
         assert.deepEqual(st.args[0], []);
     });
 
     it('allseq', function(){
-        var st = stub();
+        var st = fspy();
         Latte.M.allseq([Latte.Mv(1), Latte.Mv(2), Latte.Mv(3)]).always(st);
         assert.deepEqual(st.args[0], [1,2,3]);
     });
 
     it('allseq пустой массив', function(){
-        var st = stub();
+        var st = fspy();
         Latte.M.allseq([]).always(st);
         assert.deepEqual(st.args[0], []);
     });
 
     it('allseq co значением E в массиве', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M.allseq([Latte.Mv(1), Latte.Mv(Latte.E('e')), Latte.Mv(3)]).always(st);
 
@@ -640,7 +614,7 @@ describe('Latte Monad', function(){
     });
 
     it('static lift', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M.lift(function(a){
             return a + '!!!';
@@ -650,7 +624,7 @@ describe('Latte Monad', function(){
     });
 
     it('static lift массив с несколькими элементами', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M.lift(function(a, b, c){
             return a + b + c;
@@ -660,7 +634,7 @@ describe('Latte Monad', function(){
     });
 
     it('static lift массив с несколькими элементами и значением E', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.M.lift(function(a, b, c){
             return a + b + c;
@@ -673,8 +647,8 @@ describe('Latte Monad', function(){
 describe('Latte Arrow', function(){
 
     it('always', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(v + '!!!');
@@ -685,8 +659,8 @@ describe('Latte Arrow', function(){
     });
 
     it('always и значение E', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(Latte.E('e'));
@@ -697,7 +671,7 @@ describe('Latte Arrow', function(){
     });
 
     it('always не переопределяет значение', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(v + '!!!');
@@ -709,8 +683,8 @@ describe('Latte Arrow', function(){
     });
 
     it('next', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(v + '!!!');
@@ -721,8 +695,8 @@ describe('Latte Arrow', function(){
     });
 
     it('next и значение E', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(Latte.E('e'));
@@ -733,7 +707,7 @@ describe('Latte Arrow', function(){
     });
 
     it('next не переопределяет значение', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(v + '!!!');
@@ -745,8 +719,8 @@ describe('Latte Arrow', function(){
     });
 
     it('fail', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(v + '!!!');
@@ -757,8 +731,8 @@ describe('Latte Arrow', function(){
     });
 
     it('fail и значение E', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(Latte.E('e'));
@@ -769,7 +743,7 @@ describe('Latte Arrow', function(){
     });
 
     it('fail не переопределяет значение', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(Latte.E('e'));
@@ -781,7 +755,7 @@ describe('Latte Arrow', function(){
     });
 
     it('bnd', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(Latte.Mv).bnd(function(x){
             return Latte.Mv(x + 'b');
@@ -793,7 +767,7 @@ describe('Latte Arrow', function(){
     });
 
     it('bnd со значением E', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(Latte.Mv).bnd(function(x){
             return Latte.Mv(Latte.E('e'));
@@ -805,7 +779,7 @@ describe('Latte Arrow', function(){
     });
 
     it('bnd и другая стрелка', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(Latte.Mv).bnd(function(x){
             return Latte.Mv(x + 'b');
@@ -817,7 +791,7 @@ describe('Latte Arrow', function(){
     });
 
     it('lift', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(Latte.Mv).lift(function(x){
             return x + 'b';
@@ -829,7 +803,7 @@ describe('Latte Arrow', function(){
     });
 
     it('lift со значением E', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(Latte.Mv).lift(function(x){
             return Latte.E('e');
@@ -841,7 +815,7 @@ describe('Latte Arrow', function(){
     });
 
     it('lift и bnd', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(Latte.Mv).lift(function(x){
             return x + 'b';
@@ -855,7 +829,7 @@ describe('Latte Arrow', function(){
     });
 
     it('lift и bnd cо значением E', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(Latte.Mv).lift(function(x){
             return x + 'b';
@@ -869,8 +843,8 @@ describe('Latte Arrow', function(){
     });
 
     it('raise', function(){
-        var st1 = stub(),
-            st2 = stub();
+        var st1 = fspy(),
+            st2 = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(v + '!!!');
@@ -881,7 +855,7 @@ describe('Latte Arrow', function(){
     });
 
     it('raise и значение E', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A(function(v){
             return Latte.Mv(Latte.E('e'));
@@ -893,7 +867,7 @@ describe('Latte Arrow', function(){
     });
 
     it('static seq', function(){
-        var st = stub(),
+        var st = fspy(),
             a1 = Latte.A(function(v){
                 return Latte.Mv(v + 1);
             }),
@@ -910,7 +884,7 @@ describe('Latte Arrow', function(){
     });
 
     it('static seq от пустого массива', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A.seq([])(0).always(st);
 
@@ -918,7 +892,7 @@ describe('Latte Arrow', function(){
     });
 
     it('static seq со значением E', function(){
-        var st = stub(),
+        var st = fspy(),
             a1 = Latte.A(function(v){
                 return Latte.Mv(v + 1);
             }),
@@ -935,7 +909,7 @@ describe('Latte Arrow', function(){
     });
 
     it('allseq', function(){
-        var st = stub(),
+        var st = fspy(),
             a1 = Latte.A(function(v){
                 return Latte.Mv(v + 1);
             }),
@@ -951,13 +925,13 @@ describe('Latte Arrow', function(){
     });
 
     it('allseq пустой массив', function(){
-        var st = stub();
+        var st = fspy();
         Latte.A.allseq([])(0).always(st);
         assert.deepEqual(st.args[0], []);
     });
 
     it('allseq co значением E в массиве', function(){
-        var st = stub(),
+        var st = fspy(),
             a1 = Latte.A(function(v){
                 return Latte.Mv(v + 1);
             }),
@@ -978,7 +952,7 @@ describe('Latte Arrow', function(){
     });
 
     it('fold', function(){
-        var st = stub(),
+        var st = fspy(),
             a1 = Latte.A(function(v){
                 return Latte.Mv(v + 1);
             }),
@@ -997,7 +971,7 @@ describe('Latte Arrow', function(){
     });
 
     it('fold пустой массив', function(){
-        var st = stub();
+        var st = fspy();
 
         Latte.A.fold(function(acc, v){
             return acc += v;
@@ -1007,7 +981,7 @@ describe('Latte Arrow', function(){
     });
 
     it('fold co значением E в массиве', function(){
-        var st = stub(),
+        var st = fspy(),
             a1 = Latte.A(function(v){
                 return Latte.Mv(v + 1);
             }),
@@ -1026,7 +1000,7 @@ describe('Latte Arrow', function(){
     });
 
     it('static lift', function(){
-        var st = stub(),
+        var st = fspy(),
             a = Latte.A(function(v){
                 return Latte.Mv(v + 'st');
             });
@@ -1039,7 +1013,7 @@ describe('Latte Arrow', function(){
     });
 
     it('static lift массив с несколькими элементами', function(){
-        var st = stub(),
+        var st = fspy(),
             a1 = Latte.A(function(v){
                 return Latte.Mv(v + 'test');
             }),
@@ -1058,7 +1032,7 @@ describe('Latte Arrow', function(){
     });
 
     it('static lift массив с несколькими элементами и значением E', function(){
-        var st = stub(),
+        var st = fspy(),
             a1 = Latte.A(function(v){
                 return Latte.Mv(v + 'test');
             }),
@@ -1080,7 +1054,7 @@ describe('Latte Arrow', function(){
 describe('Latte Stream', function(){
 
     it('always', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.S(function(h){
@@ -1103,7 +1077,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH always', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.SH(function(h){
@@ -1127,7 +1101,7 @@ describe('Latte Stream', function(){
     });
 
     it('Sh always', function(){
-        var st = stub(),
+        var st = fspy(),
             s = Latte.Sh();
 
         s.inst.always(st);
@@ -1149,7 +1123,7 @@ describe('Latte Stream', function(){
     });
 
     it('SHh always', function(){
-        var st = stub(),
+        var st = fspy(),
             s = Latte.SHh();
 
         s.inst.always(st);
@@ -1170,9 +1144,9 @@ describe('Latte Stream', function(){
     });
 
     it('always от одного объекта', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
+        var st1 = fspy(),
+            st2 = fspy(),
+            st3 = fspy(),
             handle,
             s = Latte.S(function(h){
                 handle = h;
@@ -1199,7 +1173,7 @@ describe('Latte Stream', function(){
     });
 
     it('next', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.S(function(h){
@@ -1218,9 +1192,9 @@ describe('Latte Stream', function(){
     });
 
     it('next от одного объекта', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
+        var st1 = fspy(),
+            st2 = fspy(),
+            st3 = fspy(),
             handle,
             s = Latte.S(function(h){
                 handle = h;
@@ -1247,7 +1221,7 @@ describe('Latte Stream', function(){
     });
 
     it('fail', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.S(function(h){
@@ -1269,7 +1243,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH fail', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.SH(function(h){
@@ -1292,9 +1266,9 @@ describe('Latte Stream', function(){
     });
 
     it('fail от одного объекта', function(){
-        var st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
+        var st1 = fspy(),
+            st2 = fspy(),
+            st3 = fspy(),
             handle,
             s = Latte.S(function(h){
                 handle = h;
@@ -1321,7 +1295,7 @@ describe('Latte Stream', function(){
     });
 
     it('bnd', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.S(function(h){
@@ -1341,7 +1315,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH bnd', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.SH(function(h){
@@ -1361,7 +1335,7 @@ describe('Latte Stream', function(){
     });
 
     it('bnd генерирует значение E', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.S(function(h){
@@ -1381,7 +1355,7 @@ describe('Latte Stream', function(){
     });
 
     it('bnd вложенные вызовы', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.S(function(h){
@@ -1403,7 +1377,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH bnd вложенные вызовы', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.SH(function(h){
@@ -1425,7 +1399,7 @@ describe('Latte Stream', function(){
     });
 
     it('lift', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.S(function(h){
@@ -1447,7 +1421,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH lift', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.SH(function(h){
@@ -1469,7 +1443,7 @@ describe('Latte Stream', function(){
     });
 
     it('raise', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.S(function(h){
@@ -1489,7 +1463,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH raise', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.SH(function(h){
@@ -1509,7 +1483,7 @@ describe('Latte Stream', function(){
     });
 
     it('raise и fail по цепочке', function(){
-        var st = stub(),
+        var st = fspy(),
             handle;
 
         Latte.S(function(h){
@@ -1535,7 +1509,7 @@ describe('Latte Stream', function(){
     });
 
     it('static seq', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -1562,10 +1536,10 @@ describe('Latte Stream', function(){
     });
 
     it('SH и static seq', function(){
-        var st = stub(),
-            st1 = stub(),
-            st2 = stub(),
-            st3 = stub(),
+        var st = fspy(),
+            st1 = fspy(),
+            st2 = fspy(),
+            st3 = fspy(),
             s1 = Latte.SH(function(h){
                 h(1);
             }).always(st1),
@@ -1586,7 +1560,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH и static SH seq', function(){
-        var st = stub(),
+        var st = fspy(),
             s1 = Latte.SH(function(h){
                 h(1);
             }),
@@ -1603,7 +1577,7 @@ describe('Latte Stream', function(){
     });
 
     it('S и static SH seq', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -1633,7 +1607,7 @@ describe('Latte Stream', function(){
     });
 
     it('S и SH и static SH seq', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle3,
             s1 = Latte.S(function(h){
@@ -1660,7 +1634,7 @@ describe('Latte Stream', function(){
     });
 
     it('S и SH и static S seq', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle3,
             s1 = Latte.S(function(h){
@@ -1687,7 +1661,7 @@ describe('Latte Stream', function(){
     });
 
     it('static seq и значение E', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -1714,7 +1688,7 @@ describe('Latte Stream', function(){
     });
 
     it('static allseq', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -1741,7 +1715,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH static allseq', function(){
-        var st = stub(),
+        var st = fspy(),
             s1 = Latte.SH(function(h){
                 h(1);
             }),
@@ -1758,7 +1732,7 @@ describe('Latte Stream', function(){
     });
 
     it('static allseq и значение E', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -1788,7 +1762,7 @@ describe('Latte Stream', function(){
     });
 
     it('static allseq только если все потоки с новыми данными', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -1825,7 +1799,7 @@ describe('Latte Stream', function(){
     });
 
     it('static fold', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -1859,7 +1833,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH static fold', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -1891,7 +1865,7 @@ describe('Latte Stream', function(){
     });
 
     it('static fold и значение E', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -1921,7 +1895,7 @@ describe('Latte Stream', function(){
     });
 
     it('static lift', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -1950,7 +1924,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH static lift', function(){
-        var st = stub(),
+        var st = fspy(),
             s1 = Latte.SH(function(h){
                 h(1);
             }),
@@ -1969,7 +1943,7 @@ describe('Latte Stream', function(){
     });
 
     it('static lift и значение E', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2004,7 +1978,7 @@ describe('Latte Stream', function(){
     });
 
     it('static any', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2037,7 +2011,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH static any', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2073,7 +2047,7 @@ describe('Latte Stream', function(){
     });
 
     it('static pallseq', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2119,7 +2093,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH static pallseq', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2163,7 +2137,7 @@ describe('Latte Stream', function(){
     });
 
     it('static pallseq и значение E', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2208,7 +2182,7 @@ describe('Latte Stream', function(){
     });
 
     it('static pseq', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2254,7 +2228,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH static pseq', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2298,7 +2272,7 @@ describe('Latte Stream', function(){
     });
 
     it('static pseq и значение E', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2341,7 +2315,7 @@ describe('Latte Stream', function(){
     });
 
     it('static pfold', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2379,7 +2353,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH static pfold', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2415,7 +2389,7 @@ describe('Latte Stream', function(){
     });
 
     it('static pfold и значение E', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2459,7 +2433,7 @@ describe('Latte Stream', function(){
     });
 
     it('static plift', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2497,7 +2471,7 @@ describe('Latte Stream', function(){
     });
 
     it('SH static plift', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2533,7 +2507,7 @@ describe('Latte Stream', function(){
     });
 
     it('static plift и значение E', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             handle3,
@@ -2638,7 +2612,7 @@ describe('Latte common', function(){
 describe('Latte Stream & Latte Monad', function(){
 
     it('Монады и потоки в операциях со списками', function(){
-        var st = stub(),
+        var st = fspy(),
             handle1,
             handle2,
             sh = Latte.SH(function(h){
@@ -2665,7 +2639,7 @@ describe('Latte Stream & Latte Monad', function(){
 describe('Latte Stream & Latte Arrow', function(){
 
     it('Вызов стрелки из потока', function(){
-        var st = stub(),
+        var st = fspy(),
             a = Latte.A(Latte.Mv).lift(function(v){
                 return '[' + v + ']';
             });
@@ -2678,7 +2652,7 @@ describe('Latte Stream & Latte Arrow', function(){
     });
 
     it('Стрелка как инициализатор потока', function(){
-        var st = stub(),
+        var st = fspy(),
             a = Latte.A(Latte.Mv).lift(function(v){
                 return '[' + v + ']';
             });
@@ -2704,7 +2678,7 @@ describe('Latte Stream & Latte Arrow', function(){
                     return 'value: ' + v;
                 });
             }),
-            st = stub();
+            st = fspy();
 
         a().always(st);
         assert.equal(st.args[0], 'value: 1');
