@@ -17,7 +17,7 @@
 }(this, function(){
 
     var Latte = {
-            version : '1.18.2'
+            version : '1.18.3'
         },
 
         M_PROP = '___M',
@@ -123,11 +123,11 @@
                 return new M(ctor);
             }
 
-            this.notifier = notifier(ctor);
+            this._notifier = notifier(ctor);
         }
 
         M.prototype.always = function(f){
-            this.notifier(f);
+            this._notifier(f);
             return this;
         };
 
@@ -145,7 +145,7 @@
 
         M.prototype.bnd = function(f){
             return new this.constructor(bind(function(c){
-                this.notifier(function(v){
+                this._notifier(function(v){
                     !Latte.isE(v) ? f(v).always(c) : c(v);
                 });
             }, this));
@@ -153,7 +153,7 @@
 
         M.prototype.lift = function(f){
             return new this.constructor(bind(function(c){
-                this.notifier(function(v){
+                this._notifier(function(v){
                     !Latte.isE(v) ? c(f(v)) : c(v);
                 });
             }, this));
@@ -161,7 +161,7 @@
 
         M.prototype.raise = function(f){
             return new this.constructor(bind(function(c){
-                this.notifier(function(v){
+                this._notifier(function(v){
                     Latte.isE(v) ? c(Latte.E(f(v))) : c(v);
                 });
             }, this));
