@@ -17,7 +17,7 @@
 }(this, function(){
 
     var Latte = {
-            version : '1.18.3'
+            version : '1.19.0'
         },
 
         M_PROP = '___M',
@@ -46,7 +46,7 @@
                             });
                         });
 
-                    } : curryLift([]));
+                    } : lift([]));
                 };
             },
 
@@ -62,30 +62,46 @@
 
             fold : function(methname){
                 return function(f, init, ms){
-                    return this[methname](ms).lift(function(vs){
-                        return vs.reduce(f, init);
-                    });
+                    return this[methname](ms).lift(meth('reduce', f, init));
                 };
             },
 
             lift : function(methname){
                 return function(f, ms){
-                    return this[methname](ms).lift(function(vs){
-                        return f.apply(null, vs);
-                    });
+                    return this[methname](ms).lift(Function.prototype.apply.bind(f, null));
                 };
             }
         };
 
-    function bind(f, context){
-        return function(){
-            return f.apply(context, arguments);
+    function noop(){}
+
+    function compose(){
+        var args = Array.prototype.slice.call(arguments);
+
+        return function(val){
+            return args.reduce(function(v, f){
+                return f(v);
+            }, val);
         };
     }
 
-    function curryLift(v){
+    function lift(v){
         return function(f){
             return f(v);
+        };
+    }
+
+    function cond(p, t, f){
+        return function(v){
+            return p(v) ? t(v) : f(v);
+        };
+    }
+
+    function meth(mname){
+        var args = Array.prototype.slice.call(arguments, 1);
+
+        return function(o){
+            return o[mname].apply(o, args);
         };
     }
 
@@ -107,7 +123,7 @@
     }
 
     function isObject(v){
-        return typeof v === 'object' && !!v;
+        return Object.prototype.toString.call(v) === '[object Object]';
     }
 
     function isEntity(f, prop){
@@ -132,39 +148,29 @@
         };
 
         M.prototype.next = function(f){
-            return this.always(function(v){
-                !Latte.isE(v) && f(v);
-            });
+            return this.always(cond(Latte.isE, noop, f));
         };
 
         M.prototype.fail = function(f){
-            return this.always(function(v){
-                Latte.isE(v) && f(v);
-            });
+            return this.always(cond(Latte.isE, f, noop));
         };
 
         M.prototype.bnd = function(f){
-            return new this.constructor(bind(function(c){
-                this._notifier(function(v){
-                    !Latte.isE(v) ? f(v).always(c) : c(v);
-                });
-            }, this));
+            return new this.constructor(function(c){
+                this._notifier(cond(Latte.isE, c, compose(f, meth('always', c))));
+            }.bind(this));
         };
 
         M.prototype.lift = function(f){
-            return new this.constructor(bind(function(c){
-                this._notifier(function(v){
-                    !Latte.isE(v) ? c(f(v)) : c(v);
-                });
-            }, this));
+            return new this.constructor(function(c){
+                this._notifier(cond(Latte.isE, c, compose(f, c)));
+            }.bind(this));
         };
 
         M.prototype.raise = function(f){
-            return new this.constructor(bind(function(c){
-                this._notifier(function(v){
-                    Latte.isE(v) ? c(Latte.E(f(v))) : c(v);
-                });
-            }, this));
+            return new this.constructor(function(c){
+                this._notifier(cond(Latte.isE, compose(f, Latte.E, c), c));
+            }.bind(this));
         };
 
         Object.defineProperty(M.prototype, mkey, {value : true});
@@ -177,7 +183,6 @@
         M.seq = staticMethodsMeta.seq('allseq');
         M.fold = staticMethodsMeta.fold('seq');
         M.lift = staticMethodsMeta.lift('seq');
-
         return mixMethods(M, ext);
     }
 
@@ -208,7 +213,7 @@
             if(!isval){
                 val = v;
                 isval = true;
-                cbs.forEach(curryLift(val));
+                cbs.forEach(lift(val));
                 cbs = [];
             }
         });
@@ -218,16 +223,12 @@
         };
     }, M_PROP));
 
-    Latte.Mv = function(v){
-        return Latte.M(curryLift(v));
-    };
+    Latte.Mv = compose(lift, Latte.M);
 
     Latte.S = extendMonadStaticMethods(CreateMonad(function(ctor){
         var cbs = [];
 
-        ctor(function(v){
-            cbs.forEach(curryLift(v));
-        });
+        ctor(compose(lift, cbs.forEach.bind(cbs)));
 
         return function(f){
             cbs.push(f);
@@ -240,14 +241,8 @@
         plift : staticMethodsMeta.lift('pseq'),
 
         any : function(ss){
-            if(!ss.length){
-                throw Error('Latte [method: any] error: Empty list');
-            }
-
             return this(function(h){
-                ss.forEach(function(s){
-                    s.always(h);
-                });
+                ss.forEach(meth('always', h));
             });
         }
     });
@@ -260,12 +255,11 @@
         ctor(function(v){
             isval = true;
             val = v;
-            cbs.forEach(curryLift(val));
+            cbs.forEach(lift(val));
         });
 
         return function(f){
-            cbs.push(f);
-            isval && f(val);
+            cbs.push(f) && isval && f(val);
         };
     }, S_PROP), Latte.S);
 
@@ -273,9 +267,9 @@
 
         return Object.defineProperty(mixMethodsWith(f, Latte.M.prototype, function(prop){
             return function(g){
-                return A(bind(function(v){
+                return A(function(v){
                     return this(v)[prop](g);
-                }, this));
+                }.bind(this));
             };
         }), A_PROP, {value : true});
 
@@ -285,7 +279,7 @@
             var args = Array.prototype.slice.call(arguments);
 
             return this(function(v){
-                args.push(args.pop().map(curryLift(v)));
+                args.push(args.pop().map(lift(v)));
                 return Latte.M[prop].apply(Latte.M, args);
             });
         };

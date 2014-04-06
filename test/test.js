@@ -1971,12 +1971,6 @@ describe('Latte Stream', function(){
         assert.equal(st.args[0](), 'err');
     });
 
-    it('static any пустой список', function(){
-        assert.throws(function(){
-            Latte.S.any([]);
-        }, Error);
-    });
-
     it('static any', function(){
         var st = fspy(),
             handle1,
@@ -2688,7 +2682,7 @@ describe('Latte Stream & Latte Arrow', function(){
             assert.equal(st.args[0], 'value: 2');
 
             done();
-        }, 2);
+        }, 22);
     })
 
 });
