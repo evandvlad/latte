@@ -531,6 +531,54 @@ describe('Latte Monad', function(){
         assert.equal(st.called, false);
     });
 
+    it('when', function(){
+        var st1 = fspy(),
+            st2 = fspy();
+
+        function predicate(v){
+            return v > 6;
+        }
+
+        Latte.Mv(12).when(predicate).always(st1);
+        Latte.Mv(1).when(predicate).always(st2);
+
+        assert.equal(st1.args[0], 12);
+        assert.equal(Latte.isE(st2.args[0]), true);
+        assert.equal(st2.args[0](), 1);
+    });
+
+    it('when от значения E', function(){
+        var st = fspy();
+
+        Latte.Mv(Latte.E(11)).when(st);
+
+        assert.equal(st.called, false);
+    });
+
+    it('unless', function(){
+        var st1 = fspy(),
+            st2 = fspy();
+
+        function predicate(v){
+            return v > 6;
+        }
+
+        Latte.Mv(12).unless(predicate).always(st1);
+        Latte.Mv(1).unless(predicate).always(st2);
+
+        assert.equal(Latte.isE(st1.args[0]), true);
+        assert.equal(st1.args[0](), 12);
+        assert.equal(st2.args[0], 1);
+    });
+
+    it('unless от значения E', function(){
+        var st = fspy();
+
+        Latte.Mv(Latte.E(11)).unless(st);
+
+        assert.equal(st.called, false);
+    });
+
     it('raise', function(){
         var st = fspy(),
             st2 = fspy();
@@ -840,6 +888,56 @@ describe('Latte Arrow', function(){
         })('a').always(st);
 
         assert.equal(st.args[0](), 'e');
+    });
+
+    it('when', function(){
+        var st1 = fspy(),
+            st2 = fspy(),
+            a = Latte.A(Latte.Mv);
+
+        function predicate(v){
+            return v > 6;
+        }
+
+        a.when(predicate)(12).always(st1);
+        a.when(predicate)(1).always(st2);
+
+        assert.equal(st1.args[0], 12);
+        assert.equal(Latte.isE(st2.args[0]), true);
+        assert.equal(st2.args[0](), 1);
+    });
+
+    it('when от значения E', function(){
+        var st = fspy();
+
+        Latte.A(Latte.Mv)(Latte.E('error')).when(st);
+
+        assert.equal(st.called, false);
+    });
+
+    it('unless', function(){
+        var st1 = fspy(),
+            st2 = fspy(),
+            a = Latte.A(Latte.Mv);
+
+        function predicate(v){
+            return v > 6;
+        }
+
+        a.unless(predicate)(12).always(st1);
+        a.unless(predicate)(1).always(st2);
+
+        assert.equal(Latte.isE(st1.args[0]), true);
+        assert.equal(st1.args[0](), 12);
+        assert.equal(st2.args[0], 1);
+    });
+
+    it('unless от значения E', function(){
+        var st = fspy();
+
+        Latte.A(Latte.Mv)(Latte.E('error')).unless(st);
+
+        assert.equal(st.called, false);
     });
 
     it('raise', function(){

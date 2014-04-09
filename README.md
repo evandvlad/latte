@@ -153,6 +153,24 @@
         return 'error: ' + e();
     });
 
+##### when #####
+Метод преобразования текущего успешного значения в значение E,
+если оно не удовлетворяет предикату, иначе оно остается без изменения.
+
+    // Latte.M a -> (a -> Bool) -> Latte.M a
+    Latte.Mv(5).when(function(v){
+        return v > 5;
+    });
+
+##### unless #####
+Метод преобразования текущего успешного значения в значение E,
+если оно удовлетворяет предикату, иначе оно остается без изменения.
+
+    // Latte.M a -> (a -> Bool) -> Latte.M a
+    Latte.Mv(5).unless(function(v){
+        return v > 5;
+    });
+
 #### Методы Latte.M ####
 
 ##### seq #####
@@ -308,6 +326,24 @@ Latte.A яляется пространством имен стрелки.
         // функция не будет вызвана!
     });
 
+##### when #####
+Метод преобразования текущего успешного значения в значение E,
+если оно не удовлетворяет предикату, иначе оно остается без изменения.
+
+    // Latte.A a Latte.M b -> (b -> Bool) -> Latte.A a Latte.M b
+    Latte.A(Latte.Mv).when(function(v){
+        return v > 5;
+    });
+
+##### unless #####
+Метод преобразования текущего успешного значения в значение E,
+если оно удовлетворяет предикату, иначе оно остается без изменения.
+
+    // Latte.A a Latte.M b -> (b -> Bool) -> Latte.A a Latte.M b
+    Latte.A(Latte.Mv).unless(function(v){
+        return v > 5;
+    });
+
 #### Методы Latte.A ####
 
 Определены методы: Latte.A.seq, Latte.A.allseq, Latte.A.fold, Latte.A.lift, они работают с группой стрелок,
@@ -360,7 +396,7 @@ Latte.Sh и Latte.SHh аналогичны методу Latte.Mh, определ
 
 #### Методы объекта ####
 
-always, next, fail, bnd, lift, raise.
+always, next, fail, bnd, lift, raise, when, unless.
 
 #### Методы Latte.S и Latte.SH ####
 

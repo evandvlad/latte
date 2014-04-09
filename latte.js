@@ -17,7 +17,7 @@
 }(this, function(){
 
     var Latte = {
-            version : '1.19.0'
+            version : '1.20.0'
         },
 
         M_PROP = '___M',
@@ -73,7 +73,17 @@
             }
         };
 
-    function noop(){}
+    function id(v){
+        return v;
+    }
+
+    function isFunction(v){
+        return Object.prototype.toString.call(v) === '[object Function]';
+    }
+
+    function isObject(v){
+        return Object.prototype.toString.call(v) === '[object Object]';
+    }
 
     function compose(){
         var args = Array.prototype.slice.call(arguments);
@@ -118,14 +128,6 @@
         }, oto);
     }
 
-    function isFunction(v){
-        return Object.prototype.toString.call(v) === '[object Function]';
-    }
-
-    function isObject(v){
-        return Object.prototype.toString.call(v) === '[object Object]';
-    }
-
     function isEntity(f, prop){
         return function(v){
             return f(v) && !!v[prop];
@@ -148,11 +150,11 @@
         };
 
         M.prototype.next = function(f){
-            return this.always(cond(Latte.isE, noop, f));
+            return this.always(cond(Latte.isE, id, f));
         };
 
         M.prototype.fail = function(f){
-            return this.always(cond(Latte.isE, f, noop));
+            return this.always(cond(Latte.isE, f, id));
         };
 
         M.prototype.bnd = function(f){
@@ -171,6 +173,14 @@
             return new this.constructor(function(c){
                 this._notifier(cond(Latte.isE, compose(f, Latte.E, c), c));
             }.bind(this));
+        };
+
+        M.prototype.when = function(f){
+            return this.lift(cond(f, id, Latte.E));
+        };
+
+        M.prototype.unless = function(f){
+            return this.lift(cond(f, Latte.E, id));
         };
 
         Object.defineProperty(M.prototype, mkey, {value : true});
