@@ -588,6 +588,15 @@ describe('Latte Monad', function(){
         assert.equal(st.args[0], undefined);
     });
 
+    it('pass передача значения', function(){
+        var st = fspy();
+
+        Latte.Mv(11).pass('value').always(st);
+
+        assert.equal(st.called, true);
+        assert.equal(st.args[0], 'value');
+    });
+
     it('pass от значения E', function(){
         var st = fspy();
 

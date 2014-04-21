@@ -17,7 +17,7 @@
 }(this, function(){
 
     var Latte = {
-            version : '1.21.0'
+            version : '1.22.0'
         },
 
         M_PROP = '___M',
@@ -71,10 +71,14 @@
             }
         };
 
-    function noop(){}
-
     function id(v){
         return v;
+    }
+
+    function constf(v){
+        return function(){
+            return v;
+        };
     }
 
     function isFunction(v){
@@ -183,8 +187,8 @@
             return this.lift(cond(f, Latte.E, id));
         };
 
-        M.prototype.pass = function(){
-            return this.lift(noop);
+        M.prototype.pass = function(v){
+            return this.lift(constf(v));
         };
 
         Object.defineProperty(M.prototype, mkey, {value : true});
@@ -213,9 +217,7 @@
     }
 
     Latte.E = function(v){
-        return Object.defineProperty(function E(){
-            return v;
-        }, E_PROP, {value : true});
+        return Object.defineProperty(constf(v), E_PROP, {value : true});
     };
 
     Latte.M = extendMonadStaticMethods(CreateMonad(function(ctor){

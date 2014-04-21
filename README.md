@@ -174,9 +174,9 @@
 ##### pass #####
 Метод отбрасывающий результат предыдущего успешного вычисления
 
-    // Latte.M a -> Latte.M undefined
-    Latte.Mv(5).pass().next(function(v){
-        // v - undefined
+    // Latte.M a -> b -> Latte.M b
+    Latte.Mv(5).pass('value').next(function(v){
+        // v - value
     });
 
 #### Методы Latte.M ####
