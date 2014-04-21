@@ -17,18 +17,16 @@
 }(this, function(){
 
     var Latte = {
-            version : '1.20.0'
+            version : '1.21.0'
         },
 
         M_PROP = '___M',
         E_PROP = '___E',
-        A_PROP = '___A',
         S_PROP = '___S',
 
         staticMethodsMeta = {
 
             allseq : function(isResetAcc){
-
                 return function(xs){
                     var len = xs.length;
 
@@ -73,6 +71,8 @@
             }
         };
 
+    function noop(){}
+
     function id(v){
         return v;
     }
@@ -116,14 +116,8 @@
     }
 
     function mixMethods(oto, ofrom){
-        return mixMethodsWith(oto, ofrom, function(prop){
-            return ofrom[prop];
-        });
-    }
-
-    function mixMethodsWith(oto, ofrom, proc){
         return Object.keys(ofrom || []).reduce(function(acc, prop){
-            isFunction(ofrom[prop]) && (acc[prop] = proc(prop));
+            isFunction(ofrom[prop]) && (acc[prop] = ofrom[prop]);
             return acc;
         }, oto);
     }
@@ -158,21 +152,27 @@
         };
 
         M.prototype.bnd = function(f){
+            var self = this;
+
             return new this.constructor(function(c){
-                this._notifier(cond(Latte.isE, c, compose(f, meth('always', c))));
-            }.bind(this));
+                self._notifier(cond(Latte.isE, c, compose(f, meth('always', c))));
+            });
         };
 
         M.prototype.lift = function(f){
+            var self = this;
+
             return new this.constructor(function(c){
-                this._notifier(cond(Latte.isE, c, compose(f, c)));
-            }.bind(this));
+                self._notifier(cond(Latte.isE, c, compose(f, c)));
+            });
         };
 
         M.prototype.raise = function(f){
+            var self = this;
+
             return new this.constructor(function(c){
-                this._notifier(cond(Latte.isE, compose(f, Latte.E, c), c));
-            }.bind(this));
+                self._notifier(cond(Latte.isE, compose(f, Latte.E, c), c));
+            });
         };
 
         M.prototype.when = function(f){
@@ -181,6 +181,10 @@
 
         M.prototype.unless = function(f){
             return this.lift(cond(f, Latte.E, id));
+        };
+
+        M.prototype.pass = function(){
+            return this.lift(noop);
         };
 
         Object.defineProperty(M.prototype, mkey, {value : true});
@@ -273,28 +277,6 @@
         };
     }, S_PROP), Latte.S);
 
-    Latte.A = mixMethodsWith(function A(f){
-
-        return Object.defineProperty(mixMethodsWith(f, Latte.M.prototype, function(prop){
-            return function(g){
-                return A(function(v){
-                    return this(v)[prop](g);
-                }.bind(this));
-            };
-        }), A_PROP, {value : true});
-
-    }, Latte.M, function(prop){
-
-        return function(){
-            var args = Array.prototype.slice.call(arguments);
-
-            return this(function(v){
-                args.push(args.pop().map(lift(v)));
-                return Latte.M[prop].apply(Latte.M, args);
-            });
-        };
-    });
-
     Latte.Mh = CreateHandMonad(Latte.M);
     Latte.Sh = CreateHandMonad(Latte.S);
     Latte.SHh = CreateHandMonad(Latte.SH);
@@ -302,7 +284,6 @@
     Latte.isE = isEntity(isFunction, E_PROP);
     Latte.isM = isEntity(isObject, M_PROP);
     Latte.isS = isEntity(isObject, S_PROP);
-    Latte.isA = isEntity(isFunction, A_PROP);
 
     return Latte;
 }));

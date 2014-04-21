@@ -1,4 +1,4 @@
-Библиотека для работы с асинхронным/синхронным кодом на основе концепции монад, стрелок, потоков.
+Библиотека для работы с асинхронным/синхронным кодом на основе концепции монад, потоков.
 
 ### Значение E ###
 
@@ -171,6 +171,14 @@
         return v > 5;
     });
 
+##### pass #####
+Метод отбрасывающий результат предыдущего успешного вычисления
+
+    // Latte.M a -> Latte.M undefined
+    Latte.Mv(5).pass().next(function(v){
+        // v - undefined
+    });
+
 #### Методы Latte.M ####
 
 ##### seq #####
@@ -232,129 +240,11 @@
     Latte.Mv(x).bnd(f).bnd(g) == Latte.Mv(x).bnd(function(x){ return f(x).bnd(g); });
 
 
-### Стрелка Latte.A ###
-
----
-
-Стрелка работает напрямую с монадами Latte.M и реализуют аналогичный интерфейс. Реализована только
-стрелка обратной композиции функции, она только идеалогически соответствует типу Arrow определенному в Haskell.
-Задачи стрелки - осуществить необходимую композицию переданных функций, вызов с определенным значением и
-получения результата. Для передачи значения ("вызова"), стрелку необходимо вызвать как функцию, она принимает один
-аргумент и в качестве возвращаемого значения получает монаду. Создается стрелка с помощью конструктора Latte.A, которому
-передается функция, принимаюшая значение и возвращающая монаду.
-
-    // (a -> Latte.M b) -> Latte.A a Latte.M b
-    Latte.A(function(value){
-        return Latte.Mv(value);
-    });
-
-Вычисление:
-
-    // Latte.A a Latte.M b -> a -> Latte.M b
-    Latte.A(function(value){
-        return Latte.Mv(value);
-    })('value');
-
-Для проверки, что значение является стрелкой, предоставлен метод - Latte.isA
-
-    // a -> Bool
-    Latte.isA('a') === false;
-    Latte.isA(Latte.A(Latte.Mv)) === true;
-
-#### Методы стрелки ####
-
-Определены как методы объекта стрелки, так и статические методы (вызовы от объекта Latte.A);
-Latte.A яляется пространством имен стрелки.
-
-#### Методы объекта ####
-
-##### always #####
-Метод принимает функцию, которой передается значение, независимо от того,
-как закончился процесс вычисления этого значения (значение обычного типа или типа E).
-Возвращаемое методом значение игнорируется.
-
-    // Latte.A a Latte.M b -> (b -> ()) -> Latte.A a Latte.M b
-    Latte.A(Latte.Mv).always(function(value){
-        console.log(value);
-    });
-
-##### next #####
-Метод принимает функцию, которой передается значение только успешного вычисления (не типа E).
-Возвращаемое методом значение игнорируется.
-
-    // Latte.A a Latte.M b -> (b -> ()) -> Latte.A a Latte.M b
-    Latte.A(Latte.Mv).next(function(value){
-        console.log(value);
-    });
-
-##### fail #####
-Метод принимает функцию, которой передается значение только неуспешного вычисления (типа E).
-Возвращаемое методом значение игнорируется.
-
-    // Latte.A a Latte.M E b -> (E b -> ()) -> Latte.A a Latte.M E b
-    Latte.Mv('value').fail(function(value){
-        // функция не будет вызвана!
-    });
-
-    Latte.Mv(Latte.E('error')).fail(function(value){
-        console.log('error: ' + value());
-    });
-
-##### bnd #####
-Метод принимает функцию, принимающую значение предыдущего вычисления и возвращающую новое монадическое значение.
-
-    // Latte.A a Latte.M b -> (b -> Latte.M c) -> Latte.A b Latte.M c
-    Latte.A(Latte.Mv).bnd(function(a){
-        return Latte.Mv(a + 1);
-    });
-
-##### lift #####
-Метод принимает функцию, принимающую значение предыдущего вычисления и возвращающую новое значение,
-которое будет помещено в монаду.
-
-    // Latte.A a Latte.M b -> (b -> c) -> Latte.A b Latte.M c
-    Latte.A(Latte.Mv).lift(function(a){
-        return a + 1;
-    });
-
-##### raise #####
-Метод используется для генерации нового значения типа E, он принимает функцию, принимающую значение типа E и
-возвращащую значение, которое будет обернуто в тип E.
-
-    // Latte.A a Latte.M E b -> (E b -> c) -> Latte.A b Latte.M E c
-    Latte.A(Latte.Mv).raise(function(){
-        // функция не будет вызвана!
-    });
-
-##### when #####
-Метод преобразования текущего успешного значения в значение E,
-если оно не удовлетворяет предикату, иначе оно остается без изменения.
-
-    // Latte.A a Latte.M b -> (b -> Bool) -> Latte.A a Latte.M b
-    Latte.A(Latte.Mv).when(function(v){
-        return v > 5;
-    });
-
-##### unless #####
-Метод преобразования текущего успешного значения в значение E,
-если оно удовлетворяет предикату, иначе оно остается без изменения.
-
-    // Latte.A a Latte.M b -> (b -> Bool) -> Latte.A a Latte.M b
-    Latte.A(Latte.Mv).unless(function(v){
-        return v > 5;
-    });
-
-#### Методы Latte.A ####
-
-Определены методы: Latte.A.seq, Latte.A.allseq, Latte.A.fold, Latte.A.lift, они работают с группой стрелок,
-аналогичный образом, как те же методы для работы с монадами.
-
 ### Поток. Latte.S, Latte.SH, Latte.Sh и Latte.SHh ###
 
 ---
 
-Потоки используются для повторяющихся событий и так же как и стрелки напрямую задействуют монады и реализуют аналогичный
-интерфейс.
+Потоки используются для повторяющихся событий и напрямую задействуют монады, реализуют аналогичный интерфейс.
 
     // ((a -> ()) -> ()) -> Latte.S Latte.M a
     Latte.S(function(h){
@@ -396,13 +286,13 @@ Latte.Sh и Latte.SHh аналогичны методу Latte.Mh, определ
 
 #### Методы объекта ####
 
-always, next, fail, bnd, lift, raise, when, unless.
+always, next, fail, bnd, lift, raise, when, unless, pass.
 
 #### Методы Latte.S и Latte.SH ####
 
 seq, pseq, any, lift, plift, fold, pfold, allseq, pallseq.
 
-### Комбинирование монад, стрелок и потоков ###
+### Комбинирование монад и потоков ###
 
 ---
 
@@ -429,48 +319,4 @@ seq, pseq, any, lift, plift, fold, pfold, allseq, pallseq.
 
     Latte.S.pseq([s, sh, m]).always(function(v){
         console.log(v);
-    });
-
-Вызов стрелки из потока:
-
-    var arw = a = Latte.A(Latte.Mv).lift(function(value){
-        return '[' + value + ']';
-    });
-
-    Latte.SH(function(handle){
-        handle('value');
-    }).bnd(arw).always(function(value){
-        console.log(value); // [value];
-    });
-
-Вызов стрелки инициализирующей поток:
-
-    var arw = Latte.A(Latte.Mv).lift(function(value){
-        return '[' + value + ']';
-    });
-
-    Latte.SH(function(handle){
-        arw('value').always(handle);
-    }).always(function(value){
-        console.log(value); // [value];
-    });
-
-Вызов потока хранящего состояние из стрелки:
-
-    var stream = Latte.SH(function(handle){
-        handle(Date.now());
-
-        setTimeout(function(){
-            handle(Date.now());
-        }, 1000);
-    });
-
-    var arw = Latte.A(function(){
-        return stream.lift(function(value){
-            return 'timestamp: ' + value;
-        });
-    });
-
-    arw().always(function(tsstring){
-        console.log('current ' + tsstring);
     });
