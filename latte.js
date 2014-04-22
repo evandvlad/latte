@@ -17,14 +17,14 @@
 }(this, function(){
 
     var Latte = {
-            version : '1.22.0'
+            version : '1.22.1'
         },
 
         M_PROP = '___M',
         E_PROP = '___E',
         S_PROP = '___S',
 
-        staticMethodsMeta = {
+        staticMetaMethods = {
 
             allseq : function(isResetAcc){
                 return function(xs){
@@ -132,7 +132,7 @@
         };
     }
 
-    function CreateMonad(notifier, mkey){
+    function Build(notifier, mkey){
 
         function M(ctor){
             if(!(this instanceof M)){
@@ -196,15 +196,15 @@
         return M;
     }
 
-    function extendMonadStaticMethods(M, ext){
-        M.allseq = staticMethodsMeta.allseq(true);
-        M.seq = staticMethodsMeta.seq('allseq');
-        M.fold = staticMethodsMeta.fold('seq');
-        M.lift = staticMethodsMeta.lift('seq');
+    function extendStaticMethods(M, ext){
+        M.allseq = staticMetaMethods.allseq(true);
+        M.seq = staticMetaMethods.seq('allseq');
+        M.fold = staticMetaMethods.fold('seq');
+        M.lift = staticMetaMethods.lift('seq');
         return mixMethods(M, ext);
     }
 
-    function CreateHandMonad(M){
+    function BuildHand(M){
         return function(){
             var hm = {};
 
@@ -220,7 +220,7 @@
         return Object.defineProperty(constf(v), E_PROP, {value : true});
     };
 
-    Latte.M = extendMonadStaticMethods(CreateMonad(function(ctor){
+    Latte.M = extendStaticMethods(Build(function(ctor){
         var cbs = [],
             isval = false,
             val;
@@ -230,7 +230,7 @@
                 val = v;
                 isval = true;
                 cbs.forEach(lift(val));
-                cbs = [];
+                cbs = null;
             }
         });
 
@@ -241,7 +241,7 @@
 
     Latte.Mv = compose(lift, Latte.M);
 
-    Latte.S = extendMonadStaticMethods(CreateMonad(function(ctor){
+    Latte.S = extendStaticMethods(Build(function(ctor){
         var cbs = [];
 
         ctor(compose(lift, cbs.forEach.bind(cbs)));
@@ -251,11 +251,10 @@
         };
     }, S_PROP), {
 
-        pallseq : staticMethodsMeta.allseq(false),
-        pseq : staticMethodsMeta.seq('pallseq'),
-        pfold : staticMethodsMeta.fold('pseq'),
-        plift : staticMethodsMeta.lift('pseq'),
-
+        pallseq : staticMetaMethods.allseq(false),
+        pseq : staticMetaMethods.seq('pallseq'),
+        pfold : staticMetaMethods.fold('pseq'),
+        plift : staticMetaMethods.lift('pseq'),
         any : function(ss){
             return this(function(h){
                 ss.forEach(meth('always', h));
@@ -263,7 +262,7 @@
         }
     });
 
-    Latte.SH = mixMethods(CreateMonad(function(ctor){
+    Latte.SH = mixMethods(Build(function(ctor){
         var cbs = [],
             isval = false,
             val;
@@ -279,9 +278,9 @@
         };
     }, S_PROP), Latte.S);
 
-    Latte.Mh = CreateHandMonad(Latte.M);
-    Latte.Sh = CreateHandMonad(Latte.S);
-    Latte.SHh = CreateHandMonad(Latte.SH);
+    Latte.Mh = BuildHand(Latte.M);
+    Latte.Sh = BuildHand(Latte.S);
+    Latte.SHh = BuildHand(Latte.SH);
 
     Latte.isE = isEntity(isFunction, E_PROP);
     Latte.isM = isEntity(isObject, M_PROP);
