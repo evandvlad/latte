@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '1.22.2'
+            version : '1.22.3'
         },
 
         M_PROP = '___M',
@@ -30,7 +30,7 @@
                 return function(xs){
                     var len = xs.length;
 
-                    return this(len ? function(h){
+                    return new this(len ? function(h){
                         var acc = [];
 
                         xs.forEach(function(x, i){
@@ -173,21 +173,21 @@
         M.prototype.bnd = function(f){
             var self = this;
             return new this.constructor(function(c){
-                self._state.on(cond(Latte.isE, c, compose(f, meth('always', c))));
+                return self.always(cond(Latte.isE, c, compose(f, meth('always', c))));
             });
         };
 
         M.prototype.lift = function(f){
             var self = this;
             return new this.constructor(function(c){
-                self._state.on(cond(Latte.isE, c, compose(f, c)));
+                return self.always(cond(Latte.isE, c, compose(f, c)));
             });
         };
 
         M.prototype.raise = function(f){
             var self = this;
             return new this.constructor(function(c){
-                self._state.on(cond(Latte.isE, compose(f, Latte.E, c), c));
+                return self.always(cond(Latte.isE, compose(f, Latte.E, c), c));
             });
         };
 
