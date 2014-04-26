@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '1.22.3'
+            version : '1.23.0'
         },
 
         M_PROP = '___M',
@@ -129,10 +129,15 @@
         this._params = params;
         this._queue = [];
         this._isval = false;
-        executor(this.set.bind(this));
+        executor(this._set.bind(this));
     }
 
-    MState.prototype.set = function(v){
+    MState.prototype.on = function(f){
+        this._queue && this._queue.push(f);
+        this._params.hold && this._isval && f(this._val);
+    };
+
+    MState.prototype._set = function(v){
         if(!this._isval || !this._params.immutable){
             this._queue.forEach(lift(v));
             this._params.immutable && (this._queue = null);
@@ -140,11 +145,6 @@
         }
 
         this._isval = true;
-    };
-
-    MState.prototype.on = function(f){
-        this._queue && this._queue.push(f);
-        this._params.hold && this._isval && f(this._val);
     };
 
     function Build(params){
@@ -192,11 +192,17 @@
         };
 
         M.prototype.when = function(f){
-            return this.lift(cond(f, id, Latte.E));
+            var self = this;
+            return new this.constructor(function(c){
+                return self.next(cond(f, c, id));
+            });
         };
 
         M.prototype.unless = function(f){
-            return this.lift(cond(f, Latte.E, id));
+            var self = this;
+            return new this.constructor(function(c){
+                return self.next(cond(f, id, c));
+            });
         };
 
         M.prototype.pass = function(v){
