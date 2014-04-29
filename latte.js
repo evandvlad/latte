@@ -17,12 +17,15 @@
     'use strict';
 
     var Latte = {
-            version : '1.23.0'
+            version : '1.23.1'
         },
 
         M_PROP = '___M',
         E_PROP = '___E',
         S_PROP = '___S',
+
+        aslice = Array.prototype.slice,
+        toString = Object.prototype.toString,
 
         staticMetaMethods = {
 
@@ -66,7 +69,9 @@
 
             lift : function(methname){
                 return function(f, ms){
-                    return this[methname](ms).lift(Function.prototype.apply.bind(f, null));
+                    return this[methname](ms).lift(function(a){
+                        return f.apply(null, a);
+                    });
                 };
             }
         };
@@ -82,20 +87,22 @@
     }
 
     function isFunction(v){
-        return Object.prototype.toString.call(v) === '[object Function]';
+        return toString.call(v) === '[object Function]';
     }
 
     function isObject(v){
-        return Object.prototype.toString.call(v) === '[object Object]';
+        return toString.call(v) === '[object Object]';
     }
 
-    function compose(){
-        var args = Array.prototype.slice.call(arguments);
+    function bind(f, ctx){
+        return function(){
+            return f.apply(ctx, arguments);
+        };
+    }
 
-        return function(val){
-            return args.reduce(function(v, f){
-                return f(v);
-            }, val);
+    function compose(f, g){
+        return function(x){
+            return g(f(x));
         };
     }
 
@@ -112,8 +119,7 @@
     }
 
     function meth(mname){
-        var args = Array.prototype.slice.call(arguments, 1);
-
+        var args = aslice.call(arguments, 1);
         return function(o){
             return o[mname].apply(o, args);
         };
@@ -129,7 +135,7 @@
         this._params = params;
         this._queue = [];
         this._isval = false;
-        executor(this._set.bind(this));
+        executor(bind(this._set, this));
     }
 
     MState.prototype.on = function(f){
@@ -187,7 +193,7 @@
         M.prototype.raise = function(f){
             var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(Latte.isE, compose(f, Latte.E, c), c));
+                return self.always(cond(Latte.isE, compose(compose(f, Latte.E), c), c));
             });
         };
 
