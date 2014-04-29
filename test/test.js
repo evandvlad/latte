@@ -2265,9 +2265,9 @@ describe('Latte common', function(){
 
         assert.equal(Latte.isE(Latte.E()), true);
         assert.equal(Latte.isE(Latte.E('error')), true);
-    });
+   });
 
-    it('проверка S', function(){
+   it('проверка S', function(){
         assert.equal(Latte.isS(), false);
         assert.equal(Latte.isS({}), false);
         assert.equal(Latte.isS(function(){}), false);
@@ -2280,6 +2280,18 @@ describe('Latte common', function(){
         assert.equal(Latte.isS(Latte.S.plift(function(){}, [Latte.S(function(){})])), true);
 
         assert.equal(Latte.isS(Latte.SH(function(){})), true);
+   });
+
+    it('E и M,S,SH', function(){
+        assert.equal(Latte.E, Latte.M.E);
+        assert.equal(Latte.E, Latte.S.E);
+        assert.equal(Latte.E, Latte.SH.E);
+    });
+
+    it('isE и M,S,SH', function(){
+        assert.equal(Latte.isE, Latte.M.isE);
+        assert.equal(Latte.isE, Latte.S.isE);
+        assert.equal(Latte.isE, Latte.SH.isE);
     });
 });
 

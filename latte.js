@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '1.23.1'
+            version : '1.24.0'
         },
 
         M_PROP = '___M',
@@ -163,37 +163,40 @@
             this._state = new MState(executor, params);
         }
 
+        M.E = Latte.E;
+        M.isE = Latte.isE;
+
         M.prototype.always = function(f){
             this._state.on(f);
             return this;
         };
 
         M.prototype.next = function(f){
-            return this.always(cond(Latte.isE, id, f));
+            return this.always(cond(this.constructor.isE, id, f));
         };
 
         M.prototype.fail = function(f){
-            return this.always(cond(Latte.isE, f, id));
+            return this.always(cond(this.constructor.isE, f, id));
         };
 
         M.prototype.bnd = function(f){
             var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(Latte.isE, c, compose(f, meth('always', c))));
+                return self.always(cond(self.constructor.isE, c, compose(f, meth('always', c))));
             });
         };
 
         M.prototype.lift = function(f){
             var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(Latte.isE, c, compose(f, c)));
+                return self.always(cond(self.constructor.isE, c, compose(f, c)));
             });
         };
 
         M.prototype.raise = function(f){
             var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(Latte.isE, compose(compose(f, Latte.E), c), c));
+                return self.always(cond(self.constructor.isE, compose(compose(f, self.constructor.E), c), c));
             });
         };
 
@@ -253,6 +256,10 @@
         return Object.defineProperty(constf(v), E_PROP, {value : true});
     };
 
+    Latte.isE = isEntity(isFunction, E_PROP);
+    Latte.isM = isEntity(isObject, M_PROP);
+    Latte.isS = isEntity(isObject, S_PROP);
+
     Latte.M = Build({immutable : true, hold : true, mkey : M_PROP});
     Latte.Mv = compose(lift, Latte.M);
     Latte.S = Build({immutable : false, hold : false, mkey : S_PROP});
@@ -260,10 +267,6 @@
     Latte.Mh = BuildHand(Latte.M);
     Latte.Sh = BuildHand(Latte.S);
     Latte.SHh = BuildHand(Latte.SH);
-
-    Latte.isE = isEntity(isFunction, E_PROP);
-    Latte.isM = isEntity(isObject, M_PROP);
-    Latte.isS = isEntity(isObject, S_PROP);
 
     return Latte;
 }));
