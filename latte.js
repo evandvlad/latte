@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '1.24.0'
+            version : '2.0.0'
         },
 
         M_PROP = '___M',
@@ -54,9 +54,23 @@
             seq : function(methname){
                 return function(ms){
                     return this[methname](ms).lift(function(vs){
-                        return vs.reduce(function(acc, v){
-                            return Latte.isE(acc) ? acc : (Latte.isE(v) ? v : (acc.push(v) && acc));
-                        }, []);
+                        var ret = [],
+                            l = vs.length,
+                            i = 0,
+                            v;
+
+                        for(; i < l; i += 1){
+                            v = vs[i];
+
+                            if(ms[i].constructor.isE(v)){
+                                ret = null;
+                                return v;
+                            }
+
+                            ret.push(v);
+                        }
+
+                        return ret;
                     });
                 };
             },
@@ -86,14 +100,6 @@
         };
     }
 
-    function isFunction(v){
-        return toString.call(v) === '[object Function]';
-    }
-
-    function isObject(v){
-        return toString.call(v) === '[object Object]';
-    }
-
     function bind(f, ctx){
         return function(){
             return f.apply(ctx, arguments);
@@ -102,7 +108,7 @@
 
     function compose(f, g){
         return function(x){
-            return g(f(x));
+            return f(g(x));
         };
     }
 
@@ -123,6 +129,21 @@
         return function(o){
             return o[mname].apply(o, args);
         };
+    }
+
+    function mix(oto, ofrom){
+        return Object.keys(ofrom || []).reduce(function(acc, prop){
+            acc[prop] = ofrom[prop];
+            return acc;
+        }, oto);
+    }
+
+    function isFunction(v){
+        return toString.call(v) === '[object Function]';
+    }
+
+    function isObject(v){
+        return toString.call(v) === '[object Object]';
     }
 
     function isEntity(f, prop){
@@ -182,21 +203,21 @@
         M.prototype.bnd = function(f){
             var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(self.constructor.isE, c, compose(f, meth('always', c))));
+                return self.always(cond(self.constructor.isE, c, compose(meth('always', c), f)));
             });
         };
 
         M.prototype.lift = function(f){
             var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(self.constructor.isE, c, compose(f, c)));
+                return self.always(cond(self.constructor.isE, c, compose(c, f)));
             });
         };
 
         M.prototype.raise = function(f){
             var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(self.constructor.isE, compose(compose(f, self.constructor.E), c), c));
+                return self.always(cond(self.constructor.isE, compose(c, compose(self.constructor.E, f)), c));
             });
         };
 
@@ -218,6 +239,14 @@
             return this.lift(constf(v));
         };
 
+        M.Hand = function(){
+            var hm = {};
+            hm.inst = new this(function(h){
+                hm.hand = h;
+            });
+            return hm;
+        };
+
         M.allseq = staticMetaMethods.allseq(true);
         M.seq = staticMetaMethods.seq('allseq');
         M.fold = staticMetaMethods.fold('seq');
@@ -229,27 +258,21 @@
             M.pfold = staticMetaMethods.fold('pseq');
             M.plift = staticMetaMethods.lift('pseq');
             M.any = function(ss){
-                return this(function(h){
+                return new this(function(h){
                     ss.forEach(meth('always', h));
                 });
+            };
+        }
+
+        if(params.mkey === M_PROP){
+            M.Pack = function(v){
+                return new this(lift(v));
             };
         }
 
         Object.defineProperty(M.prototype, params.mkey, {value : true});
 
         return M;
-    }
-
-    function BuildHand(M){
-        return function(){
-            var hm = {};
-
-            hm.inst = M(function(h){
-                hm.hand = h;
-            });
-
-            return hm;
-        };
     }
 
     Latte.E = function(v){
@@ -260,13 +283,35 @@
     Latte.isM = isEntity(isObject, M_PROP);
     Latte.isS = isEntity(isObject, S_PROP);
 
+    Latte.isLatte = function(v){
+        return Latte.isM(v) || Latte.isS(v);
+    };
+
     Latte.M = Build({immutable : true, hold : true, mkey : M_PROP});
-    Latte.Mv = compose(lift, Latte.M);
     Latte.S = Build({immutable : false, hold : false, mkey : S_PROP});
     Latte.SH = Build({immutable : false, hold : true, mkey : S_PROP});
-    Latte.Mh = BuildHand(Latte.M);
-    Latte.Sh = BuildHand(Latte.S);
-    Latte.SHh = BuildHand(Latte.SH);
+
+    Latte.extend = function(M, ext){
+        var Ctor;
+
+        ext = ext || {};
+
+        Ctor = ext.hasOwnProperty('constructor') ?
+            ext.constructor :
+            function Ctor(executor){
+                if(!(this instanceof Ctor)){
+                    return new Ctor(executor);
+                }
+
+                M.call(this, executor);
+            };
+
+        Ctor.prototype = Object.create(M.prototype);
+        Ctor.prototype.constructor = Ctor;
+        mix(Ctor.prototype, ext);
+
+        return mix(Ctor, M);
+    };
 
     return Latte;
 }));
