@@ -17,12 +17,12 @@
     'use strict';
 
     var Latte = {
-            version : '2.0.0'
+            version : '2.0.1'
         },
 
-        M_PROP = '___M',
-        E_PROP = '___E',
-        S_PROP = '___S',
+        M_KEY = '___M',
+        E_KEY = '___E',
+        S_KEY = '___S',
 
         aslice = Array.prototype.slice,
         toString = Object.prototype.toString,
@@ -52,8 +52,8 @@
             },
 
             seq : function(methname){
-                return function(ms){
-                    return this[methname](ms).lift(function(vs){
+                return function(xs){
+                    return this[methname](xs).lift(function(vs){
                         var ret = [],
                             l = vs.length,
                             i = 0,
@@ -62,7 +62,7 @@
                         for(; i < l; i += 1){
                             v = vs[i];
 
-                            if(ms[i].constructor.isE(v)){
+                            if(xs[i].constructor.isE(v)){
                                 ret = null;
                                 return v;
                             }
@@ -76,14 +76,14 @@
             },
 
             fold : function(methname){
-                return function(f, init, ms){
-                    return this[methname](ms).lift(meth('reduce', f, init));
+                return function(f, init, xs){
+                    return this[methname](xs).lift(meth('reduce', f, init));
                 };
             },
 
             lift : function(methname){
-                return function(f, ms){
-                    return this[methname](ms).lift(function(a){
+                return function(f, xs){
+                    return this[methname](xs).lift(function(a){
                         return f.apply(null, a);
                     });
                 };
@@ -152,94 +152,94 @@
         };
     }
 
-    function MState(executor, params){
+    function State(executor, params){
         this._params = params;
         this._queue = [];
-        this._isval = false;
+        this.isval = false;
         executor(bind(this._set, this));
     }
 
-    MState.prototype.on = function(f){
+    State.prototype.on = function(f){
         this._queue && this._queue.push(f);
-        this._params.hold && this._isval && f(this._val);
+        this._params.hold && this.isval && f(this.val);
     };
 
-    MState.prototype._set = function(v){
-        if(!this._isval || !this._params.immutable){
+    State.prototype._set = function(v){
+        if(!this.isval || !this._params.immutable){
             this._queue.forEach(lift(v));
             this._params.immutable && (this._queue = null);
-            this._val = v;
+            this.val = v;
         }
 
-        this._isval = true;
+        this.isval = true;
     };
 
     function Build(params){
 
-        function M(executor){
-            if(!(this instanceof M)){
-                return new M(executor);
+        function L(executor){
+            if(!(this instanceof L)){
+                return new L(executor);
             }
 
-            this._state = new MState(executor, params);
+            this._state = new State(executor, params);
         }
 
-        M.E = Latte.E;
-        M.isE = Latte.isE;
+        L.E = Latte.E;
+        L.isE = Latte.isE;
 
-        M.prototype.always = function(f){
+        L.prototype.always = function(f){
             this._state.on(f);
             return this;
         };
 
-        M.prototype.next = function(f){
+        L.prototype.next = function(f){
             return this.always(cond(this.constructor.isE, id, f));
         };
 
-        M.prototype.fail = function(f){
+        L.prototype.fail = function(f){
             return this.always(cond(this.constructor.isE, f, id));
         };
 
-        M.prototype.bnd = function(f){
+        L.prototype.bnd = function(f){
             var self = this;
             return new this.constructor(function(c){
                 return self.always(cond(self.constructor.isE, c, compose(meth('always', c), f)));
             });
         };
 
-        M.prototype.lift = function(f){
+        L.prototype.lift = function(f){
             var self = this;
             return new this.constructor(function(c){
                 return self.always(cond(self.constructor.isE, c, compose(c, f)));
             });
         };
 
-        M.prototype.raise = function(f){
+        L.prototype.raise = function(f){
             var self = this;
             return new this.constructor(function(c){
                 return self.always(cond(self.constructor.isE, compose(c, compose(self.constructor.E, f)), c));
             });
         };
 
-        M.prototype.when = function(f){
+        L.prototype.when = function(f){
             var self = this;
             return new this.constructor(function(c){
                 return self.next(cond(f, c, id));
             });
         };
 
-        M.prototype.unless = function(f){
+        L.prototype.unless = function(f){
             var self = this;
             return new this.constructor(function(c){
                 return self.next(cond(f, id, c));
             });
         };
 
-        M.prototype.pass = function(v){
+        L.prototype.pass = function(v){
             return this.lift(constf(v));
         };
 
-        M.Hand = function(){
+        L.Hand = function(){
             var hm = {};
             hm.inst = new this(function(h){
                 hm.hand = h;
@@ -247,51 +247,51 @@
             return hm;
         };
 
-        M.allseq = staticMetaMethods.allseq(true);
-        M.seq = staticMetaMethods.seq('allseq');
-        M.fold = staticMetaMethods.fold('seq');
-        M.lift = staticMetaMethods.lift('seq');
+        L.allseq = staticMetaMethods.allseq(true);
+        L.seq = staticMetaMethods.seq('allseq');
+        L.fold = staticMetaMethods.fold('seq');
+        L.lift = staticMetaMethods.lift('seq');
 
-        if(params.mkey === S_PROP){
-            M.pallseq = staticMetaMethods.allseq(false);
-            M.pseq = staticMetaMethods.seq('pallseq');
-            M.pfold = staticMetaMethods.fold('pseq');
-            M.plift = staticMetaMethods.lift('pseq');
-            M.any = function(ss){
+        if(params.key === S_KEY){
+            L.pallseq = staticMetaMethods.allseq(false);
+            L.pseq = staticMetaMethods.seq('pallseq');
+            L.pfold = staticMetaMethods.fold('pseq');
+            L.plift = staticMetaMethods.lift('pseq');
+            L.any = function(ss){
                 return new this(function(h){
                     ss.forEach(meth('always', h));
                 });
             };
         }
 
-        if(params.mkey === M_PROP){
-            M.Pack = function(v){
+        if(params.key === M_KEY){
+            L.Pack = function(v){
                 return new this(lift(v));
             };
         }
 
-        Object.defineProperty(M.prototype, params.mkey, {value : true});
+        Object.defineProperty(L.prototype, params.key, {value : true});
 
-        return M;
+        return L;
     }
 
     Latte.E = function(v){
-        return Object.defineProperty(constf(v), E_PROP, {value : true});
+        return Object.defineProperty(constf(v), E_KEY, {value : true});
     };
 
-    Latte.isE = isEntity(isFunction, E_PROP);
-    Latte.isM = isEntity(isObject, M_PROP);
-    Latte.isS = isEntity(isObject, S_PROP);
+    Latte.isE = isEntity(isFunction, E_KEY);
+    Latte.isM = isEntity(isObject, M_KEY);
+    Latte.isS = isEntity(isObject, S_KEY);
 
-    Latte.isLatte = function(v){
+    Latte.isL = function(v){
         return Latte.isM(v) || Latte.isS(v);
     };
 
-    Latte.M = Build({immutable : true, hold : true, mkey : M_PROP});
-    Latte.S = Build({immutable : false, hold : false, mkey : S_PROP});
-    Latte.SH = Build({immutable : false, hold : true, mkey : S_PROP});
+    Latte.M = Build({immutable : true, hold : true, key : M_KEY});
+    Latte.S = Build({immutable : false, hold : false, key : S_KEY});
+    Latte.SH = Build({immutable : false, hold : true, key : S_KEY});
 
-    Latte.extend = function(M, ext){
+    Latte.extend = function(L, ext){
         var Ctor;
 
         ext = ext || {};
@@ -303,14 +303,14 @@
                     return new Ctor(executor);
                 }
 
-                M.call(this, executor);
+                L.call(this, executor);
             };
 
-        Ctor.prototype = Object.create(M.prototype);
+        Ctor.prototype = Object.create(L.prototype);
         Ctor.prototype.constructor = Ctor;
         mix(Ctor.prototype, ext);
 
-        return mix(Ctor, M);
+        return mix(Ctor, L);
     };
 
     return Latte;

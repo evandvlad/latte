@@ -2293,6 +2293,14 @@ describe('Latte common', function(){
         assert.equal(Latte.isE, Latte.S.isE);
         assert.equal(Latte.isE, Latte.SH.isE);
     });
+
+    it('isL', function(){
+        assert.equal(Latte.isL(Latte.E()), false);
+        assert.equal(Latte.isL(Latte.M.Pack()), true);
+        assert.equal(Latte.isL(Latte.M(function(){})), true);
+        assert.equal(Latte.isL(Latte.S(function(){})), true);
+        assert.equal(Latte.isL(Latte.SH(function(){})), true);
+    });
 });
 
 describe('Latte.extend', function(){
