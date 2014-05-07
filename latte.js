@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '2.0.1'
+            version : '2.1.0'
         },
 
         M_KEY = '___M',
@@ -164,10 +164,16 @@
         this._params.hold && this.isval && f(this.val);
     };
 
+    State.prototype.reset = function(){
+        this._queue = [];
+        this.isval = false;
+        delete this.val;
+    };
+
     State.prototype._set = function(v){
         if(!this.isval || !this._params.immutable){
             this._queue.forEach(lift(v));
-            this._params.immutable && (this._queue = null);
+            this._params.immutable && (this._queue = []);
             this.val = v;
         }
 
