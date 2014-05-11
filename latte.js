@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '2.1.0'
+            version : '2.1.1'
         },
 
         M_KEY = '___M',
@@ -152,25 +152,25 @@
         };
     }
 
-    function State(executor, params){
+    Latte._State = function(executor, params){
         this._params = params;
         this._queue = [];
         this.isval = false;
         executor(bind(this._set, this));
-    }
+    };
 
-    State.prototype.on = function(f){
+    Latte._State.prototype.on = function(f){
         this._queue && this._queue.push(f);
         this._params.hold && this.isval && f(this.val);
     };
 
-    State.prototype.reset = function(){
+    Latte._State.prototype.reset = function(){
         this._queue = [];
         this.isval = false;
         delete this.val;
     };
 
-    State.prototype._set = function(v){
+    Latte._State.prototype._set = function(v){
         if(!this.isval || !this._params.immutable){
             this._queue.forEach(lift(v));
             this._params.immutable && (this._queue = []);
@@ -187,7 +187,7 @@
                 return new L(executor);
             }
 
-            this._state = new State(executor, params);
+            this._state = new Latte._State(executor, params);
         }
 
         L.E = Latte.E;
