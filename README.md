@@ -271,6 +271,16 @@
     Latte.M.lift(function(a, b){
         return a + b;
     }, [Latte.M.Pack(1), Latte.M.Pack(2)]);
+    
+##### bnd #####
+Метод принимает функцию преобразования и список монад, все монадические значения передаются в
+качестве аргументов в функцию преобразования. Функция преобразования возвращает новую монаду. 
+Если одним из значений будет тип E, то функция не будет вызвана.
+
+    // (a -> a -> ... -> Latte.M b) -> [Latte.M a] -> Latte.M b
+    Latte.M.bnd(function(a, b){
+        return Latte.M.Pack(a + b);
+    }, [Latte.M.Pack(1), Latte.M.Pack(2)]);
 
 #### Monad laws ####
 
@@ -347,7 +357,7 @@ always, next, fail, bnd, lift, raise, when, unless, pass.
 
 #### Методы Latte.S и Latte.SH ####
 
-Hand, E, isE, seq, pseq, any, lift, plift, fold, pfold, allseq, pallseq.
+Hand, E, isE, seq, pseq, any, lift, plift, bnd, pbnd, fold, pfold, allseq, pallseq.
 
 (Конструктор Pack, определенный для монады для этих сущностей неопределен).
 

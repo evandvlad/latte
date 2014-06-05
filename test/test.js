@@ -1661,6 +1661,83 @@ describe('Latte Stream', function(){
         assert.equal(st.args[0](), 'err');
     });
 
+    it('static bnd', function(){
+        var st = fspy(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.S(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.S(function(h){
+                handle2 = h;
+            }),
+            s3 = Latte.S(function(h){
+                handle3 = h;
+            });
+
+        Latte.S.bnd(function(a,b,c){
+            return Latte.M.Pack(a + b + c);
+        }, [s1,s2,s3]).always(st);
+
+        handle1(1);
+        assert.equal(st.called, false);
+
+        handle2(2);
+        assert.equal(st.called, false);
+
+        handle3(3);
+        assert.deepEqual(st.args[0], 6);
+    });
+
+    it('SH static bnd', function(){
+        var st = fspy(),
+            s1 = Latte.SH(function(h){
+                h(1);
+            }),
+            s2 = Latte.SH(function(h){
+                h(2);
+            }),
+            s3 = Latte.SH(function(h){
+                h(3);
+            });
+
+        Latte.SH.bnd(function(a,b,c){
+            return Latte.M.Pack(a + b + c);
+        }, [s1,s2,s3]).always(st);
+
+        assert.deepEqual(st.args[0], 6);
+    });
+
+    it('static bnd и значение E', function(){
+        var st = fspy(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.S(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.S(function(h){
+                handle2 = h;
+            }),
+            s3 = Latte.S(function(h){
+                handle3 = h;
+            });
+
+        Latte.S.bnd(function(a, b, c){
+            return Latte.M.Pack(a + b + c);
+        }, [s1,s2,s3]).always(st);
+
+        handle1(2);
+        assert.equal(st.called, false);
+
+        handle2(Latte.E('err'));
+        assert.equal(st.called, false);
+
+        handle3(1);
+        assert.equal(st.args[0](), 'err');
+    });
+
     it('static any', function(){
         var st = fspy(),
             handle1,
@@ -2207,6 +2284,124 @@ describe('Latte Stream', function(){
 
         Latte.S.plift(function(a, b, c){
             return a + b + c;
+        }, [s1,s2,s3]).always(st);
+
+        handle1(1);
+        assert.equal(st.called, false);
+
+        handle2(2);
+        assert.equal(st.called, false);
+
+        handle3(3);
+        assert.equal(st.args[0], 6);
+
+        handle2('+');
+        assert.equal(st.args[0], '1+3');
+
+        handle1('v');
+        assert.equal(st.args[0], 'v+3');
+
+        handle3('w');
+        assert.equal(st.args[0], 'v+w');
+
+        handle2(Latte.E('err'));
+        assert.equal(st.args[0](), 'err');
+
+        handle3(1);
+        assert.equal(st.args[0](), 'err');
+    });
+
+    it('static pbnd', function(){
+        var st = fspy(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.S(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.S(function(h){
+                handle2 = h;
+            }),
+            s3 = Latte.S(function(h){
+                handle3 = h;
+            });
+
+        Latte.S.pbnd(function(a,b,c){
+            return Latte.M.Pack(a + b + c);
+        }, [s1,s2,s3]).always(st);
+
+        handle1(1);
+        assert.equal(st.called, false);
+
+        handle2(2);
+        assert.equal(st.called, false);
+
+        handle3(3);
+        assert.equal(st.args[0], 6);
+
+        handle2('+');
+        assert.equal(st.args[0], '1+3');
+
+        handle1('v');
+        assert.equal(st.args[0], 'v+3');
+
+        handle3('w');
+        assert.equal(st.args[0], 'v+w');
+    });
+
+    it('SH static pbnd', function(){
+        var st = fspy(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.SH(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.SH(function(h){
+                handle2 = h;
+                h(2);
+            }),
+            s3 = Latte.SH(function(h){
+                handle3 = h;
+            });
+
+        Latte.SH.pbnd(function(a,b,c){
+            return Latte.M.Pack(a + b + c);
+        }, [s1,s2,s3]).always(st);
+
+        handle1(1);
+        assert.equal(st.called, false);
+
+        handle3(3);
+        assert.equal(st.args[0], 6);
+
+        handle2('+');
+        assert.equal(st.args[0], '1+3');
+
+        handle1('v');
+        assert.equal(st.args[0], 'v+3');
+
+        handle3('w');
+        assert.equal(st.args[0], 'v+w');
+    });
+
+    it('static pbnd и значение E', function(){
+        var st = fspy(),
+            handle1,
+            handle2,
+            handle3,
+            s1 = Latte.S(function(h){
+                handle1 = h;
+            }),
+            s2 = Latte.S(function(h){
+                handle2 = h;
+            }),
+            s3 = Latte.S(function(h){
+                handle3 = h;
+            });
+
+        Latte.S.pbnd(function(a, b, c){
+            return Latte.M.Pack(a + b + c);
         }, [s1,s2,s3]).always(st);
 
         handle1(1);

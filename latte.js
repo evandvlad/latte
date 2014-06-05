@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '2.1.2'
+            version : '2.1.3'
         },
 
         M_KEY = '___M',
@@ -51,9 +51,9 @@
                 };
             },
 
-            seq : function(methname){
+            seq : function(mname){
                 return function(xs){
-                    return this[methname](xs).lift(function(vs){
+                    return this[mname](xs).lift(function(vs){
                         var ret = [],
                             l = vs.length,
                             i = 0,
@@ -75,15 +75,15 @@
                 };
             },
 
-            fold : function(methname){
+            fold : function(mname){
                 return function(f, init, xs){
-                    return this[methname](xs).lift(meth('reduce', f, init));
+                    return this[mname](xs).lift(meth('reduce', f, init));
                 };
             },
 
-            lift : function(methname){
+            spread : function(statmname, instmname){
                 return function(f, xs){
-                    return this[methname](xs).lift(function(a){
+                    return this[statmname](xs)[instmname](function(a){
                         return f.apply(null, a);
                     });
                 };
@@ -256,13 +256,15 @@
         L.allseq = staticMetaMethods.allseq(true);
         L.seq = staticMetaMethods.seq('allseq');
         L.fold = staticMetaMethods.fold('seq');
-        L.lift = staticMetaMethods.lift('seq');
+        L.lift = staticMetaMethods.spread('seq', 'lift');
+        L.bnd = staticMetaMethods.spread('seq', 'bnd');
 
         if(params.key === S_KEY){
             L.pallseq = staticMetaMethods.allseq(false);
             L.pseq = staticMetaMethods.seq('pallseq');
             L.pfold = staticMetaMethods.fold('pseq');
-            L.plift = staticMetaMethods.lift('pseq');
+            L.plift = staticMetaMethods.spread('pseq', 'lift');
+            L.pbnd = staticMetaMethods.spread('pseq', 'bnd');
             L.any = function(ss){
                 return new this(function(h){
                     ss.forEach(meth('always', h));
