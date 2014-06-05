@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '2.1.3'
+            version : '2.2.0'
         },
 
         M_KEY = '___M',
@@ -51,9 +51,9 @@
                 };
             },
 
-            seq : function(mname){
+            seq : function(smeth){
                 return function(xs){
-                    return this[mname](xs).lift(function(vs){
+                    return this[smeth](xs).lift(function(vs){
                         var ret = [],
                             l = vs.length,
                             i = 0,
@@ -75,15 +75,9 @@
                 };
             },
 
-            fold : function(mname){
-                return function(f, init, xs){
-                    return this[mname](xs).lift(meth('reduce', f, init));
-                };
-            },
-
-            spread : function(statmname, instmname){
+            spread : function(smeth, imeth){
                 return function(f, xs){
-                    return this[statmname](xs)[instmname](function(a){
+                    return this[smeth](xs)[imeth](function(a){
                         return f.apply(null, a);
                     });
                 };
@@ -255,14 +249,12 @@
 
         L.allseq = staticMetaMethods.allseq(true);
         L.seq = staticMetaMethods.seq('allseq');
-        L.fold = staticMetaMethods.fold('seq');
         L.lift = staticMetaMethods.spread('seq', 'lift');
         L.bnd = staticMetaMethods.spread('seq', 'bnd');
 
         if(params.key === S_KEY){
             L.pallseq = staticMetaMethods.allseq(false);
             L.pseq = staticMetaMethods.seq('pallseq');
-            L.pfold = staticMetaMethods.fold('pseq');
             L.plift = staticMetaMethods.spread('pseq', 'lift');
             L.pbnd = staticMetaMethods.spread('pseq', 'bnd');
             L.any = function(ss){
@@ -297,7 +289,6 @@
 
     Latte.M = Build({immutable : true, hold : true, key : M_KEY});
     Latte.S = Build({immutable : false, hold : false, key : S_KEY});
-    Latte.SH = Build({immutable : false, hold : true, key : S_KEY});
 
     Latte.extend = function(L, ext){
         var Ctor;

@@ -253,15 +253,6 @@
     // [Latte.M a] -> Latte.M [a]
     Latte.M.allseq([Latte.M.Pack(1), Latte.M.Pack(Latte.E('error'))]);
 
-##### fold #####
-Метод производит свертку списка монад и возвращает монаду с одним значением. Метод принимает функцию свертки,
-начальное значение и список монад. Если одним из значений будет тип E, то возвращается это монадическое значение.
-
-    // (a -> b -> a) -> a -> [Latte.M b] -> Latte.M a
-    Latte.M.fold(function(acc, v){
-        return acc += v;
-    }, 0, [Latte.M.Pack(1), Latte.M.Pack(2)]);
-
 ##### lift #####
 Метод принимает функцию преобразования и список монад, все монадические значения передаются в
 качестве аргументов в функцию преобразования. Функция преобразования возвращает значение, которое будет преобразовано
@@ -309,7 +300,7 @@
     Latte.M.Pack(x).bnd(f).bnd(g) == Latte.M.Pack(x).bnd(function(x){ return f(x).bnd(g); });
 
 
-### Поток. Latte.S, Latte.SH ###
+### Поток Latte.S ###
 
 ---
 
@@ -320,21 +311,6 @@
         document.addEventListener('click', h, false);
     }).always(function(e){
         console.log(e);
-    });
-
-Отличие потока Latte.SH в том, что он удерживает текущее состояние (SH - stream hold) и в этом смысле аналогичен монаде M,
-только в отличие от нее, может изменять это состояние.
-
-    Latte.S(function(h){
-        h('value');
-    }).always(function(v){
-        // метод не будет вызван, поскольку вызов конструктора произошел ранее добавления метода
-    });
-
-    Latte.SH(function(h){
-        h('value');
-    }).always(function(v){
-        // метод будет вызван, поскольку текущее значение удерживается, v = value
     });
 
 Для проверки, что значение является потоком, предоставлен метод - Latte.isS
@@ -355,9 +331,9 @@
 
 always, next, fail, bnd, lift, raise, when, unless, pass.
 
-#### Методы Latte.S и Latte.SH ####
+#### Методы Latte.S ####
 
-Hand, E, isE, seq, pseq, any, lift, plift, bnd, pbnd, fold, pfold, allseq, pallseq.
+Hand, E, isE, seq, pseq, any, lift, plift, bnd, pbnd, allseq, pallseq.
 
 (Конструктор Pack, определенный для монады для этих сущностей неопределен).
 
@@ -381,32 +357,3 @@ Hand, E, isE, seq, pseq, any, lift, plift, bnd, pbnd, fold, pfold, allseq, palls
 
     var MyM = Latte.extend(Latte.M);
 
-
-### Комбинирование монад и потоков ###
-
----
-
-Комбинация разных типов потоков и монад в операциях со списком:
-
-    var s = Latte.S(function(handle){
-        var x = 0;
-        setInterval(function(){
-            handle(++x);
-        }, 5000);
-    });
-
-    var sh = Latte.SH(function(handle){
-        var x = 0;
-
-        setInterval(function(){
-            handle(++x);
-        }, 5000);
-
-        handle(x);
-    });
-
-    var m = Latte.M.Pack(0);
-
-    Latte.S.pseq([s, sh, m]).always(function(v){
-        console.log(v);
-    });
