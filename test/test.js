@@ -650,6 +650,38 @@ describe('Latte Monad', function(){
         assert.equal(st2.args[0], 'test');
     });
 
+    it('wait', function(done){
+        var st = fspy();
+
+        Latte.M.Pack('test').wait(15).always(st);
+
+        assert.equal(st.called, false);
+
+        setTimeout(function(){
+            assert.equal(st.called, true);
+            assert.equal(st.args[0], 'test');
+            done();
+        }, 20);
+    });
+
+    it('wait на выходе первый результат', function(done){
+        var st = fspy(),
+            m = Latte.M.Hand();
+
+        m.inst.wait(15).always(st);
+        m.hand('test');
+        m.hand('rest');
+        m.hand('west');
+
+        assert.equal(st.called, false);
+
+        setTimeout(function(){
+            assert.equal(st.called, true);
+            assert.equal(st.args[0], 'test');
+            done();
+        }, 20);
+    });
+
     it('static seq пустой массив', function(){
         var st = fspy();
         Latte.M.seq([]).always(st);
@@ -1014,6 +1046,43 @@ describe('Latte Stream', function(){
 
         handle(Latte.E('e'));
         assert.equal(st.args[0](), 'err: e');
+    });
+
+    it('wait', function(done){
+        var st = fspy(),
+            handle;
+
+        Latte.S(function(h){
+            handle = h;
+        }).wait(15).always(st);
+
+        assert.equal(st.called, false);
+
+        handle('test');
+
+        setTimeout(function(){
+            assert.equal(st.called, true);
+            assert.equal(st.args[0], 'test');
+            done();
+        }, 20);
+    });
+
+    it('wait на выходе последний результат', function(done){
+        var st = fspy(),
+            s = Latte.S.Hand();
+
+        s.inst.wait(15).always(st);
+        s.hand('test');
+        s.hand('rest');
+        s.hand('west');
+
+        assert.equal(st.called, false);
+
+        setTimeout(function(){
+            assert.equal(st.called, true);
+            assert.equal(st.args[0], 'west');
+            done();
+        }, 20);
     });
 
     it('static seq', function(){

@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '2.2.0'
+            version : '2.3.0'
         },
 
         M_KEY = '___M',
@@ -237,6 +237,21 @@
 
         L.prototype.pass = function(v){
             return this.lift(constf(v));
+        };
+
+        L.prototype.wait = function(delay){
+            var self = this,
+                tid = null;
+
+            return new this.constructor(function(c){
+                return self.always(function(v){
+                    tid && clearTimeout(tid);
+                    tid = setTimeout(function(){
+                        c(v);
+                        tid = null;
+                    }, delay);
+                });
+            });
         };
 
         L.Hand = function(){

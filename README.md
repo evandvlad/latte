@@ -206,6 +206,16 @@
     }).pass('value').next(function(v){
         // v - value
     });
+    
+##### wait #####
+Метод приостанавливающий последующие вызовы на определенное число миллисекунд, метод возвращает новую монаду. 
+ 
+    // Latte.M a -> int -> Latte M a
+    Latte.M(function(h){
+        h(5);
+    }).wait(100).next(function(v){
+        console.log('after 100 ms value - ' + v);
+    });
 
 #### Методы Latte.M ####
 
@@ -329,7 +339,9 @@
 
 #### Методы объекта ####
 
-always, next, fail, bnd, lift, raise, when, unless, pass.
+always, next, fail, bnd, lift, raise, when, unless, pass, 
+wait (метод приостанавливает вызов, по аналогии с методом монады, кроме того, ожидает
+окончание всех вызовов за этот промежуток времени и после этого возвращает результат последнего вызова)
 
 #### Методы Latte.S ####
 
