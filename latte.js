@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '2.3.0'
+            version : '2.4.0'
         },
 
         M_KEY = '___M',
@@ -304,6 +304,16 @@
 
     Latte.M = Build({immutable : true, hold : true, key : M_KEY});
     Latte.S = Build({immutable : false, hold : false, key : S_KEY});
+
+    Latte.compose = function(fs, initVal){
+        if(!fs.length){
+            throw new Error('empty list');
+        }
+
+        return fs.reduce(function(acc, f){
+            return acc.bnd(f);
+        }, fs.shift()(initVal));
+    };
 
     Latte.extend = function(L, ext){
         var Ctor;

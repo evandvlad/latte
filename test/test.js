@@ -1790,6 +1790,81 @@ describe('Latte common', function(){
     });
 });
 
+describe('Latte.compose', function(){
+
+    it('empty list exception', function(){
+        assert.throws(function(){
+            Latte.compose([]);
+        }, Error);
+    });
+
+    it('Latte.M success compose', function(){
+        var spy = fspy(),
+            wfn = function(v){
+                return Latte.M.Pack(v + 1);
+            };
+
+        Latte.compose([wfn, wfn, wfn], 5).always(spy);
+
+        assert.equal(spy.called, true);
+        assert.equal(spy.args[0], 8);
+    });
+
+    it('Latte.M error compose', function(){
+        var spy = fspy(),
+            wfn = function(v){
+                return Latte.M.Pack(Latte.E('error'));
+            };
+
+        Latte.compose([wfn, wfn, wfn], 5).always(spy);
+
+        assert.equal(spy.called, true);
+        assert.equal(spy.args[0](), 'error');
+    });
+
+    it('Latte.M not called next functions if error', function(){
+        var spy = fspy(),
+            called = 0,
+            wfn = function(v){
+                called += 1;
+                return Latte.M.Pack(Latte.E('error'));
+            };
+
+        Latte.compose([wfn, wfn, wfn], 5).always(spy);
+
+        assert.equal(spy.called, true);
+        assert.equal(spy.args[0](), 'error');
+        assert.equal(called, 1);
+    });
+
+    it('Latte.M & Latte.S', function(){
+        var spy = fspy(),
+            handle;
+
+        Latte.compose([
+            function(){
+                var s = Latte.S.Hand();
+                handle = s.hand;
+                return s.inst;
+            },
+            function(v){
+                return Latte.M.Pack('test-' + v);
+            }
+        ]).always(spy);
+
+        handle('1');
+        assert.equal(spy.args[0], 'test-1');
+
+        handle('2');
+        assert.equal(spy.args[0], 'test-2');
+
+        handle('3');
+        assert.equal(spy.args[0], 'test-3');
+
+        assert.equal(spy.count, 3);
+    });
+});
+
 describe('Latte.extend', function(){
 
     it('c расширением', function(){
