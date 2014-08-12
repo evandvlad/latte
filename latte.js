@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '2.4.0'
+            version : '2.5.0'
         },
 
         M_KEY = '___M',
@@ -95,8 +95,9 @@
     }
 
     function bind(f, ctx){
+        var args = aslice.call(arguments, 2);
         return function(){
-            return f.apply(ctx, arguments);
+            return f.apply(ctx, args.concat(aslice.call(arguments)));
         };
     }
 
@@ -144,6 +145,15 @@
         return function(v){
             return f(v) && !!v[prop];
         };
+    }
+
+    function gen(g, h, v){
+        var gdata = g.next(v),
+            gv = gdata.value;
+
+        !gdata.done ?
+            (Latte.isM(gv) ? gv.next(bind(gen, null, g, h)).fail(h) : gen(g, h, gv)) :
+            h(gv);
     }
 
     Latte._State = function(executor, params){
@@ -260,6 +270,12 @@
                 hm.hand = h;
             });
             return hm;
+        };
+
+        L.Gen = function(g){
+            return new this(function(h){
+                gen(g(h), h);
+            });
         };
 
         L.allseq = staticMetaMethods.allseq(true);

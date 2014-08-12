@@ -741,6 +741,71 @@ describe('Latte Monad', function(){
 
         assert.equal(st.args[0](), 'e');
     });
+
+    it('Gen sync only return', function(){
+        var spy = fspy();
+
+        Latte.M.Gen(function*(){
+            return 5;
+        }).always(spy);
+
+        assert.equal(spy.args[0], 5);
+    });
+
+    it('Gen sync only return & yield', function(){
+        var spy = fspy();
+
+        Latte.M.Gen(function*(){
+            var x = yield Latte.M.Pack(12),
+                y = yield Latte.M.Pack(3);
+
+            return (x / y + 5);
+        }).always(spy);
+
+        assert.equal(spy.args[0], 9);
+    });
+
+    it('Gen async', function(done){
+        var spy = fspy();
+
+        Latte.M.Gen(function*(){
+            var x = yield Latte.M(function(h){
+                    setTimeout(function(){
+                        h(12);
+                    }, 10)
+                }),
+                y = yield 3;
+
+            return (x / y + 5);
+        }).always(spy);
+
+        setTimeout(function(){
+            assert.equal(spy.args[0], 9);
+            done();
+        }, 15);
+    });
+
+    it('Gen async with handle', function(done){
+        var spy = fspy();
+
+        Latte.M.Gen(function*(h){
+            var x = yield Latte.M(function(h){
+                    setTimeout(function(){
+                        h(12);
+                    }, 10)
+                }),
+                y = yield 3;
+
+            h('break');
+
+            return (x / y + 5);
+        }).always(spy);
+
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'break');
+            done();
+        }, 15);
+    });
 });
 
 describe('Latte Stream', function(){
@@ -1725,7 +1790,6 @@ describe('Latte Stream', function(){
         handle3(1);
         assert.equal(st.args[0](), 'err');
     });
-
 });
 
 describe('Latte common', function(){
