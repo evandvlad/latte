@@ -17,12 +17,14 @@
     'use strict';
 
     var Latte = {
-            version : '2.5.0'
+            version : '3.0.0'
         },
 
         M_KEY = '___M',
         E_KEY = '___E',
         S_KEY = '___S',
+
+        L_STATE_PRIVATE_PROP = '_____####![state]',
 
         aslice = Array.prototype.slice,
         toString = Object.prototype.toString,
@@ -76,9 +78,9 @@
             },
 
             spread : function(smeth, imeth){
-                return function(f, xs){
+                return function(f, xs, ctx){
                     return this[smeth](xs)[imeth](function(a){
-                        return f.apply(null, a);
+                        return f.apply(ctx, a);
                     });
                 };
             }
@@ -94,10 +96,9 @@
         };
     }
 
-    function bind(f, ctx){
-        var args = aslice.call(arguments, 2);
-        return function(){
-            return f.apply(ctx, args.concat(aslice.call(arguments)));
+    function bindc(f, ctx){
+        return function(v){
+            return f.call(ctx, v);
         };
     }
 
@@ -151,16 +152,14 @@
         var gdata = g.next(v),
             gv = gdata.value;
 
-        !gdata.done ?
-            (Latte.isM(gv) ? gv.next(bind(gen, null, g, h)).fail(h) : gen(g, h, gv)) :
-            h(gv);
+        !gdata.done ? (Latte.isM(gv) ? gv.next(gen.bind(null, g, h)).fail(h) : gen(g, h, gv)) : h(gv);
     }
 
     Latte._State = function(executor, params){
         this._params = params;
         this._queue = [];
         this.isval = false;
-        executor(bind(this._set, this));
+        executor(bindc(this._set, this));
     };
 
     Latte._State.prototype.on = function(f){
@@ -186,62 +185,62 @@
 
     function Build(params){
 
-        function L(executor){
+        function L(executor, ctx){
             if(!(this instanceof L)){
-                return new L(executor);
+                return new L(executor, ctx);
             }
 
-            this._state = new Latte._State(executor, params);
+            this[L_STATE_PRIVATE_PROP] = new Latte._State(bindc(executor, ctx), params);
         }
 
         L.E = Latte.E;
         L.isE = Latte.isE;
 
-        L.prototype.always = function(f){
-            this._state.on(f);
+        L.prototype.always = function(f, ctx){
+            this[L_STATE_PRIVATE_PROP].on(bindc(f, ctx));
             return this;
         };
 
-        L.prototype.next = function(f){
-            return this.always(cond(this.constructor.isE, id, f));
+        L.prototype.next = function(f, ctx){
+            return this.always(cond(this.constructor.isE, id, bindc(f, ctx)));
         };
 
-        L.prototype.fail = function(f){
-            return this.always(cond(this.constructor.isE, f, id));
+        L.prototype.fail = function(f, ctx){
+            return this.always(cond(this.constructor.isE, bindc(f, ctx), id));
         };
 
-        L.prototype.bnd = function(f){
+        L.prototype.bnd = function(f, ctx){
             var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(self.constructor.isE, c, compose(meth('always', c), f)));
+                return self.always(cond(self.constructor.isE, c, compose(meth('always', c), bindc(f, ctx))));
             });
         };
 
-        L.prototype.lift = function(f){
+        L.prototype.lift = function(f, ctx){
             var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(self.constructor.isE, c, compose(c, f)));
+                return self.always(cond(self.constructor.isE, c, compose(c, bindc(f, ctx))));
             });
         };
 
-        L.prototype.raise = function(f){
+        L.prototype.raise = function(f, ctx){
             var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(self.constructor.isE, compose(c, compose(self.constructor.E, f)), c));
+                return self.always(cond(self.constructor.isE, compose(c, compose(self.constructor.E, bindc(f, ctx))), c));
             });
         };
 
-        L.prototype.when = function(f){
+        L.prototype.when = function(f, ctx){
             var self = this;
             return new this.constructor(function(c){
-                return self.next(cond(f, c, id));
+                return self.next(cond(bindc(f, ctx), c, id));
             });
         };
 
-        L.prototype.unless = function(f){
+        L.prototype.unless = function(f, ctx){
             var self = this;
             return new this.constructor(function(c){
-                return self.next(cond(f, id, c));
+                return self.next(cond(bindc(f, ctx), id, c));
             });
         };
 
@@ -272,9 +271,9 @@
             return hm;
         };
 
-        L.Gen = function(g){
+        L.Gen = function(g, ctx){
             return new this(function(h){
-                gen(g(h), h);
+                gen(bindc(g, ctx)(h), h);
             });
         };
 
