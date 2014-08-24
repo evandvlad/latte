@@ -17,14 +17,12 @@
     'use strict';
 
     var Latte = {
-            version : '3.0.0'
+            version : '3.0.1'
         },
 
         M_KEY = '___M',
         E_KEY = '___E',
         S_KEY = '___S',
-
-        L_STATE_PRIVATE_PROP = '_____####![state]',
 
         aslice = Array.prototype.slice,
         toString = Object.prototype.toString,
@@ -156,10 +154,17 @@
     }
 
     Latte._State = function(executor, params){
+        var handle = bindc(this._set, this);
+
         this._params = params;
         this._queue = [];
         this.isval = false;
-        executor(bindc(this._set, this));
+
+        params.async ?
+            setTimeout(function(){
+                executor(handle);
+            }, 0) :
+            executor(handle);
     };
 
     Latte._State.prototype.on = function(f){
@@ -183,6 +188,8 @@
         this.isval = true;
     };
 
+    Latte._STATE_PRIVATE_PROP = '_____####![state]';
+
     function Build(params){
 
         function L(executor, ctx){
@@ -190,14 +197,14 @@
                 return new L(executor, ctx);
             }
 
-            this[L_STATE_PRIVATE_PROP] = new Latte._State(bindc(executor, ctx), params);
+            this[Latte._STATE_PRIVATE_PROP] = new Latte._State(bindc(executor, ctx), params);
         }
 
         L.E = Latte.E;
         L.isE = Latte.isE;
 
         L.prototype.always = function(f, ctx){
-            this[L_STATE_PRIVATE_PROP].on(bindc(f, ctx));
+            this[Latte._STATE_PRIVATE_PROP].on(bindc(f, ctx));
             return this;
         };
 
@@ -210,38 +217,33 @@
         };
 
         L.prototype.bnd = function(f, ctx){
-            var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(self.constructor.isE, c, compose(meth('always', c), bindc(f, ctx))));
-            });
+                return this.always(cond(this.constructor.isE, c, compose(meth('always', c), bindc(f, ctx))));
+            }, this);
         };
 
         L.prototype.lift = function(f, ctx){
-            var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(self.constructor.isE, c, compose(c, bindc(f, ctx))));
-            });
+                return this.always(cond(this.constructor.isE, c, compose(c, bindc(f, ctx))));
+            }, this);
         };
 
         L.prototype.raise = function(f, ctx){
-            var self = this;
             return new this.constructor(function(c){
-                return self.always(cond(self.constructor.isE, compose(c, compose(self.constructor.E, bindc(f, ctx))), c));
-            });
+                return this.always(cond(this.constructor.isE, compose(c, compose(this.constructor.E, bindc(f, ctx))), c));
+            }, this);
         };
 
         L.prototype.when = function(f, ctx){
-            var self = this;
             return new this.constructor(function(c){
-                return self.next(cond(bindc(f, ctx), c, id));
-            });
+                return this.next(cond(bindc(f, ctx), c, id));
+            }, this);
         };
 
         L.prototype.unless = function(f, ctx){
-            var self = this;
             return new this.constructor(function(c){
-                return self.next(cond(bindc(f, ctx), id, c));
-            });
+                return this.next(cond(bindc(f, ctx), id, c));
+            }, this);
         };
 
         L.prototype.pass = function(v){
@@ -249,25 +251,39 @@
         };
 
         L.prototype.wait = function(delay){
-            var self = this,
-                tid = null;
+            var tid = null;
 
             return new this.constructor(function(c){
-                return self.always(function(v){
+                return this.always(function(v){
                     tid && clearTimeout(tid);
                     tid = setTimeout(function(){
                         c(v);
                         tid = null;
                     }, delay);
                 });
-            });
+            }, this);
         };
 
         L.Hand = function(){
-            var hm = {};
+            var hm = {},
+                isval = false,
+                val,
+                f;
+
+            hm.hand = function(v){
+                if(!isval || !params.immutable){
+                    val = v;
+                    f && f(v);
+                }
+
+                isval = true;
+            };
+
             hm.inst = new this(function(h){
-                hm.hand = h;
-            });
+                f = h;
+                isval && f(val);
+            }, hm);
+
             return hm;
         };
 
@@ -317,8 +333,8 @@
         return Latte.isM(v) || Latte.isS(v);
     };
 
-    Latte.M = Build({immutable : true, hold : true, key : M_KEY});
-    Latte.S = Build({immutable : false, hold : false, key : S_KEY});
+    Latte.M = Build({immutable : true, hold : true, key : M_KEY, async : false});
+    Latte.S = Build({immutable : false, hold : true, key : S_KEY, async : false});
 
     Latte.compose = function(fs, initVal){
         if(!fs.length){
