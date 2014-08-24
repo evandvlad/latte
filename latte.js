@@ -17,12 +17,14 @@
     'use strict';
 
     var Latte = {
-            version : '3.0.1'
+            version : '4.0.0'
         },
 
         M_KEY = '___M',
         E_KEY = '___E',
         S_KEY = '___S',
+
+        NOTHING = new String('Nothing'),
 
         aslice = Array.prototype.slice,
         toString = Object.prototype.toString,
@@ -158,7 +160,7 @@
 
         this._params = params;
         this._queue = [];
-        this.isval = false;
+        this.val = NOTHING;
 
         params.async ?
             setTimeout(function(){
@@ -169,23 +171,20 @@
 
     Latte._State.prototype.on = function(f){
         this._queue && this._queue.push(f);
-        this._params.hold && this.isval && f(this.val);
+        this._params.hold && this.val !== NOTHING && f(this.val);
     };
 
     Latte._State.prototype.reset = function(){
         this._queue = [];
-        this.isval = false;
-        delete this.val;
+        this.val = NOTHING;
     };
 
     Latte._State.prototype._set = function(v){
-        if(!this.isval || !this._params.immutable){
+        if(this.val === NOTHING || !this._params.immutable){
             this._queue.forEach(lift(v));
             this._params.immutable && (this._queue = null);
             this.val = v;
         }
-
-        this.isval = true;
     };
 
     Latte._STATE_PRIVATE_PROP = '_____####![state]';
@@ -266,22 +265,19 @@
 
         L.Hand = function(){
             var hm = {},
-                isval = false,
-                val,
+                val = NOTHING,
                 f;
 
             hm.hand = function(v){
-                if(!isval || !params.immutable){
+                if(val === NOTHING || !params.immutable){
                     val = v;
                     f && f(v);
                 }
-
-                isval = true;
             };
 
             hm.inst = new this(function(h){
                 f = h;
-                isval && f(val);
+                val !== NOTHING && f(val);
             }, hm);
 
             return hm;
@@ -333,8 +329,8 @@
         return Latte.isM(v) || Latte.isS(v);
     };
 
-    Latte.M = Build({immutable : true, hold : true, key : M_KEY, async : false});
-    Latte.S = Build({immutable : false, hold : true, key : S_KEY, async : false});
+    Latte.M = Build({immutable : true, hold : true, key : M_KEY, async : true});
+    Latte.S = Build({immutable : false, hold : true, key : S_KEY, async : true});
 
     Latte.compose = function(fs, initVal){
         if(!fs.length){
