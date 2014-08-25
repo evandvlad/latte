@@ -4,8 +4,10 @@
  * Time: 22:52
  */
 
-var assert = require("assert"),
-    Latte = require("../latte.js"),
+var traceur = require("../gtraceur/node_modules/traceur"),
+    assert = require("assert"),
+//    Latte = require("../latte.js"),
+    Latte = require("../latte.es6.cmpl.js")['default'],
     fspy = require("./fspy.js");
 
 describe('Monadic Laws', function(){
@@ -163,7 +165,7 @@ describe('Latte Monad', function(){
             assert.equal(st.called, true);
             assert.equal(st.args[0], 'test');
             done();
-        }, 50);
+        }, 80);
     });
 
     it('M игнорирование повторных вызовов обработчика', function(done){
@@ -354,7 +356,7 @@ describe('Latte Monad', function(){
         var m = Latte.M(function(h){
                 setTimeout(function(){
                     h('test');
-                }, 10);
+                }, 0);
             }),
             ctx = {v : '-1'},
             r;
@@ -366,7 +368,7 @@ describe('Latte Monad', function(){
         setTimeout(function(){
             assert.equal(r, 'test-1');
             done();
-        }, 30);
+        }, 80);
     });
 
     it('next', function(done){
@@ -657,7 +659,7 @@ describe('Latte Monad', function(){
             assert.equal(st4.args[0], '<[test!]>');
 
             done();
-        }, 140);
+        }, 220);
     });
 
     it('lift', function(done){
@@ -963,7 +965,7 @@ describe('Latte Monad', function(){
             assert.equal(st.called, true);
             assert.equal(st.args[0], 'test');
             done();
-        }, 110);
+        }, 150);
     });
 
     it('static seq пустой массив', function(done){
@@ -1090,7 +1092,7 @@ describe('Latte Monad', function(){
         setTimeout(function(){
             assert.equal(spy.args[0], 9);
             done();
-        }, 100);
+        }, 150);
     });
 
     it('Gen context', function(done){
