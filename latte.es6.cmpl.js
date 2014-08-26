@@ -10,8 +10,51 @@ var M_KEY = '___M',
     E_KEY = '___E',
     S_KEY = '___S',
     NOTHING = new String('Nothing');
-var Latte = {version: '4.0.0'},
+var Latte = {version: '4.1.0'},
     toString = Object.prototype.toString,
+    id = (function(v) {
+      return v;
+    }),
+    bindc = (function(f, ctx) {
+      return (function(v) {
+        return f.call(ctx, v);
+      });
+    }),
+    compose = (function(f, g) {
+      return (function(x) {
+        return f(g(x));
+      });
+    }),
+    cond = (function(p, t, f) {
+      return (function(v) {
+        return p(v) ? t(v) : f(v);
+      });
+    }),
+    meth = (function(mname) {
+      for (var args = [],
+          $__2 = 1; $__2 < arguments.length; $__2++)
+        $traceurRuntime.setProperty(args, $__2 - 1, arguments[$traceurRuntime.toProperty($__2)]);
+      return (function(o) {
+        return o[$traceurRuntime.toProperty(mname)].apply(o, args);
+      });
+    }),
+    isFunction = (function(v) {
+      return toString.call(v) === '[object Function]';
+    }),
+    isObject = (function(v) {
+      return toString.call(v) === '[object Object]';
+    }),
+    isEntity = (function(f, prop) {
+      return (function(v) {
+        return f(v) && !!v[$traceurRuntime.toProperty(prop)];
+      });
+    }),
+    gen = (function(g, h, v) {
+      var $__4 = g.next(v),
+          done = $__4.done,
+          value = $__4.value;
+      !done ? (Latte.isM(value) ? value.next(gen.bind(null, g, h)).fail(h) : gen(g, h, value)) : h(value);
+    }),
     staticMetaMethods = {
       allseq: (function(isResetAcc) {
         return function(xs) {
@@ -101,66 +144,16 @@ var Latte = {version: '4.0.0'},
         };
       })
     };
-function id(v) {
-  return v;
-}
-function bindc(f, ctx) {
-  return (function(v) {
-    return f.call(ctx, v);
-  });
-}
-function compose(f, g) {
-  return (function(x) {
-    return f(g(x));
-  });
-}
-function cond(p, t, f) {
-  return (function(v) {
-    return p(v) ? t(v) : f(v);
-  });
-}
-function meth(mname) {
-  for (var args = [],
-      $__2 = 1; $__2 < arguments.length; $__2++)
-    $traceurRuntime.setProperty(args, $__2 - 1, arguments[$traceurRuntime.toProperty($__2)]);
-  return (function(o) {
-    return o[$traceurRuntime.toProperty(mname)].apply(o, args);
-  });
-}
-function isFunction(v) {
-  return toString.call(v) === '[object Function]';
-}
-function isObject(v) {
-  return toString.call(v) === '[object Object]';
-}
-function isEntity(f, prop) {
-  return (function(v) {
-    return f(v) && !!v[$traceurRuntime.toProperty(prop)];
-  });
-}
-function gen(g, h, v) {
-  var $__3 = g.next(v),
-      done = $__3.done,
-      value = $__3.value;
-  !done ? (Latte.isM(value) ? value.next(gen.bind(null, g, h)).fail(h) : gen(g, h, value)) : h(value);
-}
 var State = function State(executor, params) {
-  var handle = bindc(this._set, this);
   this._params = params;
   this._queue = [];
   this.val = NOTHING;
-  params.async ? setTimeout((function() {
-    return executor(handle);
-  }), 0) : executor(handle);
+  executor(bindc(this._set, this));
 };
 ($traceurRuntime.createClass)(State, {
   on: function(f) {
     this._queue && this._queue.push(f);
-    this._params.hold && this.val !== NOTHING && f(this.val);
-  },
-  reset: function() {
-    this._queue = [];
-    this.val = NOTHING;
+    this.val !== NOTHING && f(this.val);
   },
   _set: function(v) {
     if (this.val === NOTHING || !this._params.immutable) {
@@ -175,7 +168,7 @@ var State = function State(executor, params) {
 function Build(params) {
   function L(executor, ctx) {
     if (!(this instanceof L)) {
-      return new L(executor, ctx);
+      return new (Function.prototype.bind.apply(L, $traceurRuntime.spread([null], Array.from(arguments))))();
     }
     $traceurRuntime.setProperty(this, Latte._STATE_PRIVATE_PROP, new Latte._State(bindc(executor, ctx), params));
   }
@@ -209,6 +202,12 @@ function Build(params) {
       return $__0.always(cond($__0.constructor.isE, compose(c, compose($__0.constructor.E, bindc(f, ctx))), c));
     }));
   };
+  L.prototype.repair = function(f, ctx) {
+    var $__0 = this;
+    return new this.constructor((function(c) {
+      return $__0.always(cond($__0.constructor.isE, compose(meth('always', c), bindc(f, ctx)), c));
+    }));
+  };
   L.prototype.when = function(f, ctx) {
     var $__0 = this;
     return new this.constructor((function(c) {
@@ -222,7 +221,7 @@ function Build(params) {
     }));
   };
   L.prototype.pass = function(v) {
-    return this.lift((function(vl) {
+    return this.lift((function() {
       return v;
     }));
   };
@@ -286,9 +285,9 @@ function Build(params) {
   return L;
 }
 Latte._State = State;
-Latte._STATE_PRIVATE_PROP = Symbol('_____####![state]');
+Latte._STATE_PRIVATE_PROP = Symbol('_state');
 Latte.E = (function(v) {
-  return Object.defineProperty((function(vl) {
+  return Object.defineProperty((function() {
     return v;
   }), E_KEY, {value: true});
 });
@@ -300,31 +299,30 @@ Latte.isL = (function(v) {
 });
 Latte.M = Build({
   immutable: true,
-  hold: true,
-  key: M_KEY,
-  async: true
+  key: M_KEY
 });
 Latte.S = Build({
   immutable: false,
-  hold: true,
-  key: S_KEY,
-  async: true
+  key: S_KEY
 });
-Latte.compose = (function(fs, initVal) {
-  if (!fs.length) {
-    throw new Error('empty list');
-  }
-  return fs.reduce((function(acc, f) {
+Latte.compose = (function($__4, initVal) {
+  var $__5 = $__4,
+      fn = $__5[0],
+      fns = Array.prototype.slice.call($__5, 1);
+  return fns.reduce((function(acc, f) {
     return acc.bnd(f);
-  }), fs.shift()(initVal));
+  }), fn(initVal));
 });
 Latte.extend = (function(L) {
   var ext = arguments[1] !== (void 0) ? arguments[1] : {};
-  var Ctor = ext.hasOwnProperty('constructor') ? ext.constructor : function Ctor(executor) {
+  var Ctor = ext.hasOwnProperty('constructor') ? ext.constructor : function Ctor() {
+    for (var args = [],
+        $__3 = 0; $__3 < arguments.length; $__3++)
+      $traceurRuntime.setProperty(args, $__3, arguments[$traceurRuntime.toProperty($__3)]);
     if (!(this instanceof Ctor)) {
-      return new Ctor(executor);
+      return new (Function.prototype.bind.apply(Ctor, $traceurRuntime.spread([null], args)))();
     }
-    L.call(this, executor);
+    L.apply(this, args);
   };
   Object.assign(Object.setPrototypeOf(Ctor.prototype, L.prototype), ext);
   return Object.assign(Ctor, L);

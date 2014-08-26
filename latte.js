@@ -17,7 +17,7 @@
     'use strict';
 
     var Latte = {
-            version : '4.0.0'
+            version : '4.1.0'
         },
 
         M_KEY = '___M',
@@ -156,27 +156,15 @@
     }
 
     Latte._State = function(executor, params){
-        var handle = bindc(this._set, this);
-
         this._params = params;
         this._queue = [];
         this.val = NOTHING;
-
-        params.async ?
-            setTimeout(function(){
-                executor(handle);
-            }, 0) :
-            executor(handle);
+        executor(bindc(this._set, this));
     };
 
     Latte._State.prototype.on = function(f){
         this._queue && this._queue.push(f);
-        this._params.hold && this.val !== NOTHING && f(this.val);
-    };
-
-    Latte._State.prototype.reset = function(){
-        this._queue = [];
-        this.val = NOTHING;
+        this.val !== NOTHING && f(this.val);
     };
 
     Latte._State.prototype._set = function(v){
@@ -230,6 +218,12 @@
         L.prototype.raise = function(f, ctx){
             return new this.constructor(function(c){
                 return this.always(cond(this.constructor.isE, compose(c, compose(this.constructor.E, bindc(f, ctx))), c));
+            }, this);
+        };
+
+        L.prototype.repair = function(f, ctx){
+            return new this.constructor(function(c){
+                return this.always(cond(this.constructor.isE, compose(meth('always', c), bindc(f, ctx)), c));
             }, this);
         };
 
@@ -329,8 +323,8 @@
         return Latte.isM(v) || Latte.isS(v);
     };
 
-    Latte.M = Build({immutable : true, hold : true, key : M_KEY, async : true});
-    Latte.S = Build({immutable : false, hold : true, key : S_KEY, async : true});
+    Latte.M = Build({immutable : true, key : M_KEY});
+    Latte.S = Build({immutable : false, key : S_KEY});
 
     Latte.compose = function(fs, initVal){
         if(!fs.length){
@@ -349,12 +343,12 @@
 
         Ctor = ext.hasOwnProperty('constructor') ?
             ext.constructor :
-            function Ctor(executor){
+            function Ctor(executor, ctx){
                 if(!(this instanceof Ctor)){
-                    return new Ctor(executor);
+                    return new Ctor(executor, ctx);
                 }
 
-                L.call(this, executor);
+                L.call(this, executor, ctx);
             };
 
         Ctor.prototype = Object.create(L.prototype);

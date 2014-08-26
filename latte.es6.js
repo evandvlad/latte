@@ -9,9 +9,30 @@ const M_KEY = '___M',
       S_KEY = '___S',
       NOTHING = new String('Nothing');
 
-var Latte = {version : '4.0.0'},
+var Latte = {version : '4.1.0'},
 
     toString = Object.prototype.toString,
+
+    id = v => v,
+
+    bindc = (f, ctx) => v => f.call(ctx, v),
+
+    compose = (f, g) => x => f(g(x)),
+
+    cond = (p, t, f) => v => p(v) ? t(v) : f(v),
+
+    meth = (mname, ...args) => o => o[mname].apply(o, args),
+
+    isFunction = v => toString.call(v) === '[object Function]',
+
+    isObject = v => toString.call(v) === '[object Object]',
+
+    isEntity = (f, prop) => v => f(v) && !!v[prop],
+
+    gen = (g, h, v) => {
+        var {done, value} = g.next(v);
+        !done ? (Latte.isM(value) ? value.next(gen.bind(null, g, h)).fail(h) : gen(g, h, value)) : h(value);
+    },
 
     staticMetaMethods = {
 
@@ -57,63 +78,18 @@ var Latte = {version : '4.0.0'},
         }
     };
 
-function id(v){
-    return v;
-}
-
-function bindc(f, ctx){
-    return v => f.call(ctx, v);
-}
-
-function compose(f, g){
-    return x => f(g(x));
-}
-
-function cond(p, t, f){
-    return v => p(v) ? t(v) : f(v);
-}
-
-function meth(mname, ...args){
-    return o => o[mname].apply(o, args);
-}
-
-function isFunction(v){
-    return toString.call(v) === '[object Function]';
-}
-
-function isObject(v){
-    return toString.call(v) === '[object Object]';
-}
-
-function isEntity(f, prop){
-    return v => f(v) && !!v[prop];
-}
-
-function gen(g, h, v){
-    var {done, value} = g.next(v);
-    !done ? (Latte.isM(value) ? value.next(gen.bind(null, g, h)).fail(h) : gen(g, h, value)) : h(value);
-}
-
 class State {
 
     constructor(executor, params){
-        var handle = bindc(this._set, this);
-
         this._params = params;
         this._queue = [];
         this.val = NOTHING;
-
-        params.async ? setTimeout(() => executor(handle), 0) : executor(handle);
+        executor(bindc(this._set, this));
     }
 
     on(f) {
         this._queue && this._queue.push(f);
-        this._params.hold && this.val !== NOTHING && f(this.val);
-    }
-
-    reset() {
-        this._queue = [];
-        this.val = NOTHING;
+        this.val !== NOTHING && f(this.val);
     }
 
     _set(v) {
@@ -129,7 +105,7 @@ function Build(params){
 
     function L(executor, ctx){
         if(!(this instanceof L)){
-            return new L(executor, ctx);
+            return new L(...Array.from(arguments));
         }
 
         this[Latte._STATE_PRIVATE_PROP] = new Latte._State(bindc(executor, ctx), params);
@@ -152,7 +128,9 @@ function Build(params){
     };
 
     L.prototype.bnd = function(f, ctx){
-        return new this.constructor(c => this.always(cond(this.constructor.isE, c, compose(meth('always', c), bindc(f, ctx)))));
+        return new this.constructor(
+            c => this.always(cond(this.constructor.isE, c, compose(meth('always', c), bindc(f, ctx))))
+        );
     };
 
     L.prototype.lift = function(f, ctx){
@@ -160,7 +138,15 @@ function Build(params){
     };
 
     L.prototype.raise = function(f, ctx){
-        return new this.constructor(c => this.always(cond(this.constructor.isE, compose(c, compose(this.constructor.E, bindc(f, ctx))), c)));
+        return new this.constructor(
+            c => this.always(cond(this.constructor.isE, compose(c, compose(this.constructor.E, bindc(f, ctx))), c))
+        );
+    };
+
+    L.prototype.repair = function(f, ctx){
+        return new this.constructor(
+            c => this.always(cond(this.constructor.isE, compose(meth('always', c), bindc(f, ctx)), c))
+        );
     };
 
     L.prototype.when = function(f, ctx){
@@ -172,7 +158,7 @@ function Build(params){
     };
 
     L.prototype.pass = function(v){
-        return this.lift(vl => v);
+        return this.lift(() => v);
     };
 
     L.prototype.wait = function(delay){
@@ -239,34 +225,28 @@ function Build(params){
 
 Latte._State = State;
 
-Latte._STATE_PRIVATE_PROP = Symbol('_____####![state]');
+Latte._STATE_PRIVATE_PROP = Symbol('_state');
 
-Latte.E = v => Object.defineProperty(vl => v, E_KEY, {value : true});
+Latte.E = v => Object.defineProperty(() => v, E_KEY, {value : true});
 Latte.isE = isEntity(isFunction, E_KEY);
 Latte.isM = isEntity(isObject, M_KEY);
 Latte.isS = isEntity(isObject, S_KEY);
 Latte.isL = v => Latte.isM(v) || Latte.isS(v);
 
-Latte.M = Build({immutable : true, hold : true, key : M_KEY, async : true});
-Latte.S = Build({immutable : false, hold : true, key : S_KEY, async : true});
+Latte.M = Build({immutable : true, key : M_KEY});
+Latte.S = Build({immutable : false, key : S_KEY});
 
-Latte.compose = (fs, initVal) => {
-    if(!fs.length){
-        throw new Error('empty list');
-    }
-
-    return fs.reduce((acc, f) => acc.bnd(f), fs.shift()(initVal));
-};
+Latte.compose = ([fn, ...fns], initVal) => fns.reduce((acc, f) => acc.bnd(f), fn(initVal));
 
 Latte.extend = (L, ext = {}) => {
     var Ctor = ext.hasOwnProperty('constructor') ?
         ext.constructor :
-        function Ctor(executor){
+        function Ctor(...args){
             if(!(this instanceof Ctor)){
-                return new Ctor(executor);
+                return new Ctor(...args);
             }
 
-            L.call(this, executor);
+            L.apply(this, args);
         };
 
     Object.assign(Object.setPrototypeOf(Ctor.prototype, L.prototype), ext);

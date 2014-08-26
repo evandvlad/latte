@@ -90,9 +90,7 @@ describe('Latte Monad', function(){
         var st = fspy();
 
         Latte.M(function(h){
-            setTimeout(function(){
-                h('test');
-            }, 0);
+            h('test');
         }).always(st);
 
         setTimeout(function(){
@@ -108,9 +106,7 @@ describe('Latte Monad', function(){
         var st = fspy();
 
         Latte.M(function(h){
-            setTimeout(function(){
-                h(Latte.E('error'));
-            }, 10);
+            h(Latte.E('error'));
         }).always(st);
 
         setTimeout(function(){
@@ -119,7 +115,7 @@ describe('Latte Monad', function(){
             assert.equal(st.args.length, 1);
             assert.equal(st.args[0](), 'error');
             done();
-        }, 40);
+        }, 70);
     });
 
     it('M немедленный вызов', function(done){
@@ -156,7 +152,7 @@ describe('Latte Monad', function(){
         Latte.M(function(h){
             setTimeout(function(){
                 h('test');
-            }, 10);
+            }, 0);
 
             return Latte.M.Pack('new test');
         }).always(st);
@@ -526,7 +522,7 @@ describe('Latte Monad', function(){
             assert.equal(st2.args[0](), 'error');
 
             done();
-        }, 10);
+        }, 100);
     });
 
     it('fail от одного объекта', function(done){
@@ -570,6 +566,72 @@ describe('Latte Monad', function(){
             assert.equal(r, 'test-1');
             done();
         }, 80);
+    });
+
+    it('repair', function(done){
+        var m = Latte.M(function(h){
+                h(Latte.E('error'));
+            }),
+            spy = fspy();
+
+        m.repair(function(v){
+            return Latte.M.Pack('repaired ' + v());
+        }).next(spy);
+
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'repaired error');
+            done();
+        }, 100);
+    });
+
+    it('repair не вызывается если success', function(done){
+        var m = Latte.M(function(h){
+                h('error');
+            }),
+            spy = fspy();
+
+        m.repair(spy);
+
+        setTimeout(function(){
+            assert.equal(spy.called, false);
+            done();
+        }, 100);
+    });
+
+    it('repair цепочка', function(done){
+        var m = Latte.M(function(h){
+                h(Latte.E('error'));
+            }),
+            spy = fspy();
+
+        m.repair(function(v){
+            return Latte.M.Pack(Latte.E(v() + ' + other error'));
+        }).repair(function(v){
+            return Latte.M.Pack('fix ' + v());
+        }).next(spy);
+
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'fix error + other error');
+            done();
+        }, 100);
+    });
+
+    it('repair context', function(done){
+        var m = Latte.M(function(h){
+                h(Latte.E('error'));
+            }),
+            spy = fspy();
+
+        m.repair(function(v){
+            return Latte.M.Pack(Latte.E(v() + ' + ' + this.err));
+        }, {err : 'other error'}).repair(function(v){
+            return Latte.M.Pack('fix ' + v());
+        }).next(spy);
+
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'fix error + other error');
+            done();
+        }, 100);
     });
 
     it('bnd', function(done){
@@ -674,7 +736,7 @@ describe('Latte Monad', function(){
         setTimeout(function(){
             assert.equal(st.args[0], 'test!!!');
             done();
-        }, 10);
+        }, 100);
     });
 
     it('lift метод возвращает E', function(done){
@@ -687,7 +749,7 @@ describe('Latte Monad', function(){
         setTimeout(function(){
             assert.equal(st.args[0](), 'error test');
             done();
-        }, 10);
+        }, 50);
     });
 
     it('lift метод не вызывается при E', function(done){
@@ -748,7 +810,7 @@ describe('Latte Monad', function(){
             assert.equal(st6.called, false);
 
             done();
-        }, 10);
+        }, 100);
     });
 
     it('when от значения E', function(done){
@@ -812,7 +874,7 @@ describe('Latte Monad', function(){
             assert.equal(st6.called, false);
 
             done();
-        }, 10);
+        }, 50);
     });
 
     it('unless от значения E', function(done){
@@ -861,7 +923,7 @@ describe('Latte Monad', function(){
             assert.equal(st.called, true);
             assert.equal(st.args[0], undefined);
             done();
-        }, 10);
+        }, 100);
     });
 
     it('pass передача значения', function(done){
@@ -885,7 +947,7 @@ describe('Latte Monad', function(){
             assert.equal(st.called, true);
             assert.equal(st.args[0](), 11);
             done();
-        }, 10);
+        }, 100);
     });
 
     it('raise', function(done){
@@ -900,7 +962,7 @@ describe('Latte Monad', function(){
             assert.equal(st.args[0](), 'new e');
             assert.equal(st2.args[0](), 'new e');
             done();
-        }, 10);
+        }, 100);
     });
 
     it('raise не вызывается при отсутствии E значения', function(done){
@@ -985,7 +1047,7 @@ describe('Latte Monad', function(){
         setTimeout(function(){
             assert.deepEqual(st.args[0], [1,2,3]);
             done();
-        }, 10);
+        }, 100);
     });
 
     it('allseq пустой массив', function(done){
@@ -1024,7 +1086,7 @@ describe('Latte Monad', function(){
         setTimeout(function(){
             assert.equal(st.args[0], 'test!!!');
             done();
-        }, 10);
+        }, 100);
     });
 
     it('static lift context', function(done){
@@ -1037,7 +1099,7 @@ describe('Latte Monad', function(){
         setTimeout(function(){
             assert.equal(st.args[0], 'test!!!');
             done();
-        }, 10);
+        }, 100);
     });
 
     it('static lift массив с несколькими элементами', function(done){
@@ -1050,7 +1112,7 @@ describe('Latte Monad', function(){
         setTimeout(function(){
             assert.equal(st.args[0], 'test Latte');
             done();
-        }, 10);
+        }, 100);
     });
 
     it('static lift массив с несколькими элементами и значением E', function(done){
@@ -1063,7 +1125,7 @@ describe('Latte Monad', function(){
         setTimeout(function(){
             assert.equal(st.args[0](), 'e');
             done();
-        }, 10);
+        }, 100);
     });
 
     it('Gen sync only return', function(done){
@@ -1150,22 +1212,18 @@ describe('Latte Stream', function(){
         }).always(st);
 
         setTimeout(function(){
-            handle(2);
-            assert.equal(st.args[0], 2);
+            handle(24);
 
             setTimeout(function(){
-                handle(24);
                 assert.equal(st.args[0], 24);
+                handle(Latte.E('e'));
 
                 setTimeout(function(){
-                    handle(Latte.E('e'));
                     assert.equal(st.args[0](), 'e');
-                    assert.equal(st.count, 4);
-
                     done();
-                }, 10);
-            }, 10);
-        }, 10);
+                }, 50);
+            }, 50);
+        }, 50);
     });
 
     it('Hand always', function(done){
@@ -1320,16 +1378,14 @@ describe('Latte Stream', function(){
         assert.equal(st.called, false);
 
         setTimeout(function(){
-            handle(2);
+            handle(24);
             assert.equal(st.called, false);
 
             setTimeout(function(){
-                handle(24);
                 assert.equal(st.called, false);
+                handle(Latte.E('e'));
 
                 setTimeout(function(){
-                    handle(Latte.E('e'));
-
                     assert.equal(st.args[0](), 'e');
                     done();
                 }, 10);
@@ -1399,9 +1455,9 @@ describe('Latte Stream', function(){
                 setTimeout(function(){
                     assert.equal(st.args[0](), 'e');
                     done();
-                }, 10);
-            }, 10);
-        }, 10);
+                }, 40);
+            }, 40);
+        }, 40);
     });
 
     it('bnd генерирует значение E', function(done){
@@ -1549,10 +1605,76 @@ describe('Latte Stream', function(){
                     setTimeout(function(){
                         assert.equal(st.args[0](), 'err: e');
                         done();
-                    }, 10);
-                }, 10);
-            }, 10);
-        }, 10);
+                    }, 40);
+                }, 40);
+            }, 40);
+        }, 40);
+    });
+
+    it('repair', function(done){
+        var m = Latte.S(function(h){
+                h(Latte.E('error'));
+            }),
+            spy = fspy();
+
+        m.repair(function(v){
+            return Latte.M.Pack('repaired ' + v());
+        }).next(spy);
+
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'repaired error');
+            done();
+        }, 100);
+    });
+
+    it('repair не вызывается если success', function(done){
+        var m = Latte.S(function(h){
+                h('error');
+            }),
+            spy = fspy();
+
+        m.repair(spy);
+
+        setTimeout(function(){
+            assert.equal(spy.called, false);
+            done();
+        }, 100);
+    });
+
+    it('repair цепочка', function(done){
+        var m = Latte.S(function(h){
+                h(Latte.E('error'));
+            }),
+            spy = fspy();
+
+        m.repair(function(v){
+            return Latte.M.Pack(Latte.E(v() + ' + other error'));
+        }).repair(function(v){
+            return Latte.M.Pack('fix ' + v());
+        }).next(spy);
+
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'fix error + other error');
+            done();
+        }, 100);
+    });
+
+    it('repair context', function(done){
+        var m = Latte.S(function(h){
+                h(Latte.E('error'));
+            }),
+            spy = fspy();
+
+        m.repair(function(v){
+            return Latte.M.Pack(Latte.E(v() + ' + ' + this.err));
+        }, {err : 'other error'}).repair(function(v){
+            return Latte.M.Pack('fix ' + v());
+        }).next(spy);
+
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'fix error + other error');
+            done();
+        }, 100);
     });
 
     it('wait', function(done){
@@ -1573,8 +1695,8 @@ describe('Latte Stream', function(){
                 assert.equal(st.called, true);
                 assert.equal(st.args[0], 'test');
                 done();
-            }, 20);
-        }, 20);
+            }, 50);
+        }, 50);
     });
 
     it('wait на выходе последний результат', function(done){
@@ -1619,9 +1741,9 @@ describe('Latte Stream', function(){
             setTimeout(function(){
                 handle2(2);
                 assert.equal(st.called, false);
+                handle3(3);
 
                 setTimeout(function(){
-                    handle3(3);
                     assert.deepEqual(st.args[0], [1,2,3]);
                     done();
                 }, 10);
@@ -1905,10 +2027,10 @@ describe('Latte Stream', function(){
                     setTimeout(function(){
                         assert.deepEqual(st.args[0], 6);
                         done();
-                    }, 10);
-                }, 10);
-            }, 10);
-        }, 10);
+                    }, 50);
+                }, 50);
+            }, 50);
+        }, 50);
     });
 
     it('static bnd context', function(done){
@@ -2225,16 +2347,16 @@ describe('Latte Stream', function(){
                                             setTimeout(function(){
                                                 assert.deepEqual(st.args[0], [1,7,9]);
                                                 done();
-                                            }, 10);
-                                        }, 10);
-                                    }, 10);
-                                }, 10);
-                            }, 10);
-                        }, 10);
-                    }, 10);
-                }, 10);
-            }, 10);
-        }, 10);
+                                            }, 40);
+                                        }, 40);
+                                    }, 40);
+                                }, 40);
+                            }, 40);
+                        }, 40);
+                    }, 40);
+                }, 40);
+            }, 40);
+        }, 40);
     });
 
     it('static pseq и значение E', function(done){
@@ -2463,13 +2585,13 @@ describe('Latte Stream', function(){
                                 setTimeout(function(){
                                     assert.equal(st.args[0], 'v+w');
                                     done();
-                                }, 10);
-                            }, 10);
-                        }, 10);
-                    }, 10);
-                }, 10);
-            }, 10);
-        }, 10);
+                                }, 50);
+                            }, 50);
+                        }, 50);
+                    }, 50);
+                }, 50);
+            }, 50);
+        }, 50);
     });
 
     it('static pbnd и значение E', function(done){
@@ -2516,24 +2638,24 @@ describe('Latte Stream', function(){
 
                                 setTimeout(function(){
                                     assert.equal(st.args[0], 'v+w');
+                                    handle2(Latte.E('err'));
 
                                     setTimeout(function(){
-                                        handle2(Latte.E('err'));
                                         assert.equal(st.args[0](), 'err');
+                                        handle3(1);
 
                                         setTimeout(function(){
-                                            handle3(1);
                                             assert.equal(st.args[0](), 'err');
                                             done();
-                                        }, 10);
-                                    }, 10);
-                                }, 10);
-                            }, 10);
-                        }, 10);
-                    }, 10);
-                }, 10);
-            }, 10);
-        }, 10);
+                                        }, 40);
+                                    }, 40);
+                                }, 40);
+                            }, 40);
+                        }, 40);
+                    }, 40);
+                }, 40);
+            }, 40);
+        }, 40);
     });
 });
 
@@ -2619,7 +2741,7 @@ describe('Latte.compose', function(){
             assert.equal(spy.called, true);
             assert.equal(spy.args[0], 8);
             done();
-        }, 40);
+        }, 90);
     });
 
     it('Latte.M error compose', function(done){
@@ -2759,13 +2881,15 @@ describe('Latte Stream & Latte Monad', function(){
             handle1(1);
             handle2(2);
 
-            assert.deepEqual(st.args[0], [1,2,3]);
-            handle1(11);
-
             setTimeout(function(){
-                assert.deepEqual(st.args[0], [11,2,3]);
-                done();
-            }, 10);
-        }, 10);
+                assert.deepEqual(st.args[0], [1,2,3]);
+                handle1(11);
+
+                setTimeout(function(){
+                    assert.deepEqual(st.args[0], [11,2,3]);
+                    done();
+                }, 50);
+            }, 50);
+        }, 50);
     });
 });
