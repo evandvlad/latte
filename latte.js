@@ -169,6 +169,41 @@
             return this;
         };
 
+        Entity.allseq = (function(isResetAcc){
+            return function(xs){
+                var len = xs.length;
+
+                return new this(len ? function(h){
+                    var acc = [];
+
+                    xs.forEach(function(x, i){
+                        x.always(function(v){
+                            acc[i] = v;
+
+                            if(Object.keys(acc).length === len){
+                                h(acc.some(Latte.isE) ? Latte.E(acc.concat()) : acc.concat());
+                                isResetAcc && (acc = []);
+                            }
+                        });
+                    });
+                } : lift([]));
+            };
+        }(params.immutable));
+
+        Entity.seq = function(xs){
+            return this.allseq(xs).elift(function(vs){
+                return vs.value.filter(Latte.isE)[0];
+            });
+        };
+
+        Entity.any = function(ss){
+            return new this(function(h){
+                ss.forEach(function(s){
+                    s.always(h);
+                });
+            });
+        };
+
         Entity.Shell = function(val){
             var inp = new Entity(arguments.length ? lift(val) : noop),
                 out = new Entity(inp.always, inp);
@@ -219,41 +254,6 @@
                 get : bind(shell.get, shell),
                 out : fconst(out)
             };
-        };
-
-        Entity.allseq = (function(isResetAcc){
-            return function(xs){
-                var len = xs.length;
-
-                return new this(len ? function(h){
-                    var acc = [];
-
-                    xs.forEach(function(x, i){
-                        x.always(function(v){
-                            acc[i] = v;
-
-                            if(Object.keys(acc).length === len){
-                                h(acc.some(Latte.isE) ? Latte.E(acc.concat()) : acc.concat());
-                                isResetAcc && (acc = []);
-                            }
-                        });
-                    });
-                } : lift([]));
-            };
-        }(params.immutable));
-
-        Entity.seq = function(xs){
-            return this.allseq(xs).elift(function(vs){
-                return vs.value.filter(Latte.isE)[0];
-            });
-        };
-
-        Entity.any = function(ss){
-            return new this(function(h){
-                ss.forEach(function(s){
-                    s.always(h);
-                });
-            });
         };
 
         Object.defineProperty(Entity.prototype, params.key, {value : true});
