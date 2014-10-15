@@ -221,16 +221,16 @@
                 get : bind(shell.get, shell),
 
                 out : fconst(new Entity(function(h){
-                    shell.out().next(function(v){
-                        var gn = g.call(ctx, v);
+                    shell.out().next(function(vl){
+                        var gn = g.call(ctx, vl);
 
                         (function _gen(val){
                             var state = gn.next(val),
-                                vl = state.value;
+                                v = state.value;
 
                             state.done ?
-                                (Latte.isLatte(vl) ? vl.always(h) : h(vl)) :
-                                (Latte.isLatte(vl) ? vl.next(_gen).fail(h) : _gen(vl));
+                                (Latte.isLatte(v) ? v.always(h) : h(v)) :
+                                (Latte.isLatte(v) ? v.next(_gen).fail(h) : _gen(v));
                         }());
                     }).fail(h);
                 }))
@@ -242,26 +242,17 @@
         return Entity;
     }
 
-    Latte.version = '5.1.0';
+    Latte.version = '5.1.1';
 
     Latte.Promise = Build({immutable : true, key : KEY_PROMISE});
-
     Latte.Stream = Build({immutable : false, key : KEY_STREAM});
 
-    Latte.isPromise = function(v){
-        return isEntity(KEY_PROMISE, v);
-    };
-
-    Latte.isStream = function(v){
-        return isEntity(KEY_STREAM, v);
-    };
+    Latte.isPromise = bind(isEntity, null, KEY_PROMISE);
+    Latte.isStream = bind(isEntity, null, KEY_STREAM);
+    Latte.isE = bind(isEntity, null, KEY_E);
 
     Latte.E = function(v){
         return Object.defineProperty({value : v}, KEY_E, {value : true});
-    };
-
-    Latte.isE = function(v){
-        return isEntity(KEY_E, v);
     };
 
     Latte.isNothing = function(v){
