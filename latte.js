@@ -33,6 +33,10 @@
         };
     }
 
+    function not(v){
+        return !v;
+    }
+
     function lift(v){
         return function(f){
             return f(v);
@@ -46,6 +50,12 @@
         };
     }
 
+    function compose(f, g){
+        return function(){
+            return f(g.apply(null, arguments));
+        };
+    }
+
     function mix(oto, ofrom){
         return Object.keys(ofrom || []).reduce(function(acc, prop){
             acc[prop] = ofrom[prop];
@@ -53,8 +63,18 @@
         }, oto);
     }
 
+    function cond(f, g, h){
+        return function(){
+            return f.apply(null, arguments) ? g.apply(null, arguments) : h.apply(null, arguments);
+        };
+    }
+
     function isEntity(key, v){
         return toString.call(v) === '[object Object]' && !!v[key];
+    }
+
+    function unpackEntity(f, v){
+        Latte.isLatte(v) ? v.always(f) : f(v);
     }
 
     function Build(params){
@@ -73,48 +93,34 @@
         };
 
         Entity.prototype.next = function(f, ctx){
-            this[Latte._KEY_PRIVATE_STATE_PROP].on(function(v){
-                !Latte.isE(v) && f.apply(ctx, arguments);
-            }, Latte._MODE_NOT_E);
+            this[Latte._KEY_PRIVATE_STATE_PROP].on(cond(Latte.isE, noop, bind(f, ctx)), Latte._MODE_NOT_E);
             return this;
         };
 
         Entity.prototype.fail = function(f, ctx){
-            this[Latte._KEY_PRIVATE_STATE_PROP].on(function(v){
-                Latte.isE(v) && f.apply(ctx, arguments);
-            }, Latte._MODE_E);
+            this[Latte._KEY_PRIVATE_STATE_PROP].on(cond(Latte.isE, bind(f, ctx), noop), Latte._MODE_E);
             return this;
         };
 
         Entity.prototype.when = function(f, ctx){
             return new this.constructor(function(c){
-                this.next(function(v){
-                    f.apply(ctx, arguments) && c(v);
-                }).fail(c);
+                this.next(cond(bind(f, ctx), c, noop)).fail(c);
             }, this);
         };
 
         Entity.prototype.unless = function(f, ctx){
-            return this.when(function(){
-                return !f.apply(ctx, arguments);
-            });
+            return this.when(compose(not, bind(f, ctx)));
         };
 
         Entity.prototype.fmap = function(f, ctx){
             return new this.constructor(function(c){
-                this.next(function(v){
-                    var r = f.apply(ctx, arguments);
-                    Latte.isLatte(r) ? r.always(c) : c(r);
-                }).fail(c);
+                this.next(compose(bind(unpackEntity, null, c), bind(f, ctx))).fail(c);
             }, this);
         };
 
         Entity.prototype.efmap = function(f, ctx){
             return new this.constructor(function(c){
-                this.next(c).fail(function(){
-                    var r = f.apply(ctx, arguments);
-                    Latte.isLatte(r) ? r.always(c) : c(r);
-                });
+                this.next(c).fail(compose(bind(unpackEntity, null, c), bind(f, ctx)));
             }, this);
         };
 
@@ -157,14 +163,14 @@
                     var acc = [];
 
                     xs.forEach(function(x, i){
-                        x.always(function(v){
+                        unpackEntity(function(v){
                             acc[i] = v;
 
                             if(Object.keys(acc).length === len){
                                 h(acc.some(Latte.isE) ? Latte.E(acc.concat()) : acc.concat());
                                 isResetAcc && (acc = []);
                             }
-                        });
+                        }, x);
                     });
                 } : lift([]));
             };
@@ -178,14 +184,32 @@
 
         Entity.any = function(xs){
             return new this(function(h){
-                xs.forEach(function(x){
-                    x.always(h);
-                });
+                xs.forEach(bind(unpackEntity, null, h));
             });
         };
 
+        Entity.fun = function(f, ctx){
+            return bind(function(){
+                return this.collect(aslice.call(arguments)).fmap(bind(f.apply, f, ctx));
+            }, this);
+        };
+
+        Entity.gen = function(g, ctx){
+            return this.fun(function(){
+                var args = arguments;
+                return new this(function(h){
+                    var gen = g.apply(ctx, args);
+
+                    (function _iterate(val){
+                        var state = gen.next(val);
+                        unpackEntity(state.done ? h : cond(Latte.isE, h, _iterate), state.value);
+                    }());
+                });
+            }, this);
+        };
+
         Entity.Shell = function(){
-            var inp = new Entity(noop);
+            var inp = new this(noop);
 
             inp.set = function(v){
                 this[Latte._KEY_PRIVATE_STATE_PROP].set(v);
@@ -204,36 +228,7 @@
                 },
 
                 get : bind(inp.get, inp),
-                out : fconst(new Entity(inp.always, inp))
-            };
-        };
-
-        Entity.Gen = function(g, ctx){
-            var shell = new Entity.Shell();
-
-            return {
-
-                set : function(val){
-                    shell.set(val);
-                    return this;
-                },
-
-                get : bind(shell.get, shell),
-
-                out : fconst(new Entity(function(h){
-                    shell.out().next(function(vl){
-                        var gn = g.call(ctx, vl);
-
-                        (function _gen(val){
-                            var state = gn.next(val),
-                                v = state.value;
-
-                            state.done ?
-                                (Latte.isLatte(v) ? v.always(h) : h(v)) :
-                                (Latte.isLatte(v) ? v.next(_gen).fail(h) : _gen(v));
-                        }());
-                    }).fail(h);
-                }))
+                out : fconst(new this(inp.always, inp))
             };
         };
 
@@ -242,7 +237,7 @@
         return Entity;
     }
 
-    Latte.version = '5.1.1';
+    Latte.version = '5.2.0';
 
     Latte.Promise = Build({immutable : true, key : KEY_PROMISE});
     Latte.Stream = Build({immutable : false, key : KEY_STREAM});
@@ -313,6 +308,15 @@
     };
 
     Latte._State.prototype.set = function(v){
+        unpackEntity(bind(this._set, this), v);
+        return this;
+    };
+
+    Latte._State.prototype.get = function(){
+        return this._val;
+    };
+
+    Latte._State.prototype._set = function(v){
         if(Latte.isNothing(this._val) || !this._params.immutable){
             this._prev[Latte._MODE_ALL] = this._val;
             this._prev[Latte.isE(this._val) ? Latte._MODE_E : Latte._MODE_NOT_E] = this._val;
@@ -322,10 +326,6 @@
         }
 
         return this;
-    };
-
-    Latte._State.prototype.get = function(){
-        return this._val;
     };
 
     Latte._State.prototype._fapply = function(fobj){
