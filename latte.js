@@ -18,9 +18,10 @@
 
     var Latte = {},
 
-        KEY_E = '_____####![E]',
-        KEY_PROMISE = '_____####![PROMISE]',
-        KEY_STREAM = '_____####![STREAM]',
+        PROP_E = '_____####![E]',
+        PROP_PROMISE = '_____####![PROMISE]',
+        PROP_STREAM = '_____####![STREAM]',
+        PROP_CALLBACK = '_____####![CALLBACK]',
 
         aslice = Array.prototype.slice,
         toString = Object.prototype.toString;
@@ -69,12 +70,20 @@
         };
     }
 
+    function prop(p){
+        return function(o){
+            return o[p];
+        };
+    }
+
     function isEntity(key, v){
         return toString.call(v) === '[object Object]' && !!v[key];
     }
 
     function unpackEntity(f, v){
-        Latte.isLatte(v) ? v.always(f) : f(v);
+        Latte.isLatte(v) ? v.always(function(val){
+            f(val);
+        }) : f(v);
     }
 
     function Build(params){
@@ -190,25 +199,31 @@
 
         Entity.fun = function(f, ctx){
             return bind(function(){
-                return this.collect(aslice.call(arguments)).fmap(bind(f.apply, f, ctx));
+                return this.collect(aslice.call(arguments)).fmap(function(v){
+                    var cbs = v.filter(Latte.isCallback),
+                        r = f.apply(ctx, v);
+
+                    return cbs.length ? this.any(cbs.map(prop(PROP_CALLBACK))) : r;
+                }, this);
             }, this);
         };
 
         Entity.gen = function(g, ctx){
-            return this.fun(function(){
-                var args = arguments;
-                return new this(function(h){
-                    var gen = g.apply(ctx, args);
+            return bind(function(){
+                return this.collect(aslice.call(arguments)).fmap(function(v){
+                    return new this(function(h){
+                        var gen = g.apply(ctx, v);
 
-                    (function _iterate(val){
-                        var state = gen.next(val);
-                        unpackEntity(state.done ? h : cond(Latte.isE, h, _iterate), state.value);
-                    }());
-                });
+                        (function _iterate(val){
+                            var state = gen.next(val);
+                            unpackEntity(state.done ? h : cond(Latte.isE, h, _iterate), state.value);
+                        }());
+                    });
+                }, this);
             }, this);
         };
 
-        Entity.Shell = function(){
+        Entity.shell = function(){
             var inp = new this(noop);
 
             inp.set = function(v){
@@ -237,25 +252,39 @@
         return Entity;
     }
 
-    Latte.version = '5.2.0';
+    Latte.version = '5.2.1';
 
-    Latte.Promise = Build({immutable : true, key : KEY_PROMISE});
-    Latte.Stream = Build({immutable : false, key : KEY_STREAM});
+    Latte.Promise = Build({immutable : true, key : PROP_PROMISE});
+    Latte.Stream = Build({immutable : false, key : PROP_STREAM});
 
-    Latte.isPromise = bind(isEntity, null, KEY_PROMISE);
-    Latte.isStream = bind(isEntity, null, KEY_STREAM);
-    Latte.isE = bind(isEntity, null, KEY_E);
+    Latte.isPromise = bind(isEntity, null, PROP_PROMISE);
+    Latte.isStream = bind(isEntity, null, PROP_STREAM);
+    Latte.isE = bind(isEntity, null, PROP_E);
 
     Latte.E = function(v){
-        return Object.defineProperty({value : v}, KEY_E, {value : true});
+        return Object.defineProperty({value : v}, PROP_E, {value : true});
     };
 
     Latte.isNothing = function(v){
         return v === Latte._NOTHING;
     };
 
+    Latte.isCallback = function(v){
+        return toString.call(v) === '[object Function]' && !!v[PROP_CALLBACK];
+    };
+
     Latte.isLatte = function(v){
         return Latte.isPromise(v) || Latte.isStream(v);
+    };
+
+    Latte.callback = function(f, ctx){
+        var shell = Latte.Stream.shell();
+
+        return Object.defineProperty(function(){
+            var r = f.apply(ctx || this, arguments);
+            shell.set(r);
+            return r;
+        }, PROP_CALLBACK, {value : shell.out()});
     };
 
     Latte.extend = function(Entity, ext){

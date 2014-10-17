@@ -34,6 +34,40 @@ describe('E', function(){
     });
 });
 
+describe('callback', function(){
+
+    it('isFunction', function(){
+        assert.equal(typeof Latte.callback(function(){}) === 'function', true);
+    });
+
+    it('isCallback', function(){
+        assert.equal(Latte.isCallback(function(){}), false);
+        assert.equal(Latte.isCallback(Latte.callback(function(){})), true);
+    });
+
+    it('return', function(){
+        assert.equal(Latte.callback(function(){})(), undefined);
+        assert.equal(Latte.callback(function(){return 'test';})(), 'test');
+    });
+
+    it('call with several arguments', function(){
+        var spy = fspy();
+
+        Latte.callback(spy)(1,2,3);
+
+        assert.equal(spy.args.length, 3);
+        assert.equal(spy.args[0], 1);
+        assert.equal(spy.args[1], 2);
+        assert.equal(spy.args[2], 3);
+    });
+
+    it('do not unpack value from Latte instance', function(){
+        var spy = fspy();
+        Latte.callback(spy)(Latte.Promise(function(){}));
+        assert.equal(Latte.isPromise(spy.args[0]), true);
+    });
+});
+
 describe('Promise instance', function(){
 
     describe('common', function(){
@@ -2752,6 +2786,61 @@ describe('Promise static', function(){
                 done();
             }, 40);
         });
+
+        it('with callback', function(done){
+            var spy = fspy(),
+                p = Latte.Promise.fun(setTimeout)(Latte.callback(function(){
+                    return 'test';
+                }), 0);
+
+            p.always(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isE(spy.args[0]), false);
+                assert.equal(spy.args[0], 'test');
+                assert.equal(Latte.isNothing(spy.args[1]), true);
+                done();
+            }, 40);
+        });
+
+        it('with 2 callbacks', function(done){
+            var spy = fspy(),
+                p = Latte.Promise.fun(function(f, g){
+                    g('test');
+                })(Latte.callback(function(v){
+                    return '[' + v + ']';
+                }), Latte.callback(function(v){
+                    return '(' + v + ')';
+                }));
+
+            p.always(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isE(spy.args[0]), false);
+                assert.equal(spy.args[0], '(test)');
+                assert.equal(Latte.isNothing(spy.args[1]), true);
+                done();
+            }, 40);
+        });
+
+        it('with callback ignore return', function(done){
+            var spy = fspy(),
+                p = Latte.Promise.fun(function(f){
+                    f('test');
+                    return 'rest';
+                })(Latte.callback(function(){
+                    return 'test';
+                }));
+
+            p.always(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isE(spy.args[0]), false);
+                assert.equal(spy.args[0], 'test');
+                assert.equal(Latte.isNothing(spy.args[1]), true);
+                done();
+            }, 40);
+        });
     });
 
     describe('gen', function(){
@@ -2906,11 +2995,11 @@ describe('Promise static', function(){
     });
 });
 
-describe('Promise Shell', function(){
+describe('Promise shell', function(){
 
     it('without value', function(done){
         var spy = fspy(),
-            s = Latte.Promise.Shell();
+            s = Latte.Promise.shell();
 
         s.out().always(spy);
 
@@ -2922,14 +3011,14 @@ describe('Promise Shell', function(){
 
     it('out method return same instance', function(){
         var spy = fspy(),
-            s = Latte.Promise.Shell();
+            s = Latte.Promise.shell();
 
         assert.equal(s.out() === s.out(), true);
     });
 
     it('set value', function(done){
         var spy = fspy(),
-            s = Latte.Promise.Shell();
+            s = Latte.Promise.shell();
 
         s.out().always(spy);
         s.set('test');
@@ -2944,7 +3033,7 @@ describe('Promise Shell', function(){
 
     it('set promise', function(done){
         var spy = fspy(),
-            s = Latte.Promise.Shell();
+            s = Latte.Promise.shell();
 
         s.out().always(spy);
         s.set(Latte.Promise(function(h){
@@ -2961,7 +3050,7 @@ describe('Promise Shell', function(){
 
     it('set stream', function(done){
         var spy = fspy(),
-            s = Latte.Promise.Shell();
+            s = Latte.Promise.shell();
 
         s.out().always(spy);
         s.set(Latte.Stream(function(h){
@@ -2978,7 +3067,7 @@ describe('Promise Shell', function(){
 
     it('ignore set value twice', function(done){
         var spy = fspy(),
-            s = Latte.Promise.Shell();
+            s = Latte.Promise.shell();
 
         s.out().always(spy);
         s.set('test-1').set('test-2');
@@ -2993,7 +3082,7 @@ describe('Promise Shell', function(){
 
     it('get method', function(done){
         var spy = fspy(),
-            s = Latte.Promise.Shell();
+            s = Latte.Promise.shell();
 
         s.set('test').out().always(spy);
 
@@ -3009,7 +3098,7 @@ describe('Promise Shell', function(){
     });
 
     it('out method return common promise instance', function(){
-        var s = Latte.Promise.Shell(),
+        var s = Latte.Promise.shell(),
             out = s.out();
 
         assert.equal(typeof out.set === 'undefined', true);
@@ -5940,6 +6029,64 @@ describe('Stream static', function(){
                 done();
             }, 40);
         });
+
+        it('with callback', function(done){
+            var spy = fspy(),
+                p = Latte.Stream.fun(setTimeout)(Latte.callback(function(){
+                    return 'test';
+                }), 0);
+
+            p.always(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isE(spy.args[0]), false);
+                assert.equal(spy.args[0], 'test');
+                assert.equal(Latte.isNothing(spy.args[1]), true);
+                done();
+            }, 40);
+        });
+
+        it('with 2 callbacks', function(done){
+            var spy = fspy(),
+                p = Latte.Stream.fun(function(f, g){
+                    g('test');
+                    setTimeout(function(){
+                        f('rest');
+                    }, 0);
+                })(Latte.callback(function(v){
+                    return '[' + v + ']';
+                }), Latte.callback(function(v){
+                    return '(' + v + ')';
+                }));
+
+            p.always(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isE(spy.args[0]), false);
+                assert.equal(spy.args[0], '[rest]');
+                assert.equal(spy.args[1], '(test)');
+                done();
+            }, 40);
+        });
+
+        it('with callback ignore return', function(done){
+            var spy = fspy(),
+                p = Latte.Stream.fun(function(f){
+                    f('test');
+                    return 'rest';
+                })(Latte.callback(function(){
+                    return 'test';
+                }));
+
+            p.always(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isE(spy.args[0]), false);
+                assert.equal(spy.args[0], 'test');
+                assert.equal(Latte.isNothing(spy.args[1]), true);
+                done();
+            }, 40);
+        });
     });
 
     describe('gen', function(){
@@ -6097,11 +6244,11 @@ describe('Stream static', function(){
     });
 });
 
-describe('Stream Shell', function(){
+describe('Stream shell', function(){
 
     it('without value', function(done){
         var spy = fspy(),
-            s = Latte.Stream.Shell();
+            s = Latte.Stream.shell();
 
         s.out().always(spy);
 
@@ -6113,14 +6260,14 @@ describe('Stream Shell', function(){
 
     it('out method return same instance', function(){
         var spy = fspy(),
-            s = Latte.Stream.Shell();
+            s = Latte.Stream.shell();
 
         assert.equal(s.out() === s.out(), true);
     });
 
     it('set value', function(done){
         var spy = fspy(),
-            s = Latte.Stream.Shell();
+            s = Latte.Stream.shell();
 
         s.out().always(spy);
         s.set('test');
@@ -6135,7 +6282,7 @@ describe('Stream Shell', function(){
 
     it('set promise', function(done){
         var spy = fspy(),
-            s = Latte.Stream.Shell();
+            s = Latte.Stream.shell();
 
         s.out().always(spy);
         s.set(Latte.Promise(function(h){
@@ -6152,7 +6299,7 @@ describe('Stream Shell', function(){
 
     it('set promise', function(done){
         var spy = fspy(),
-            s = Latte.Stream.Shell();
+            s = Latte.Stream.shell();
 
         s.out().always(spy);
         s.set(Latte.Stream(function(h){
@@ -6169,7 +6316,7 @@ describe('Stream Shell', function(){
 
     it('set value twice', function(done){
         var spy = fspy(),
-            s = Latte.Stream.Shell();
+            s = Latte.Stream.shell();
 
         s.out().always(spy);
         s.set('test-1').set('test-2');
@@ -6185,7 +6332,7 @@ describe('Stream Shell', function(){
 
     it('get method', function(done){
         var spy = fspy(),
-            s = Latte.Stream.Shell();
+            s = Latte.Stream.shell();
 
         s.set('test').out().always(spy);
 
@@ -6201,7 +6348,7 @@ describe('Stream Shell', function(){
     });
 
     it('out method return common promise instance', function(){
-        var s = Latte.Stream.Shell(),
+        var s = Latte.Stream.shell(),
             out = s.out();
 
         assert.equal(typeof out.set === 'undefined', true);
@@ -6251,7 +6398,7 @@ describe('extend', function(){
         assert.equal(typeof EPromise.collectAll === 'function', true);
         assert.equal(typeof EPromise.collect === 'function', true);
         assert.equal(typeof EPromise.any === 'function', true);
-        assert.equal(typeof EPromise.Shell === 'function', true);
+        assert.equal(typeof EPromise.shell === 'function', true);
     });
 
 });
