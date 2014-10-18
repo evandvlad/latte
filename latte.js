@@ -224,26 +224,26 @@
         };
 
         Entity.shell = function(){
-            var inp = new this(noop);
+            var s = new this(noop);
 
-            inp.set = function(v){
+            s.set = function(v){
                 this[Latte._KEY_PRIVATE_STATE_PROP].set(v);
                 return this;
             };
 
-            inp.get = function(){
+            s.get = function(){
                 return this[Latte._KEY_PRIVATE_STATE_PROP].get();
             };
 
             return {
 
                 set : function(val){
-                    inp.set(val);
+                    s.set(val);
                     return this;
                 },
 
-                get : bind(inp.get, inp),
-                out : fconst(new this(inp.always, inp))
+                get : bind(s.get, s),
+                out : fconst(new this(s.always, s))
             };
         };
 

@@ -407,7 +407,7 @@ Promise/Stream, то это значение будет вычисляться.
         value === 'test,rest,best,west';
     });
  
-##### shell #####    
+##### shell #####
 
 Метод возвращающий объект, представляющий собой обертку над Promise/Stream объектом, который имеет методы:
 
@@ -429,7 +429,22 @@ Promise/Stream, то это значение будет вычисляться.
     shell.out().always(function(value){
         // value - current timestamp
     });
+
+
+### Latte.callback ###
+
+Метод для оберки функции. Метод принимает функции и опционально, контекст для нее и возращает обернутую функцию 
+которую можно использовать в методах Latte.Promise.fun/Latte.Stream.fun.
+
+    Latte.Stream.fun(document.addEventListener, document)('click', Latte.callback(function(e){
+        return e;
+    }), false).log();
     
+Если callback-функция обернута в Latte.callback и используется в Latte.Promise.fun/Latte.Stream.fun, то 
+возращается значение возвращаемое функцией обернутой Latte.callback. Можно передавать несколько обернутых функций.
+
+Для проверки что функция обернута, есть метод Latte.isCallback.
+   
 ### Latte.extend ###
 
 Метод Latte.extend позволяет создать пользовательскую сущность Promise/Stream на основе имеющихся, реализуя механизм наследования и копируя статические методы родительской сущности.
