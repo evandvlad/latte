@@ -8,15 +8,18 @@ core.register('view', function(sandbox){
 
     'use strict';
 
-    var ENTER_KEY_CODE = 13,
+    var utils = sandbox.get('utils'),
+
+        ENTER_KEY_CODE = 13,
 
         createDOMEventStream = (function(){
-            var streams = {};
+            var isCaptureMode = utils.inArray.bind(null, ['blur']),
+                streams = {};
 
             return function(event){
                 if(!Object.prototype.hasOwnProperty.call(streams, event)){
                     streams[event] = Latte.Stream(function(listener){
-                        document.addEventListener(event, listener, false);
+                        document.addEventListener(event, listener, isCaptureMode(event));
                     });
                 }
 
@@ -33,6 +36,7 @@ core.register('view', function(sandbox){
         _TODO_EDITING_CLASS_NAME : 'editing',
         _TODO_REMOVE_CLASS_NAME : 'destroy',
         _TODO_TOGGLE_COMPLETE_CLASS_NAME : 'toggle',
+        _TODO_COMPLETED_CLASS_NAME : 'completed',
 
         _TOGGLE_ALL_ID : 'toggle-all',
         _NAV_LINK_ACTIVE_CLASS_NAME : 'selected',
@@ -77,37 +81,109 @@ core.register('view', function(sandbox){
                 .next(function(){
                     this.dNewTodo.value = '';
                 }, this)
+                .fmap(function(title){
+                    return {
+                        title : title
+                    };
+                });
         },
 
         onRemoveTodo : function(){
             return createDOMEventStream('click')
                 .when(function(e){
+                    return this.dTodoList.contains(e.target);
+                }, this)
+                .when(function(e){
                     return e.target.classList.contains(this._TODO_REMOVE_CLASS_NAME);
                 }, this)
                 .fmap(function(e){
-                    return e.target.getAttribute(this._TODO_ID_ATTR_NAME);
+                    return this._lookupTodoItem(e.target).getAttribute(this._TODO_ID_ATTR_NAME);
                 }, this)
                 .next(this._removeTodo, this);
         },
 
         onEditTitleTodo : function(){
-            return Latte.Promise(function(){});
+            return createDOMEventStream('dblclick')
+                .when(function(e){
+                    var target = e.target;
+                    return this.dTodoList.contains(target) && target.classList.contains(this._TODO_TITLE_CLASS_NAME);
+                }, this)
+                .fmap(function(e){
+                    var target = e.target,
+                        item = this._lookupTodoItem(target),
+                        text = target.textContent;
+
+                    this._makeTodoEditable(this._lookupTodoItem(target), text);
+
+                    return {
+                        id : item.getAttribute(this._TODO_ID_ATTR_NAME),
+                        title : text
+                    };
+                }, this)
+                .combine(this._onEditTodoFocusout())
+                .when(function(data){
+                    return data[0].title !== data[1].title;
+                }, this)
+                .fmap(utils.prop(1))
+                .next(this._updateTodoTitle, this);
         },
 
         onToggleCompletedTodo : function(){
-            return Latte.Promise(function(){});
+            return createDOMEventStream('click')
+                .when(function(e){
+                    var target = e.target;
+
+                    return this.dTodoList.contains(target) &&
+                        target.classList.contains(this._TODO_TOGGLE_COMPLETE_CLASS_NAME);
+                }, this)
+                .fmap(function(e){
+                    var target = e.target,
+                        item = this._lookupTodoItem(target);
+
+                    this._toggleTodoComplete(item, target);
+
+                    return {
+                        id : item.getAttribute(this._TODO_ID_ATTR_NAME),
+                        completed : target.checked
+                    };
+                }, this);
+        },
+
+        _onEditTodoFocusout : function(){
+            return createDOMEventStream('blur')
+                .when(function(e){
+                    var target = e.target;
+
+                    return this.dTodoList.contains(target) &&
+                        target.classList.contains(this._TODO_EDITING_INPUT_CLASS_NAME);
+                }, this)
+                .when(function(e){
+                    return e.target.value.trim();
+                }, this)
+                .fmap(function(e){
+                    var target = e.target,
+                        item = this._lookupTodoItem(target),
+                        value = target.value.trim();
+
+                    this._makeTodoNotEditable(item, target);
+
+                    return {
+                        id : item.getAttribute(this._TODO_ID_ATTR_NAME),
+                        title : value
+                    };
+                }, this);
         },
 
         _createTodo : function(data){
             var item = document.createElement(this._TODO_ITEM_TAG_NAME);
 
             item.setAttribute(this._TODO_ID_ATTR_NAME, data.id);
-            data.completed && item.classList.add('completed');
+            data.completed && item.classList.add(this._TODO_COMPLETED_CLASS_NAME);
 
             item.innerHTML = '<div class = "view">'
                 +'<input class = "' + this._TODO_TOGGLE_COMPLETE_CLASS_NAME + '" type = "checkbox" ' + (data.completed ? 'checked' : '') + '>'
                 +'<label class = "' + this._TODO_TITLE_CLASS_NAME + '">' + data.title + '</label>'
-                +'<button class = "' + this._TODO_REMOVE_CLASS_NAME + '" ' + this._TODO_ID_ATTR_NAME + ' = "' + data.id + '"></button>'
+                +'<button class = "' + this._TODO_REMOVE_CLASS_NAME + '"></button>'
                 +'</div>';
 
             return item;
@@ -119,10 +195,50 @@ core.register('view', function(sandbox){
             return this;
         },
 
+        _toggleTodoComplete : function(dItem, dSelector){
+            dItem.classList[dSelector.checked ? 'add' : 'remove'](this._TODO_COMPLETED_CLASS_NAME);
+            return this;
+        },
+
+        _updateTodoTitle : function(data){
+            this._getTodoItemById(data.id).querySelector('.' + this._TODO_TITLE_CLASS_NAME).textContent = data.title;
+            return this;
+        },
+
+        _makeTodoEditable : function(dItem, text){
+            var input = document.createElement('input');
+
+            input.type = 'text';
+            input.value = text;
+            input.classList.add(this._TODO_EDITING_INPUT_CLASS_NAME);
+
+            dItem.classList.add(this._TODO_EDITING_CLASS_NAME);
+            dItem.appendChild(input);
+            input.focus();
+
+            return this;
+        },
+
+        _makeTodoNotEditable : function(dItem, dInput){
+            dItem.classList.remove(this._TODO_EDITING_CLASS_NAME);
+            dInput.parentNode.removeChild(dInput);
+            return this;
+        },
+
         _getTodoItemById : function(id){
             return this.dTodoList.querySelector(
                     this._TODO_ITEM_TAG_NAME + '[' + this._TODO_ID_ATTR_NAME + '="' + id + '"]'
             );
+        },
+
+        _lookupTodoItem : function(dDescendant){
+            var item = dDescendant;
+
+            while(item && !item.hasAttribute(this._TODO_ID_ATTR_NAME)){
+                item = item.parentNode;
+            }
+
+            return item;
         }
     };
 });

@@ -8,6 +8,8 @@ core.register('model', function(sandbox){
 
     'use strict';
 
+    var utils = sandbox.get('utils');
+
     return {
 
         _STORAGE_KEY : 'TODOS',
@@ -37,10 +39,10 @@ core.register('model', function(sandbox){
             }, this)
         },
 
-        updateTodo : function(id, newData){
+        updateTodo : function(newData){
             return this.getTodos().fmap(function(todos){
                 return this._updateTodos(todos.map(function(todo){
-                    return todo.id === id ? extend(todo, newData) : todo;
+                    return todo.id === newData.id ? utils.extend(todo, newData) : todo;
                 }));
             }, this);
         },

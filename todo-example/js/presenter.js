@@ -14,18 +14,14 @@ core.register('presenter', function(sandbox){
             model.getTodos().next(view.paintTodos, view);
 
             view.onCreateNewTodo()
-                .fmap(function(title){
-                    return {title : title};
-                })
                 .fmap(model.createTodo, model)
                 .next(view.paintNewTodo, view);
 
             view.onRemoveTodo()
                 .fmap(model.removeTodo, model);
 
-            view.onEditTitleTodo();
-
-            view.onToggleCompletedTodo();
+            Latte.Stream.any([view.onEditTitleTodo(), view.onToggleCompletedTodo()])
+                .fmap(model.updateTodo, model);
 
             return this;
         }

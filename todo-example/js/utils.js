@@ -20,6 +20,16 @@ core.register('utils', function(sandbox){
 
                 return acc;
             }, dest);
+        },
+
+        prop : function(p){
+            return function(o){
+                return o[p];
+            };
+        },
+
+        inArray : function(arr, value){
+            return arr.indexOf(value) !== -1;
         }
     }
 });
