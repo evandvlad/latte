@@ -138,9 +138,9 @@
         };
 
         Entity.prototype.wait = function(delay){
-            var tid = null;
-
             return new this.constructor(function(c){
+                var tid = null;
+
                 return this.always(function(v){
                     tid && clearTimeout(tid);
                     tid = setTimeout(function(){
@@ -148,6 +148,22 @@
                         tid = null;
                     }, delay);
                 });
+            }, this);
+        };
+
+        Entity.prototype.gacc = function(g, ctx){
+            return new this.constructor(function(c){
+                var gen = null;
+
+                this.next(function(v){
+                    var r = (gen = gen || g.apply(ctx, arguments)).next(v);
+                    unpackEntity(cond(Latte.isE, c, function(val){
+                        if(r.done){
+                            c(val);
+                            gen = null;
+                        }
+                    }), r.value);
+                }).fail(c);
             }, this);
         };
 
@@ -162,6 +178,10 @@
 
         Entity.prototype.any = function(xs){
             return this.constructor.any([this].concat(xs));
+        };
+
+        Entity.init = function(v){
+            return new this(lift(v));
         };
 
         Entity.collectAll = (function(isResetAcc){
@@ -252,7 +272,7 @@
         return Entity;
     }
 
-    Latte.version = '5.2.1';
+    Latte.version = '5.2.2';
 
     Latte.Promise = Build({immutable : true, key : PROP_PROMISE});
     Latte.Stream = Build({immutable : false, key : PROP_STREAM});
