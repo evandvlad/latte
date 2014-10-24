@@ -30,6 +30,14 @@ core.register('utils', function(sandbox){
 
         inArray : function(arr, value){
             return arr.indexOf(value) !== -1;
+        },
+
+        toArray : function(o){
+            return Array.prototype.slice.call(o)
+        },
+
+        wrapToArray : function(v){
+            return [v];
         }
     }
 });

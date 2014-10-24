@@ -8,21 +8,37 @@ core.register('model', function(sandbox){
 
     'use strict';
 
-    var utils = sandbox.get('utils');
+    var utils = sandbox.get('utils'),
+
+        STORAGE_KEY = 'TODOS';
 
     return {
-
-        _STORAGE_KEY : 'TODOS',
 
         _todoId : 0,
 
         init : function(){
-            localStorage[this._STORAGE_KEY] = localStorage[this._STORAGE_KEY] || JSON.stringify([]);
+            localStorage[STORAGE_KEY] = localStorage[STORAGE_KEY] || JSON.stringify([]);
             return this;
         },
 
         getTodos : function(){
-            return Latte.Promise.shell().set(JSON.parse(localStorage[this._STORAGE_KEY])).out();
+            return Latte.Promise.init(JSON.parse(localStorage[STORAGE_KEY]));
+        },
+
+        getCompletedTodos : function(){
+            return this.getTodos().fmap(function(todos){
+                return todos.filter(function(todo){
+                    return todo.completed;
+                });
+            });
+        },
+
+        getNotCompletedTodos : function(){
+            return this.getTodos().fmap(function(todos){
+                return todos.filter(function(todo){
+                    return !todo.completed;
+                });
+            });
         },
 
         createTodo : function(data){
@@ -39,10 +55,15 @@ core.register('model', function(sandbox){
             }, this)
         },
 
-        updateTodo : function(newData){
+        updateTodos : function(newTodos){
+            var newTodosMap = newTodos.reduce(function(acc, todo){
+                acc[todo.id] = todo;
+                return acc;
+            }, {});
+
             return this.getTodos().fmap(function(todos){
                 return this._updateTodos(todos.map(function(todo){
-                    return todo.id === newData.id ? utils.extend(todo, newData) : todo;
+                    return typeof newTodosMap[todo.id] !== 'undefined' ? utils.extend(todo, newTodosMap[todo.id]) : todo;
                 }));
             }, this);
         },
@@ -59,8 +80,8 @@ core.register('model', function(sandbox){
         },
 
         _updateTodos : function(todos){
-            localStorage[this._STORAGE_KEY] = JSON.stringify(todos);
-            return Latte.Promise.shell().set(todos).out();
+            localStorage[STORAGE_KEY] = JSON.stringify(todos);
+            return Latte.Promise.init(todos);
         }
     };
 

@@ -133,6 +133,13 @@
             }, this);
         };
 
+        Entity.prototype.fdip = function(f, ctx){
+            var fn;
+            return this.fmap(function(){
+                return (fn = fn || f.call(ctx)).apply(null, arguments);
+            });
+        };
+
         Entity.prototype.pass = function(v){
             return this.fmap(fconst(v));
         };
@@ -272,7 +279,7 @@
         return Entity;
     }
 
-    Latte.version = '5.2.2';
+    Latte.version = '5.2.3';
 
     Latte.Promise = Build({immutable : true, key : PROP_PROMISE});
     Latte.Stream = Build({immutable : false, key : PROP_STREAM});

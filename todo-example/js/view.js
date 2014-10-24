@@ -11,6 +11,16 @@ core.register('view', function(sandbox){
     var utils = sandbox.get('utils'),
 
         ENTER_KEY_CODE = 13,
+        TODO_ITEM_TAG_NAME = 'li',
+        TODO_ID_ATTR_NAME = 'data-id',
+        TODO_TITLE_CLASS_NAME = 'todo-title',
+        TODO_EDITING_INPUT_CLASS_NAME = 'edit',
+        TODO_EDITING_CLASS_NAME = 'editing',
+        TODO_REMOVE_CLASS_NAME = 'destroy',
+        TODO_TOGGLE_COMPLETE_CLASS_NAME = 'toggle',
+        TODO_COMPLETED_CLASS_NAME = 'completed',
+        TODO_ALL_COMPLETED_ID = 'toggle-all',
+        NAV_LINK_ACTIVE_CLASS_NAME = 'selected',
 
         createDOMEventStream = (function(){
             var isCaptureMode = utils.inArray.bind(null, ['blur']),
@@ -29,18 +39,6 @@ core.register('view', function(sandbox){
 
     return {
 
-        _TODO_ITEM_TAG_NAME : 'li',
-        _TODO_ID_ATTR_NAME : 'data-id',
-        _TODO_TITLE_CLASS_NAME : 'todo-title',
-        _TODO_EDITING_INPUT_CLASS_NAME : 'edit',
-        _TODO_EDITING_CLASS_NAME : 'editing',
-        _TODO_REMOVE_CLASS_NAME : 'destroy',
-        _TODO_TOGGLE_COMPLETE_CLASS_NAME : 'toggle',
-        _TODO_COMPLETED_CLASS_NAME : 'completed',
-
-        _TOGGLE_ALL_ID : 'toggle-all',
-        _NAV_LINK_ACTIVE_CLASS_NAME : 'selected',
-
         init : function(){
             this.dNewTodo = document.getElementById('new-todo');
             this.dTodoList = document.getElementById('todo-list');
@@ -49,6 +47,18 @@ core.register('view', function(sandbox){
             this.dMainPanel = document.getElementById('main');
             this.dFooterPanel = document.getElementById('footer');
             this.dNavLinks = document.querySelectorAll('#filters a');
+
+            this._onNavLinkChange();
+
+            return this;
+        },
+
+        setActiveHash : function(hash){
+            var active = utils.toArray(this.dNavLinks).filter(function(link){
+                    return link.hash.slice(1) === hash;
+                })[0];
+
+            active && this._toggleActiveNavLink(active);
 
             return this;
         },
@@ -91,13 +101,11 @@ core.register('view', function(sandbox){
         onRemoveTodo : function(){
             return createDOMEventStream('click')
                 .when(function(e){
-                    return this.dTodoList.contains(e.target);
-                }, this)
-                .when(function(e){
-                    return e.target.classList.contains(this._TODO_REMOVE_CLASS_NAME);
+                    var target = e.target;
+                    return this.dTodoList.contains(target) && target.classList.contains(TODO_REMOVE_CLASS_NAME);
                 }, this)
                 .fmap(function(e){
-                    return this._lookupTodoItem(e.target).getAttribute(this._TODO_ID_ATTR_NAME);
+                    return this._lookupTodoItem(e.target).getAttribute(TODO_ID_ATTR_NAME);
                 }, this)
                 .next(this._removeTodo, this);
         },
@@ -106,7 +114,7 @@ core.register('view', function(sandbox){
             return createDOMEventStream('dblclick')
                 .when(function(e){
                     var target = e.target;
-                    return this.dTodoList.contains(target) && target.classList.contains(this._TODO_TITLE_CLASS_NAME);
+                    return this.dTodoList.contains(target) && target.classList.contains(TODO_TITLE_CLASS_NAME);
                 }, this)
                 .fmap(function(e){
                     var target = e.target,
@@ -116,7 +124,7 @@ core.register('view', function(sandbox){
                     this._makeTodoEditable(this._lookupTodoItem(target), text);
 
                     return {
-                        id : item.getAttribute(this._TODO_ID_ATTR_NAME),
+                        id : item.getAttribute(TODO_ID_ATTR_NAME),
                         title : text
                     };
                 }, this)
@@ -128,13 +136,33 @@ core.register('view', function(sandbox){
                 .next(this._updateTodoTitle, this);
         },
 
+        onToggleCompletedTodos : function(){
+            return createDOMEventStream('click')
+                .when(function(e){
+                    return e.target.id === TODO_ALL_COMPLETED_ID;
+                })
+                .fmap(function(e){
+                    var isChecked = e.target.checked;
+                    return utils.toArray(this.dTodoList.children).reduce(function(acc, todo){
+                        if(isChecked !== todo.classList.contains(TODO_COMPLETED_CLASS_NAME)){
+                            todo.querySelector('.' + TODO_TOGGLE_COMPLETE_CLASS_NAME).click();
+                            acc.push({
+                                id : todo.getAttribute(TODO_ID_ATTR_NAME),
+                                completed : !isChecked
+                            })
+                        }
+
+                        return acc;
+                    }, []);
+                }, this)
+                .when(utils.prop('length'));
+        },
+
         onToggleCompletedTodo : function(){
             return createDOMEventStream('click')
                 .when(function(e){
                     var target = e.target;
-
-                    return this.dTodoList.contains(target) &&
-                        target.classList.contains(this._TODO_TOGGLE_COMPLETE_CLASS_NAME);
+                    return this.dTodoList.contains(target) && target.classList.contains(TODO_TOGGLE_COMPLETE_CLASS_NAME);
                 }, this)
                 .fmap(function(e){
                     var target = e.target,
@@ -143,7 +171,7 @@ core.register('view', function(sandbox){
                     this._toggleTodoComplete(item, target);
 
                     return {
-                        id : item.getAttribute(this._TODO_ID_ATTR_NAME),
+                        id : item.getAttribute(TODO_ID_ATTR_NAME),
                         completed : target.checked
                     };
                 }, this);
@@ -153,9 +181,7 @@ core.register('view', function(sandbox){
             return createDOMEventStream('blur')
                 .when(function(e){
                     var target = e.target;
-
-                    return this.dTodoList.contains(target) &&
-                        target.classList.contains(this._TODO_EDITING_INPUT_CLASS_NAME);
+                    return this.dTodoList.contains(target) && target.classList.contains(TODO_EDITING_INPUT_CLASS_NAME);
                 }, this)
                 .when(function(e){
                     return e.target.value.trim();
@@ -168,22 +194,42 @@ core.register('view', function(sandbox){
                     this._makeTodoNotEditable(item, target);
 
                     return {
-                        id : item.getAttribute(this._TODO_ID_ATTR_NAME),
+                        id : item.getAttribute(TODO_ID_ATTR_NAME),
                         title : value
                     };
                 }, this);
         },
 
-        _createTodo : function(data){
-            var item = document.createElement(this._TODO_ITEM_TAG_NAME);
+        _onNavLinkChange : function(){
+            return createDOMEventStream('click')
+                .when(function(e){
+                    return utils.inArray(utils.toArray(this.dNavLinks), e.target);
+                }, this)
+                .next(function(e){
+                    this._toggleActiveNavLink(e.target);
+                }, this);
+        },
 
-            item.setAttribute(this._TODO_ID_ATTR_NAME, data.id);
-            data.completed && item.classList.add(this._TODO_COMPLETED_CLASS_NAME);
+        _toggleActiveNavLink : function(active){
+            utils.toArray(this.dNavLinks).forEach(function(link){
+                link.classList.remove(NAV_LINK_ACTIVE_CLASS_NAME);
+            }, this);
+
+            active.classList.add(NAV_LINK_ACTIVE_CLASS_NAME);
+
+            return this;
+        },
+
+        _createTodo : function(data){
+            var item = document.createElement(TODO_ITEM_TAG_NAME);
+
+            item.setAttribute(TODO_ID_ATTR_NAME, data.id);
+            data.completed && item.classList.add(TODO_COMPLETED_CLASS_NAME);
 
             item.innerHTML = '<div class = "view">'
-                +'<input class = "' + this._TODO_TOGGLE_COMPLETE_CLASS_NAME + '" type = "checkbox" ' + (data.completed ? 'checked' : '') + '>'
-                +'<label class = "' + this._TODO_TITLE_CLASS_NAME + '">' + data.title + '</label>'
-                +'<button class = "' + this._TODO_REMOVE_CLASS_NAME + '"></button>'
+                +'<input class = "' + TODO_TOGGLE_COMPLETE_CLASS_NAME + '" type = "checkbox" ' + (data.completed ? 'checked' : '') + '>'
+                +'<label class = "' + TODO_TITLE_CLASS_NAME + '">' + data.title + '</label>'
+                +'<button class = "' + TODO_REMOVE_CLASS_NAME + '"></button>'
                 +'</div>';
 
             return item;
@@ -196,12 +242,12 @@ core.register('view', function(sandbox){
         },
 
         _toggleTodoComplete : function(dItem, dSelector){
-            dItem.classList[dSelector.checked ? 'add' : 'remove'](this._TODO_COMPLETED_CLASS_NAME);
+            dItem.classList[dSelector.checked ? 'add' : 'remove'](TODO_COMPLETED_CLASS_NAME);
             return this;
         },
 
         _updateTodoTitle : function(data){
-            this._getTodoItemById(data.id).querySelector('.' + this._TODO_TITLE_CLASS_NAME).textContent = data.title;
+            this._getTodoItemById(data.id).querySelector('.' + TODO_TITLE_CLASS_NAME).textContent = data.title;
             return this;
         },
 
@@ -210,9 +256,9 @@ core.register('view', function(sandbox){
 
             input.type = 'text';
             input.value = text;
-            input.classList.add(this._TODO_EDITING_INPUT_CLASS_NAME);
+            input.classList.add(TODO_EDITING_INPUT_CLASS_NAME);
 
-            dItem.classList.add(this._TODO_EDITING_CLASS_NAME);
+            dItem.classList.add(TODO_EDITING_CLASS_NAME);
             dItem.appendChild(input);
             input.focus();
 
@@ -220,21 +266,19 @@ core.register('view', function(sandbox){
         },
 
         _makeTodoNotEditable : function(dItem, dInput){
-            dItem.classList.remove(this._TODO_EDITING_CLASS_NAME);
+            dItem.classList.remove(TODO_EDITING_CLASS_NAME);
             dInput.parentNode.removeChild(dInput);
             return this;
         },
 
         _getTodoItemById : function(id){
-            return this.dTodoList.querySelector(
-                    this._TODO_ITEM_TAG_NAME + '[' + this._TODO_ID_ATTR_NAME + '="' + id + '"]'
-            );
+            return this.dTodoList.querySelector(TODO_ITEM_TAG_NAME + '[' + TODO_ID_ATTR_NAME + '="' + id + '"]');
         },
 
         _lookupTodoItem : function(dDescendant){
             var item = dDescendant;
 
-            while(item && !item.hasAttribute(this._TODO_ID_ATTR_NAME)){
+            while(item && !item.hasAttribute(TODO_ID_ATTR_NAME)){
                 item = item.parentNode;
             }
 
