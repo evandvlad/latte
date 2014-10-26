@@ -8,16 +8,6 @@ var assert = require("assert"),
     Latte = require("../latte.js"),
     fspy = require("./fspy.js");
 
-describe('Nothing', function(){
-
-    it('isNothing', function(){
-        assert.equal(Latte.isNothing(Latte._NOTHING), true);
-        assert.equal(Latte.isNothing(), false);
-        assert.equal(Latte.isNothing('Nothing'), false);
-    });
-
-});
-
 describe('E', function(){
 
     it('isE', function(){
@@ -202,7 +192,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -220,7 +209,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -238,7 +226,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -257,7 +244,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -273,7 +259,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -310,8 +295,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy1.args[0].value, 'error');
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -330,8 +313,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), false);
                 assert.equal(spy1.args[0], 'test');
                 assert.equal(spy2.args[0], 'test');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -372,7 +353,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -398,7 +378,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -449,8 +428,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), false);
                 assert.equal(spy1.args[0], 'test');
                 assert.equal(spy2.args[0], 'test');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -469,8 +446,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), false);
                 assert.equal(spy1.args[0], 'test');
                 assert.equal(spy2.args[0], 'test');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -513,7 +488,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -563,8 +537,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy1.args[0].value, 'error');
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -583,8 +555,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy1.args[0].value, 'error');
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -628,8 +598,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy1.args[0].value, 'error');
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -657,7 +625,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 5);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -708,7 +675,6 @@ describe('Promise instance', function(){
                 assert.equal(spy2.called, true);
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -801,7 +767,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 5);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -852,7 +817,6 @@ describe('Promise instance', function(){
                 assert.equal(spy2.called, true);
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -945,7 +909,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], '(test)');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -963,7 +926,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -981,7 +943,6 @@ describe('Promise instance', function(){
                     assert.equal(spy1.called, false);
                     assert.equal(Latte.isE(spy2.args[0]), true);
                     assert.equal(spy2.args[0].value, 'error');
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1023,8 +984,6 @@ describe('Promise instance', function(){
                     assert.equal(Latte.isE(spy2.args[0]), false);
                     assert.equal(spy1.args[0], 10);
                     assert.equal(spy2.args[0], 25);
-                    assert.equal(Latte.isNothing(spy1.args[1]), true);
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1044,7 +1003,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], 50);
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1076,7 +1034,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], '(test)');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1096,7 +1053,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1116,7 +1072,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1164,8 +1119,6 @@ describe('Promise instance', function(){
                     assert.equal(Latte.isE(spy2.args[0]), false);
                     assert.equal(spy1.args[0], '(test)');
                     assert.equal(spy2.args[0], '[test]');
-                    assert.equal(Latte.isNothing(spy1.args[1]), true);
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1189,7 +1142,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], '([test])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1213,7 +1165,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], '([test])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1242,7 +1193,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'west');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1258,7 +1208,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1274,7 +1223,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], undefined);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1290,7 +1238,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1311,8 +1258,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), false);
                 assert.equal(spy1.args[0], 'test');
                 assert.equal(spy2.args[0], 'west');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -1328,7 +1273,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'west');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1346,7 +1290,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 15);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1393,7 +1336,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy2.args.length, 0);
                 assert.equal(spy.args[0], 5);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1411,7 +1353,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy2.called, false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1432,7 +1373,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], '!!5');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1452,7 +1392,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error: 5');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1474,7 +1413,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 10);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -1502,7 +1440,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'new error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1520,7 +1457,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], 'repair error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1538,7 +1474,6 @@ describe('Promise instance', function(){
                     assert.equal(spy1.called, false);
                     assert.equal(Latte.isE(spy2.args[0]), false);
                     assert.equal(spy2.args[0], 'test');
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1580,8 +1515,6 @@ describe('Promise instance', function(){
                     assert.equal(Latte.isE(spy2.args[0]), true);
                     assert.equal(spy1.args[0].value, 'error-1');
                     assert.equal(spy2.args[0].value, 'error-2');
-                    assert.equal(Latte.isNothing(spy1.args[1]), true);
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1601,7 +1534,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, '([error])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1633,7 +1565,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'new error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1653,7 +1584,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], 'repair error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1671,7 +1601,6 @@ describe('Promise instance', function(){
                     assert.equal(spy1.called, false);
                     assert.equal(Latte.isE(spy2.args[0]), false);
                     assert.equal(spy2.args[0], 'test');
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1719,8 +1648,6 @@ describe('Promise instance', function(){
                     assert.equal(Latte.isE(spy2.args[0]), true);
                     assert.equal(spy1.args[0].value, '(error)');
                     assert.equal(spy2.args[0].value, '[error]');
-                    assert.equal(Latte.isNothing(spy1.args[1]), true);
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1749,8 +1676,6 @@ describe('Promise instance', function(){
                     assert.equal(Latte.isE(spy2.args[0]), false);
                     assert.equal(spy1.args[0].value, '(error)');
                     assert.equal(spy2.args[0], '[error]');
-                    assert.equal(Latte.isNothing(spy1.args[1]), true);
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1774,7 +1699,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, '([error])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1798,7 +1722,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], '([error])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1822,7 +1745,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, '([error])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1846,7 +1768,6 @@ describe('Promise instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], '([error])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 50);
             });
@@ -1879,7 +1800,6 @@ describe('Promise instance', function(){
                     assert.equal(spy.called, true);
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], 'test');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 40);
             }, 10)
@@ -1900,7 +1820,6 @@ describe('Promise instance', function(){
                     assert.equal(spy.called, true);
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
                     done();
                 }, 40);
             }, 10)
@@ -1929,7 +1848,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1","test-2"]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -1945,7 +1863,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1","test-2"]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -1991,7 +1908,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2009,7 +1925,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2027,7 +1942,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error-1');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2043,7 +1957,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error-1');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2059,7 +1972,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1"]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2082,7 +1994,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1","test-2","test-3"]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2108,7 +2019,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-1");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2124,7 +2034,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test-1');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2140,7 +2049,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-2");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2158,7 +2066,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-1");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2176,7 +2083,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2194,7 +2100,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test-1');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2210,7 +2115,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test-1');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2226,7 +2130,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-1");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2249,7 +2152,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-1");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2277,7 +2179,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2298,7 +2199,6 @@ describe('Promise instance', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, "error");
                 assert.equal(spy2.called, false);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2316,7 +2216,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "!!test");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2338,7 +2237,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2364,7 +2262,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2380,7 +2277,6 @@ describe('Promise instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2407,7 +2303,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2421,7 +2316,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2435,7 +2329,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'value');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2459,7 +2352,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1","test-2"]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2480,7 +2372,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1","test-2","test-3"]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2537,7 +2428,6 @@ describe('Promise static', function(){
                 assert.equal(spy.args[0].value[0].value, 'error');
                 assert.equal(spy.args[0].value[1], 'test-2');
 
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2561,8 +2451,6 @@ describe('Promise static', function(){
 
                 assert.equal(spy.args[0].value[0], 'test-1');
                 assert.equal(spy.args[0].value[1].value, 'error');
-
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2575,7 +2463,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '[]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2598,7 +2485,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1","test-2"]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2619,7 +2505,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1","test-2","test-3"]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2671,7 +2556,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2691,7 +2575,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2711,7 +2594,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error-1');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2724,7 +2606,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '[]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2745,7 +2626,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-1");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2763,7 +2643,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-2");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2783,7 +2662,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-1");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2803,7 +2681,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2823,7 +2700,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test-1');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2853,7 +2729,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2869,7 +2744,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'value-test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2885,7 +2759,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test,rest,west');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2904,7 +2777,6 @@ describe('Promise static', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy2.called, false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2924,7 +2796,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2946,7 +2817,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test,rest');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2968,7 +2838,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test,rest,west');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -2993,7 +2862,6 @@ describe('Promise static', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
                 assert.equal(spy2.called, false);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3009,7 +2877,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3027,7 +2894,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3045,7 +2911,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3061,7 +2926,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3081,7 +2945,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], '(test)');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3100,7 +2963,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3119,7 +2981,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3135,7 +2996,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3151,7 +3011,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test,rest');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3169,7 +3028,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3188,7 +3046,6 @@ describe('Promise static', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy2.called, false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3209,7 +3066,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test,rest,west');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3233,7 +3089,6 @@ describe('Promise static', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy2.called, false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3251,7 +3106,6 @@ describe('Promise static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'rest');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 40);
         });
@@ -3289,7 +3143,6 @@ describe('Promise shell', function(){
         setTimeout(function(){
             assert.equal(Latte.isE(spy.args[0]), false);
             assert.equal(spy.args[0], 'test');
-            assert.equal(Latte.isNothing(spy.args[1]), true);
             done();
         }, 40);
     });
@@ -3306,7 +3159,6 @@ describe('Promise shell', function(){
         setTimeout(function(){
             assert.equal(Latte.isE(spy.args[0]), false);
             assert.equal(spy.args[0], 'test');
-            assert.equal(Latte.isNothing(spy.args[1]), true);
             done();
         }, 40);
     });
@@ -3323,7 +3175,6 @@ describe('Promise shell', function(){
         setTimeout(function(){
             assert.equal(Latte.isE(spy.args[0]), false);
             assert.equal(spy.args[0], 'test');
-            assert.equal(Latte.isNothing(spy.args[1]), true);
             done();
         }, 40);
     });
@@ -3338,24 +3189,6 @@ describe('Promise shell', function(){
         setTimeout(function(){
             assert.equal(Latte.isE(spy.args[0]), false);
             assert.equal(spy.args[0], 'test-1');
-            assert.equal(Latte.isNothing(spy.args[1]), true);
-            done();
-        }, 40);
-    });
-
-    it('get method', function(done){
-        var spy = fspy(),
-            s = Latte.Promise.shell();
-
-        s.set('test').out().always(spy);
-
-        setTimeout(function(){
-            var val = s.get();
-            assert.equal(Latte.isE(spy.args[0]), false);
-            assert.equal(Latte.isE(val), false);
-            assert.equal(spy.args[0], 'test');
-            assert.equal(val, 'test');
-            assert.equal(Latte.isNothing(spy.args[1]), true);
             done();
         }, 40);
     });
@@ -3365,7 +3198,6 @@ describe('Promise shell', function(){
             out = s.out();
 
         assert.equal(typeof out.set === 'undefined', true);
-        assert.equal(typeof out.get === 'undefined', true);
         assert.equal(typeof out.out === 'undefined', true);
     });
 });
@@ -3524,7 +3356,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'west');
-                assert.equal(spy.args[1], 'test');
                 done();
             }, 50);
         });
@@ -3542,7 +3373,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -3560,7 +3391,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -3580,7 +3411,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'rest');
-                assert.equal(spy.args[1], 'test');
                 done();
             }, 50);
         });
@@ -3597,7 +3427,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(spy.args[1], 'test');
                 done();
             }, 50);
         });
@@ -3634,8 +3463,6 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy1.args[0].value, 'error');
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -3654,8 +3481,6 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), false);
                 assert.equal(spy1.args[0], 'test');
                 assert.equal(spy2.args[0], 'test');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -3696,7 +3521,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -3724,7 +3549,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'rest');
-                assert.equal(spy.args[1], 'west');
                 done();
             }, 50);
         });
@@ -3742,8 +3566,6 @@ describe('Stream instance', function(){
 
             setTimeout(function(){
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isE(spy.args[1]), false);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -3780,8 +3602,6 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), false);
                 assert.equal(spy1.args[0], 'test');
                 assert.equal(spy2.args[0], 'test');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -3800,8 +3620,6 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), false);
                 assert.equal(spy1.args[0], 'test');
                 assert.equal(spy2.args[0], 'test');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -3847,8 +3665,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isE(spy.args[1]), false);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
                 done();
             }, 50);
         });
@@ -3898,8 +3714,6 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy1.args[0].value, 'error');
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -3918,8 +3732,6 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy1.args[0].value, 'error');
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -3963,8 +3775,6 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy1.args[0].value, 'error');
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -3995,7 +3805,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 5);
-                assert.equal(spy.args[1], 2);
                 done();
             }, 50);
         });
@@ -4037,7 +3846,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 5);
-                assert.equal(spy.args[1], 2);
                 done();
             }, 50);
         });
@@ -4074,7 +3882,6 @@ describe('Stream instance', function(){
                 assert.equal(spy2.called, true);
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -4117,7 +3924,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(spy1.called, true);
                 assert.equal(spy1.args[0], 12);
-                assert.equal(spy1.args[1], 5);
                 assert.equal(spy2.called, false);
                 done();
             }, 50);
@@ -4178,7 +3984,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 5);
-                assert.equal(spy.args[1], 2);
                 done();
             }, 50);
         });
@@ -4220,7 +4025,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], -5);
-                assert.equal(spy.args[1], -2);
                 done();
             }, 50);
         });
@@ -4255,7 +4059,6 @@ describe('Stream instance', function(){
                 assert.equal(spy2.called, true);
                 assert.equal(Latte.isE(spy2.args[0]), true);
                 assert.equal(spy2.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -4352,7 +4155,6 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], '(west)');
-                    assert.equal(spy.args[1], '(test)');
                     done();
                 }, 50);
             });
@@ -4373,8 +4175,6 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'error');
-                    assert.equal(Latte.isE(spy.args[1]), true);
-                    assert.equal(spy.args[1].value, 'error');
                     done();
                 }, 50);
             });
@@ -4395,7 +4195,6 @@ describe('Stream instance', function(){
                     assert.equal(spy1.called, false);
                     assert.equal(Latte.isE(spy2.args[0]), true);
                     assert.equal(spy2.args[0].value, 'error-2');
-                    assert.equal(spy2.args[1].value, 'error-1');
                     done();
                 }, 50);
             });
@@ -4416,7 +4215,6 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], '(test)');
-                    assert.equal(spy.args[1].value, 'error');
                     done();
                 }, 50);
             });
@@ -4441,8 +4239,6 @@ describe('Stream instance', function(){
                     assert.equal(Latte.isE(spy2.args[0]), false);
                     assert.equal(spy1.args[0], 10);
                     assert.equal(spy2.args[0], 25);
-                    assert.equal(Latte.isNothing(spy1.args[1]), true);
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -4462,7 +4258,7 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], 50);
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 50);
             });
@@ -4494,9 +4290,7 @@ describe('Stream instance', function(){
 
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
-                    assert.equal(Latte.isE(spy.args[1]), false);
                     assert.equal(spy.args[0], '(rest)');
-                    assert.equal(spy.args[1], '(test)');
                     done();
                 }, 50);
             });
@@ -4519,8 +4313,6 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'error');
-                    assert.equal(Latte.isE(spy.args[1]), true);
-                    assert.equal(spy.args[1].value, 'error');
                     done();
                 }, 50);
             });
@@ -4540,7 +4332,7 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 50);
             });
@@ -4588,8 +4380,6 @@ describe('Stream instance', function(){
                     assert.equal(Latte.isE(spy2.args[0]), false);
                     assert.equal(spy1.args[0], '(test)');
                     assert.equal(spy2.args[0], '[test]');
-                    assert.equal(Latte.isNothing(spy1.args[1]), true);
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -4615,9 +4405,7 @@ describe('Stream instance', function(){
 
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
-                    assert.equal(Latte.isE(spy.args[1]), false);
                     assert.equal(spy.args[0], '({test})');
-                    assert.equal(spy.args[1], '([test])');
                     done();
                 }, 50);
             });
@@ -4643,9 +4431,7 @@ describe('Stream instance', function(){
 
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
-                    assert.equal(Latte.isE(spy.args[1]), false);
                     assert.equal(spy.args[0], '{[test]}');
-                    assert.equal(spy.args[1], '([test])');
                     done();
                 }, 50);
             });
@@ -4674,7 +4460,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'west');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -4690,7 +4476,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -4706,7 +4492,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], undefined);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -4722,7 +4508,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -4743,8 +4529,6 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), false);
                 assert.equal(spy1.args[0], 'test');
                 assert.equal(spy2.args[0], 'west');
-                assert.equal(Latte.isNothing(spy1.args[1]), true);
-                assert.equal(Latte.isNothing(spy2.args[1]), true);
                 done();
             }, 50);
         });
@@ -4763,8 +4547,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'west');
-                assert.equal(Latte.isE(spy.args[1]), false);
-                assert.equal(spy.args[1], 'west');
                 done();
             }, 50);
         });
@@ -4782,7 +4564,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 15);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -4829,7 +4611,7 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy2.args.length, 0);
                 assert.equal(spy.args[0], 5);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -4855,7 +4637,6 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy2.count, 1);
                 assert.equal(spy.args[0], 8);
-                assert.equal(spy.args[1], 5);
                 done();
             }, 50);
         });
@@ -4873,7 +4654,7 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy2.called, false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -4899,7 +4680,6 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy2.called, true);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(spy.args[1].value, 'error');
                 done();
             }, 50);
         });
@@ -4938,9 +4718,7 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy2.args[0]), false);
                 assert.equal(Latte.isE(spy4.args[0]), false);
                 assert.equal(spy2.args[0], '[test]');
-                assert.equal(spy2.args[1], '[rest]');
                 assert.equal(spy4.args[0], '(test)');
-                assert.equal(spy4.args[1], '(rest)');
                 done();
             }, 50);
         });
@@ -4961,7 +4739,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], '!!5');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -4981,7 +4759,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error: 5');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -5003,7 +4781,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 10);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 50);
         });
@@ -5034,7 +4812,6 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'new error');
-                    assert.equal(spy.args[1], 'test');
                     done();
                 }, 50);
             });
@@ -5052,7 +4829,7 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], 'repair error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 50);
             });
@@ -5072,7 +4849,6 @@ describe('Stream instance', function(){
                     assert.equal(spy1.called, false);
                     assert.equal(Latte.isE(spy2.args[0]), false);
                     assert.equal(spy2.args[0], 'test');
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -5114,8 +4890,6 @@ describe('Stream instance', function(){
                     assert.equal(Latte.isE(spy2.args[0]), true);
                     assert.equal(spy1.args[0].value, 'error-1');
                     assert.equal(spy2.args[0].value, 'error-2');
-                    assert.equal(Latte.isNothing(spy1.args[1]), true);
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -5135,7 +4909,7 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, '([error])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 50);
             });
@@ -5167,9 +4941,7 @@ describe('Stream instance', function(){
 
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
-                    assert.equal(Latte.isE(spy.args[1]), true);
                     assert.equal(spy.args[0].value, 'new error-2');
-                    assert.equal(spy.args[1].value, 'new error-1');
                     done();
                 }, 50);
             });
@@ -5189,7 +4961,7 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], 'repair error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 50);
             });
@@ -5207,7 +4979,6 @@ describe('Stream instance', function(){
                     assert.equal(spy1.called, false);
                     assert.equal(Latte.isE(spy2.args[0]), false);
                     assert.equal(spy2.args[0], 'test');
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -5258,8 +5029,6 @@ describe('Stream instance', function(){
                     assert.equal(Latte.isE(spy2.args[0]), true);
                     assert.equal(spy1.args[0].value, '(error)');
                     assert.equal(spy2.args[0].value, '[error]');
-                    assert.equal(spy1.args[1], '{error}');
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -5288,8 +5057,6 @@ describe('Stream instance', function(){
                     assert.equal(Latte.isE(spy2.args[0]), false);
                     assert.equal(spy1.args[0].value, '(error)');
                     assert.equal(spy2.args[0], '[error]');
-                    assert.equal(Latte.isNothing(spy1.args[1]), true);
-                    assert.equal(Latte.isNothing(spy2.args[1]), true);
                     done();
                 }, 50);
             });
@@ -5313,7 +5080,7 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, '([error])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 50);
             });
@@ -5337,7 +5104,7 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], '([error])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 50);
             });
@@ -5361,7 +5128,7 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, '([error])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 50);
             });
@@ -5385,7 +5152,7 @@ describe('Stream instance', function(){
                 setTimeout(function(){
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], '([error])');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 50);
             });
@@ -5422,7 +5189,7 @@ describe('Stream instance', function(){
                     assert.equal(spy.called, true);
                     assert.equal(Latte.isE(spy.args[0]), false);
                     assert.equal(spy.args[0], 'rest');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 40);
             }, 10)
@@ -5445,7 +5212,7 @@ describe('Stream instance', function(){
                     assert.equal(spy.called, true);
                     assert.equal(Latte.isE(spy.args[0]), true);
                     assert.equal(spy.args[0].value, 'error');
-                    assert.equal(Latte.isNothing(spy.args[1]), true);
+                    
                     done();
                 }, 40);
             }, 10);
@@ -5477,7 +5244,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-11","test-2"]');
-                assert.equal(JSON.stringify(spy.args[1]), '["test-1","test-2"]');
                 done();
             }, 40);
         });
@@ -5493,7 +5259,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1","test-2"]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5539,7 +5305,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5557,7 +5323,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5575,7 +5341,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error-1');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5591,7 +5357,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error-1');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5607,7 +5373,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1"]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5633,7 +5399,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-1","test-2","test-33"]');
-                assert.equal(JSON.stringify(spy.args[1]), '["test-1","test-2","test-3"]');
                 done();
             }, 40);
         });
@@ -5662,7 +5427,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-2");
-                assert.equal(spy.args[1], "test-1");
                 done();
             }, 40);
         });
@@ -5678,7 +5442,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test-2');
-                assert.equal(spy.args[1], 'test-1');
                 done();
             }, 40);
         });
@@ -5694,7 +5457,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-2");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5714,7 +5477,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-1");
-                assert.equal(spy.args[1], "test-2");
                 done();
             }, 40);
         });
@@ -5731,9 +5493,7 @@ describe('Stream instance', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
-                assert.equal(Latte.isE(spy.args[1]), true);
                 assert.equal(spy.args[0], 'test-2');
-                assert.equal(spy.args[1].value, 'error');
                 done();
             }, 40);
         });
@@ -5750,9 +5510,7 @@ describe('Stream instance', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
-                assert.equal(Latte.isE(spy.args[1]), false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(spy.args[1], 'test-1');
                 done();
             }, 40);
         });
@@ -5767,9 +5525,7 @@ describe('Stream instance', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
-                assert.equal(Latte.isE(spy.args[1]), false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(spy.args[1], 'test-1');
                 done();
             }, 40);
         });
@@ -5785,7 +5541,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-1");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5808,7 +5564,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-3");
-                assert.equal(spy.args[1], "test-2");
                 done();
             }, 40);
         });
@@ -5836,7 +5591,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5857,7 +5612,7 @@ describe('Stream instance', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, "error");
                 assert.equal(spy2.called, false);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5885,7 +5640,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0].toString(), "1,2,3");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 150);
         });
@@ -5903,7 +5658,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "!!test");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5925,7 +5680,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -5954,7 +5709,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0].toString(), "1,2,3");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 150);
         });
@@ -5983,7 +5738,6 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'rest');
-                assert.equal(spy.args[1], 'test');
                 done();
             }, 40);
         });
@@ -5999,7 +5753,7 @@ describe('Stream instance', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6026,7 +5780,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6040,7 +5794,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6054,7 +5808,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'value');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6079,9 +5833,7 @@ describe('Stream static', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
-                assert.equal(Latte.isE(spy.args[1]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-11","test-2"]');
-                assert.equal(JSON.stringify(spy.args[1]), '["test-1","test-2"]');
                 done();
             }, 40);
         });
@@ -6104,9 +5856,7 @@ describe('Stream static', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
-                assert.equal(Latte.isE(spy.args[1]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-11","test-2","test-3"]');
-                assert.equal(JSON.stringify(spy.args[1]), '["test-1","test-2","test-3"]');
                 done();
             }, 40);
         });
@@ -6166,8 +5916,6 @@ describe('Stream static', function(){
                 assert.equal(spy.args[0].value[0].value, 'error-2');
                 assert.equal(spy.args[0].value[1], 'test-2');
 
-                assert.equal(spy.args[1].value[0].value, 'error-1');
-                assert.equal(spy.args[1].value[1], 'test-2');
                 done();
             }, 40);
         });
@@ -6192,7 +5940,7 @@ describe('Stream static', function(){
                 assert.equal(spy.args[0].value[0], 'test-1');
                 assert.equal(spy.args[0].value[1].value, 'error');
 
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6205,7 +5953,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '[]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6230,9 +5978,7 @@ describe('Stream static', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
-                assert.equal(Latte.isE(spy.args[1]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-11","test-2"]');
-                assert.equal(JSON.stringify(spy.args[1]), '["test-1","test-2"]');
                 done();
             }, 40);
         });
@@ -6255,9 +6001,7 @@ describe('Stream static', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
-                assert.equal(Latte.isE(spy.args[1]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '["test-11","test-2","test-3"]');
-                assert.equal(JSON.stringify(spy.args[1]), '["test-1","test-2","test-3"]');
                 done();
             }, 40);
         });
@@ -6311,9 +6055,7 @@ describe('Stream static', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
-                assert.equal(Latte.isE(spy.args[1]), true);
                 assert.equal(spy.args[0].value, 'error-2');
-                assert.equal(spy.args[1].value, 'error-1');
                 done();
             }, 40);
         });
@@ -6333,7 +6075,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6353,7 +6095,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error-1');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6366,7 +6108,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(JSON.stringify(spy.args[0]), '[]');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6389,9 +6131,7 @@ describe('Stream static', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
-                assert.equal(Latte.isE(spy.args[1]), false);
                 assert.equal(spy.args[0], "test-2");
-                assert.equal(spy.args[1], "test-1");
                 done();
             }, 40);
         });
@@ -6409,7 +6149,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], "test-2");
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6428,9 +6168,7 @@ describe('Stream static', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
-                assert.equal(Latte.isE(spy.args[1]), false);
                 assert.equal(spy.args[0], "test-2");
-                assert.equal(spy.args[1], "test-1");
                 done();
             }, 40);
         });
@@ -6449,9 +6187,7 @@ describe('Stream static', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
-                assert.equal(Latte.isE(spy.args[1]), true);
                 assert.equal(spy.args[0], 'test-2');
-                assert.equal(spy.args[1].value, 'error');
                 done();
             }, 40);
         });
@@ -6470,9 +6206,7 @@ describe('Stream static', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
-                assert.equal(Latte.isE(spy.args[1]), false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(spy.args[1], 'test-1');
                 done();
             }, 40);
         });
@@ -6502,7 +6236,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6518,7 +6252,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'value-test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6534,7 +6268,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test,rest,west');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6553,7 +6287,7 @@ describe('Stream static', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy2.called, false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6574,7 +6308,6 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'rest');
-                assert.equal(spy.args[1], 'test');
                 done();
             }, 40);
         });
@@ -6597,7 +6330,6 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test,rest');
-                assert.equal(spy.args[1], 'west,rest');
                 done();
             }, 40);
         });
@@ -6620,7 +6352,6 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test,rest,best');
-                assert.equal(spy.args[1], 'west,rest,best');
                 done();
             }, 40);
         });
@@ -6645,7 +6376,7 @@ describe('Stream static', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
                 assert.equal(spy2.called, false);
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6661,7 +6392,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6682,7 +6413,6 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test-1');
-                assert.equal(spy.args[1], 'test');
                 done();
             }, 40);
         });
@@ -6700,7 +6430,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6716,7 +6446,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6739,7 +6469,6 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], '[rest]');
-                assert.equal(spy.args[1], '(test)');
                 done();
             }, 40);
         });
@@ -6758,7 +6487,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6777,7 +6506,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6793,7 +6522,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6809,7 +6538,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test,rest');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6830,7 +6559,6 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'rest');
-                assert.equal(spy.args[1], 'test');
                 done();
             }, 40);
         });
@@ -6849,7 +6577,7 @@ describe('Stream static', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy2.called, false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6870,7 +6598,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'test,rest,west');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6894,7 +6622,7 @@ describe('Stream static', function(){
                 assert.equal(Latte.isE(spy.args[0]), true);
                 assert.equal(spy2.called, false);
                 assert.equal(spy.args[0].value, 'error');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6912,7 +6640,7 @@ describe('Stream static', function(){
             setTimeout(function(){
                 assert.equal(Latte.isE(spy.args[0]), false);
                 assert.equal(spy.args[0], 'rest');
-                assert.equal(Latte.isNothing(spy.args[1]), true);
+                
                 done();
             }, 40);
         });
@@ -6950,7 +6678,7 @@ describe('Stream shell', function(){
         setTimeout(function(){
             assert.equal(Latte.isE(spy.args[0]), false);
             assert.equal(spy.args[0], 'test');
-            assert.equal(Latte.isNothing(spy.args[1]), true);
+            
             done();
         }, 40);
     });
@@ -6967,7 +6695,7 @@ describe('Stream shell', function(){
         setTimeout(function(){
             assert.equal(Latte.isE(spy.args[0]), false);
             assert.equal(spy.args[0], 'test');
-            assert.equal(Latte.isNothing(spy.args[1]), true);
+            
             done();
         }, 40);
     });
@@ -6984,7 +6712,7 @@ describe('Stream shell', function(){
         setTimeout(function(){
             assert.equal(Latte.isE(spy.args[0]), false);
             assert.equal(spy.args[0], 'test');
-            assert.equal(Latte.isNothing(spy.args[1]), true);
+            
             done();
         }, 40);
     });
@@ -6998,26 +6726,7 @@ describe('Stream shell', function(){
 
         setTimeout(function(){
             assert.equal(Latte.isE(spy.args[0]), false);
-            assert.equal(Latte.isE(spy.args[1]), false);
             assert.equal(spy.args[0], 'test-2');
-            assert.equal(spy.args[1], 'test-1');
-            done();
-        }, 40);
-    });
-
-    it('get method', function(done){
-        var spy = fspy(),
-            s = Latte.Stream.shell();
-
-        s.set('test').out().always(spy);
-
-        setTimeout(function(){
-            var val = s.get();
-            assert.equal(Latte.isE(spy.args[0]), false);
-            assert.equal(Latte.isE(val), false);
-            assert.equal(spy.args[0], 'test');
-            assert.equal(val, 'test');
-            assert.equal(Latte.isNothing(spy.args[1]), true);
             done();
         }, 40);
     });
@@ -7027,7 +6736,6 @@ describe('Stream shell', function(){
             out = s.out();
 
         assert.equal(typeof out.set === 'undefined', true);
-        assert.equal(typeof out.get === 'undefined', true);
         assert.equal(typeof out.out === 'undefined', true);
     });
 });

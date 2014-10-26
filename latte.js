@@ -23,6 +23,8 @@
         PROP_STREAM = '_____####![STREAM]',
         PROP_CALLBACK = '_____####![CALLBACK]',
 
+        NOTHING = new String('NOTHING'),
+
         aslice = Array.prototype.slice,
         toString = Object.prototype.toString;
 
@@ -52,8 +54,8 @@
     }
 
     function compose(f, g){
-        return function(){
-            return f(g.apply(null, arguments));
+        return function(v){
+            return f(g(v));
         };
     }
 
@@ -65,8 +67,8 @@
     }
 
     function cond(f, g, h){
-        return function(){
-            return f.apply(null, arguments) ? g.apply(null, arguments) : h.apply(null, arguments);
+        return function(v){
+            return f(v) ? g(v) : h(v);
         };
     }
 
@@ -81,9 +83,11 @@
     }
 
     function unpackEntity(f, v){
-        Latte.isLatte(v) ? v.always(function(val){
-            f(val);
-        }) : f(v);
+        Latte.isLatte(v) ? v.always(f) : f(v);
+    }
+
+    function isNothing(v){
+        return v === NOTHING;
     }
 
     function Build(params){
@@ -97,18 +101,16 @@
         }
 
         Entity.prototype.always = function(f, ctx){
-            this[Latte._KEY_PRIVATE_STATE_PROP].on(bind(f, ctx), Latte._MODE_ALL);
+            this[Latte._KEY_PRIVATE_STATE_PROP].on(bind(f, ctx));
             return this;
         };
 
         Entity.prototype.next = function(f, ctx){
-            this[Latte._KEY_PRIVATE_STATE_PROP].on(cond(Latte.isE, noop, bind(f, ctx)), Latte._MODE_NOT_E);
-            return this;
+            return this.always(cond(Latte.isE, noop, bind(f, ctx)));
         };
 
         Entity.prototype.fail = function(f, ctx){
-            this[Latte._KEY_PRIVATE_STATE_PROP].on(cond(Latte.isE, bind(f, ctx), noop), Latte._MODE_E);
-            return this;
+            return this.always(cond(Latte.isE, bind(f, ctx), noop));
         };
 
         Entity.prototype.when = function(f, ctx){
@@ -134,9 +136,9 @@
         };
 
         Entity.prototype.fdip = function(f, ctx){
-            var fn;
-            return this.fmap(function(){
-                return (fn = fn || f.call(ctx)).apply(null, arguments);
+            var fn = null;
+            return this.fmap(function(v){
+                return (fn = fn || f.call(ctx))(v);
             });
         };
 
@@ -163,7 +165,7 @@
                 var gen = null;
 
                 this.next(function(v){
-                    var r = (gen = gen || g.apply(ctx, arguments)).next(v);
+                    var r = (gen = gen || g.call(ctx, v)).next(v);
                     unpackEntity(cond(Latte.isE, c, function(val){
                         if(r.done){
                             c(val);
@@ -258,10 +260,6 @@
                 return this;
             };
 
-            s.get = function(){
-                return this[Latte._KEY_PRIVATE_STATE_PROP].get();
-            };
-
             return {
 
                 set : function(val){
@@ -269,7 +267,6 @@
                     return this;
                 },
 
-                get : bind(s.get, s),
                 out : fconst(new this(s.always, s))
             };
         };
@@ -279,7 +276,7 @@
         return Entity;
     }
 
-    Latte.version = '5.2.3';
+    Latte.version = '5.3.0';
 
     Latte.Promise = Build({immutable : true, key : PROP_PROMISE});
     Latte.Stream = Build({immutable : false, key : PROP_STREAM});
@@ -290,10 +287,6 @@
 
     Latte.E = function(v){
         return Object.defineProperty({value : v}, PROP_E, {value : true});
-    };
-
-    Latte.isNothing = function(v){
-        return v === Latte._NOTHING;
     };
 
     Latte.isCallback = function(v){
@@ -337,29 +330,17 @@
     };
 
     Latte._KEY_PRIVATE_STATE_PROP = '_____####![state]';
-    Latte._NOTHING = new String('NOTHING');
-
-    Latte._MODE_NOT_E = 0;
-    Latte._MODE_E = 1;
-    Latte._MODE_ALL = 2;
 
     Latte._State = function(executor, params){
         this._params = params;
         this._queue = [];
-
-        this._prev = {};
-        this._prev[Latte._MODE_NOT_E] = Latte._NOTHING;
-        this._prev[Latte._MODE_E] = Latte._NOTHING;
-        this._prev[Latte._MODE_ALL] = Latte._NOTHING;
-
-        this._val = Latte._NOTHING;
+        this._val = NOTHING;
         executor(bind(this.set, this));
     };
 
-    Latte._State.prototype.on = function(f, mode){
-        var fobj = {fn : f, mode : mode};
-        this._queue && this._queue.push(fobj);
-        !Latte.isNothing(this._val) && this._fapply(fobj);
+    Latte._State.prototype.on = function(f){
+        this._queue && this._queue.push(f);
+        !isNothing(this._val) && f(this._val);
         return this;
     };
 
@@ -368,24 +349,13 @@
         return this;
     };
 
-    Latte._State.prototype.get = function(){
-        return this._val;
-    };
-
     Latte._State.prototype._set = function(v){
-        if(Latte.isNothing(this._val) || !this._params.immutable){
-            this._prev[Latte._MODE_ALL] = this._val;
-            this._prev[Latte.isE(this._val) ? Latte._MODE_E : Latte._MODE_NOT_E] = this._val;
+        if(isNothing(this._val) || !this._params.immutable){
             this._val = v;
-            this._queue && this._queue.forEach(this._fapply, this);
+            this._queue && this._queue.forEach(lift(this._val), this);
             this._params.immutable && (this._queue = null);
         }
 
-        return this;
-    };
-
-    Latte._State.prototype._fapply = function(fobj){
-        fobj.fn(this._val, this._prev[fobj.mode]);
         return this;
     };
 

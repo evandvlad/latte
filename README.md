@@ -61,20 +61,13 @@ Latte.isStream - метод проверяющий что аргумент яв�
 
     Latte.isE(Latte.E()) === true;
     Latte.isE({value : ''}) === false; 
-    
-### Nothing ###
-
-Значение Nothing - отсутствие значения, данное значение используется если значение не было задано. 
-Для проверки на значение Nothing есть метод Latte.isNothing.
  
 ### Методы объекта Promise/Stream ###
 
 Как было сказано ранее, Promise и Stream реализуют один интерфейс. 
 
 Методы: always, next, fail, when, unless, fmap, efmap - принимают в качестве параметров, функцию обработки и контекст для нее 
-(опционально). Функция принимает два параметра - текущее значение и предыдущее значение или значение Nothing 
-(для обещаний предыдущее значение должно быть Nothing, поскольку при задании значения оно не изменяется). 
-Предыдущее значение определяется обработчиком, то есть передаются те значения, которые обрабатываеются функцией.
+(опционально). Функция принимает один параметр - текущее значение. 
 
 Методы: combine, any - принимают в качестве параметра одно значение или массив значений. В качестве значения могут выступать
 как экземпляры Promise/Stream, так и любые другие значения.
@@ -91,19 +84,17 @@ Latte.isStream - метод проверяющий что аргумент яв�
         setTimeout(function(){
             handle('test');
         }, 1000);
-    }).always(function(value, prev){
+    }).always(function(value){
         value === 'test'; // true
-        Latte.isNothing(prev); // true
     });
     
     Latte.Promise(function(handle){
         setTimeout(function(){
             handle(Latte.E(this.message));
         }.bind(this), 1000);
-    }, {message : 'error'}).always(function(value, prev){
+    }, {message : 'error'}).always(function(value){
         Latte.isE(value); // true
         value.value === 'error'; // true
-        Latte.isNothing(prev); // true
     });
     
 ##### next #####
@@ -115,16 +106,15 @@ Latte.isStream - метод проверяющий что аргумент яв�
         setTimeout(function(){
             handle('test');
         }, 1000);
-    }).next(function(value, prev){
+    }).next(function(value){
         value === 'test'; // true
-        Latte.isNothing(prev); // true
     });
     
     Latte.Promise(function(handle){
         setTimeout(function(){
             handle(Latte.E(this.message));
         }.bind(this), 1000);
-    }, {message : 'error'}).next(function(value, prev){
+    }, {message : 'error'}).next(function(value){
         // функция не будет вызвана
     });
 
@@ -137,7 +127,7 @@ Latte.isStream - метод проверяющий что аргумент яв�
         setTimeout(function(){
             handle('test');
         }, 1000);
-    }).fail(function(value, prev){
+    }).fail(function(value){
         // функция не будет вызвана
     });
     
@@ -145,10 +135,9 @@ Latte.isStream - метод проверяющий что аргумент яв�
         setTimeout(function(){
             handle(Latte.E(this.message));
         }.bind(this), 1000);
-    }, {message : 'error'}).fail(function(value, prev){
+    }, {message : 'error'}).fail(function(value){
         Latte.isE(value); // true
         value.value === 'error'; // true
-        Latte.isNothing(prev); // true
     });
     
 ##### when #####
@@ -160,8 +149,8 @@ Latte.isStream - метод проверяющий что аргумент яв�
         setTimeout(function(){
             handle('test');
         }, 1000);
-    }).when(function(value, prev){
-        return value !== prev;
+    }).when(function(value){
+        return value === 'test';
     }).next(function(value){
         value === 'test'; // true
     });
@@ -175,8 +164,8 @@ Latte.isStream - метод проверяющий что аргумент яв�
         setTimeout(function(){
             handle('test');
         }, 1000);
-    }).unless(function(value, prev){
-        return value === prev;
+    }).unless(function(value){
+        return value !== 'test';
     }).next(function(value){
         value === 'test'; // true
     });
@@ -215,7 +204,7 @@ Latte.isStream - метод проверяющий что аргумент яв�
         setTimeout(function(){
             handle('test');
         }, 1000);
-    }).fmap(function(value, prev){
+    }).fmap(function(value){
         return value + '-1';
     }).next(function(value){
         value === 'test-1'; // true
@@ -225,7 +214,7 @@ Latte.isStream - метод проверяющий что аргумент яв�
         setTimeout(function(){
             handle('test');
         }, 1000);
-    }).fmap(function(value, prev){
+    }).fmap(function(value){
         return Latte.Promise(function(handle){
             handle(Latte.E('error'));
         });
@@ -244,7 +233,7 @@ Latte.isStream - метод проверяющий что аргумент яв�
         setTimeout(function(){
             handle(Latte.E('error'));
         }, 1000);
-    }).efmap(function(e, prev){
+    }).efmap(function(e){
         return Latte.E('new ' + e.value);
     }).fail(function(e){
         e.value === 'new error'; // true
@@ -254,7 +243,7 @@ Latte.isStream - метод проверяющий что аргумент яв�
         setTimeout(function(){
             handle(Latte.E('test'));
         }, 1000);
-    }).efmap(function(value, prev){
+    }).efmap(function(value){
         return Latte.Promise(function(handle){
             handle('not error');
         });
@@ -274,7 +263,7 @@ Latte.isStream - метод проверяющий что аргумент яв�
         }, 1000);
     }).fdip(function(){
         var values = [];
-        return function(value, prev){
+        return function(value){
             values.push(value);
             return values;
         };
@@ -489,8 +478,6 @@ Promise/Stream, то это значение будет вычисляться.
 
 -  set - принимает один параметр - значение любого типа и помещает его в Promise/Stream, если в качестве значение будет
 экземпляр Promise/Stream, то оно будет развернуто перед тем как помещено в качестве значения в текущий экземпляр.
-
--  get - возвращает текущее значение или значение типа Nothing, если в объект не было до этого помещено значение.
 
 -  out - метод возвращает сам объект Promise/Stream.
 
