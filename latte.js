@@ -138,7 +138,8 @@
         Entity.prototype.fdip = function(f, ctx){
             var fn = null;
             return this.fmap(function(v){
-                return (fn = fn || f.call(ctx))(v);
+                fn = fn || f.call(ctx);
+                return fn(v);
             });
         };
 
@@ -146,16 +147,33 @@
             return this.fmap(fconst(v));
         };
 
-        Entity.prototype.wait = function(delay){
+        Entity.prototype.debounce = function(delay){
             return new this.constructor(function(c){
-                var tid = null;
+                var state = this[Latte._KEY_PRIVATE_STATE_PROP],
+                    tid = null;
 
-                return this.always(function(v){
+                this.always(function(){
                     tid && clearTimeout(tid);
                     tid = setTimeout(function(){
-                        c(v);
+                        c(state.get());
                         tid = null;
                     }, delay);
+                });
+            }, this);
+        };
+
+        Entity.prototype.throttle = function(delay){
+            return new this.constructor(function(c){
+                var state = this[Latte._KEY_PRIVATE_STATE_PROP],
+                    tid = null;
+
+                this.always(function(){
+                    if(tid === null){
+                        tid = setTimeout(function(){
+                            c(state.get());
+                            tid = null;
+                        }, delay);
+                    }
                 });
             }, this);
         };
@@ -276,7 +294,7 @@
         return Entity;
     }
 
-    Latte.version = '5.3.0';
+    Latte.version = '5.4.0';
 
     Latte.Promise = Build({immutable : true, key : PROP_PROMISE});
     Latte.Stream = Build({immutable : false, key : PROP_STREAM});
@@ -347,6 +365,10 @@
     Latte._State.prototype.set = function(v){
         unpackEntity(bind(this._set, this), v);
         return this;
+    };
+
+    Latte._State.prototype.get = function(){
+        return this._val;
     };
 
     Latte._State.prototype._set = function(v){
