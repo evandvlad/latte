@@ -10,8 +10,8 @@ var assert = require("assert"),
 
 describe('E', function(){
 
-    it('isE', function(){
-         assert.equal(Latte.isE(Latte.E()), true);
+    it('isE', function(){   
+         assert.equal(Latte.isE(Latte.E()), true);                      
          assert.equal(Latte.isE(null), false);
          assert.equal(Latte.isE(undefined), false);
          assert.equal(Latte.isE(), false);
@@ -1783,7 +1783,7 @@ describe('Promise instance', function(){
         });
     });
 
-    describe('wait', function(){
+    describe('debounce', function(){
 
         it('call', function(done){
             var spy = fspy(),
@@ -1791,7 +1791,7 @@ describe('Promise instance', function(){
                     h('test');
                 });
 
-            p.wait(20).always(spy);
+            p.debounce(20).always(spy);
 
             setTimeout(function(){
                 assert.equal(spy.called, false);
@@ -1811,7 +1811,7 @@ describe('Promise instance', function(){
                     h(Latte.E('error'));
                 });
 
-            p.wait(20).always(spy);
+            p.debounce(20).always(spy);
 
             setTimeout(function(){
                 assert.equal(spy.called, false);
@@ -1827,7 +1827,57 @@ describe('Promise instance', function(){
 
         it('not same instance', function(){
             var p1 = Latte.Promise(function(){}),
-                p2 = p1.wait(10);
+                p2 = p1.debounce(10);
+
+            assert.equal(p1 === p2, false);
+        });
+    });
+
+    describe('throttle', function(){
+
+        it('call', function(done){
+            var spy = fspy(),
+                p = Latte.Promise(function(h){
+                    h('test');
+                });
+
+            p.throttle(20).always(spy);
+
+            setTimeout(function(){
+                assert.equal(spy.called, false);
+
+                setTimeout(function(){
+                    assert.equal(spy.called, true);
+                    assert.equal(Latte.isE(spy.args[0]), false);
+                    assert.equal(spy.args[0], 'test');
+                    done();
+                }, 40);
+            }, 10)
+        });
+
+        it('call if E', function(done){
+            var spy = fspy(),
+                p = Latte.Promise(function(h){
+                    h(Latte.E('error'));
+                });
+
+            p.throttle(20).always(spy);
+
+            setTimeout(function(){
+                assert.equal(spy.called, false);
+
+                setTimeout(function(){
+                    assert.equal(spy.called, true);
+                    assert.equal(Latte.isE(spy.args[0]), true);
+                    assert.equal(spy.args[0].value, 'error');
+                    done();
+                }, 40);
+            }, 10)
+        });
+
+        it('not same instance', function(){
+            var p1 = Latte.Promise(function(){}),
+                p2 = p1.throttle(10);
 
             assert.equal(p1 === p2, false);
         });
@@ -5168,7 +5218,7 @@ describe('Stream instance', function(){
         });
     });
 
-    describe('wait', function(){
+    describe('debounce', function(){
 
         it('call', function(done){
             var spy = fspy(),
@@ -5180,7 +5230,7 @@ describe('Stream instance', function(){
                     }, 0);
                 });
 
-            p.wait(20).always(spy);
+            p.debounce(20).always(spy);
 
             setTimeout(function(){
                 assert.equal(spy.called, false);
@@ -5203,7 +5253,7 @@ describe('Stream instance', function(){
                     }, 0);
                 });
 
-            p.wait(20).always(spy);
+            p.debounce(20).always(spy);
 
             setTimeout(function(){
                 assert.equal(spy.called, false);
@@ -5220,7 +5270,65 @@ describe('Stream instance', function(){
 
         it('not same instance', function(){
             var p1 = Latte.Stream(function(){}),
-                p2 = p1.wait(10);
+                p2 = p1.debounce(10);
+
+            assert.equal(p1 === p2, false);
+        });
+    });
+
+    describe('throttle', function(){
+
+        it('call', function(done){
+            var spy = fspy(),
+                p = Latte.Stream(function(h){
+                    setTimeout(function(){
+                        h('test');
+                        h('west');
+                        h('rest');
+                    }, 0);
+                });
+
+            p.throttle(20).always(spy);
+
+            setTimeout(function(){
+                assert.equal(spy.called, false);
+
+                setTimeout(function(){
+                    assert.equal(spy.called, true);
+                    assert.equal(Latte.isE(spy.args[0]), false);
+                    assert.equal(spy.args[0], 'rest');
+
+                    done();
+                }, 40);
+            }, 10)
+        });
+
+        it('call if E', function(done){
+            var spy = fspy(),
+                p = Latte.Stream(function(h){
+                    setTimeout(function(){
+                        h(Latte.E('error'));
+                    }, 0);
+                });
+
+            p.throttle(20).always(spy);
+
+            setTimeout(function(){
+                assert.equal(spy.called, false);
+
+                setTimeout(function(){
+                    assert.equal(spy.called, true);
+                    assert.equal(Latte.isE(spy.args[0]), true);
+                    assert.equal(spy.args[0].value, 'error');
+
+                    done();
+                }, 40);
+            }, 10);
+        });
+
+        it('not same instance', function(){
+            var p1 = Latte.Stream(function(){}),
+                p2 = p1.throttle(10);
 
             assert.equal(p1 === p2, false);
         });
