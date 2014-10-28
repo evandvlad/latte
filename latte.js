@@ -298,7 +298,7 @@
         return Entity;
     }
 
-    Latte.version = '5.4.1';
+    Latte.version = '5.5.0';
 
     Latte.Promise = Build({immutable : true, key : PROP_PROMISE});
     Latte.Stream = Build({immutable : false, key : PROP_STREAM});

@@ -350,7 +350,7 @@ Latte.Promise.gen/Latte.Stream.gen.
         }, 1000);
     }).gmap(function*(a){
         var b = yield Latte.Promise(function(handle){
-            handle('best');
+            handle('rest');
         });
         
         var c = yield 'west';
@@ -359,7 +359,7 @@ Latte.Promise.gen/Latte.Stream.gen.
             handle([a, b, c].toString());
         });
     }).always(function(value){
-        value === 'test,best,west';
+        value === 'test,rest,west';
     });
 
 ##### log #####

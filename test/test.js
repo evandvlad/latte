@@ -1036,6 +1036,7 @@ describe('Promise instance', function(){
                     assert.equal(spy.args[0], '(test)');
                     done();
                 }, 50);
+                
             });
 
             it('return E', function(done){
