@@ -178,6 +178,10 @@
             }, this);
         };
 
+        Entity.prototype.gmap = function(g, ctx){
+            return this.fmap(this.constructor.gen(g, ctx));
+        };
+
         Entity.prototype.gacc = function(g, ctx){
             return new this.constructor(function(c){
                 var gen = null;
@@ -294,7 +298,7 @@
         return Entity;
     }
 
-    Latte.version = '5.4.0';
+    Latte.version = '5.4.1';
 
     Latte.Promise = Build({immutable : true, key : PROP_PROMISE});
     Latte.Stream = Build({immutable : false, key : PROP_STREAM});
