@@ -22,7 +22,6 @@
         PROP_PROMISE = '_____####![PROMISE]',
         PROP_STREAM = '_____####![STREAM]',
         PROP_CALLBACK = '_____####![CALLBACK]',
-
         NOTHING = new String('NOTHING'),
 
         aslice = Array.prototype.slice,
@@ -198,6 +197,20 @@
             }, this);
         };
 
+        Entity.prototype.gtick = function(g, ctx){
+            return new this.constructor(function(c){
+                this.next(function(v){
+                    (function _iterate(gen, val){
+                        var r = gen.next(val);
+                        unpackEntity(function(vl){
+                            c(vl);
+                            !r.done && _iterate(gen, vl);
+                        }, r.value);
+                    }(g.call(ctx, v), v));
+                }).fail(c);
+            }, this);
+        };
+
         Entity.prototype.log = function(){
             console && typeof console.log === 'function' && this.always(bind(console.log, console));
             return this;
@@ -298,7 +311,7 @@
         return Entity;
     }
 
-    Latte.version = '5.5.0';
+    Latte.version = '5.6.0';
 
     Latte.Promise = Build({immutable : true, key : PROP_PROMISE});
     Latte.Stream = Build({immutable : false, key : PROP_STREAM});
@@ -321,7 +334,6 @@
 
     Latte.callback = function(f, ctx){
         var shell = Latte.Stream.shell();
-
         return Object.defineProperty(function(){
             var r = f.apply(ctx || this, arguments);
             shell.set(r);
@@ -381,7 +393,6 @@
             this._queue && this._queue.forEach(lift(this._val), this);
             this._params.immutable && (this._queue = null);
         }
-
         return this;
     };
 
