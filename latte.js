@@ -1,12 +1,13 @@
 /**
  * Autor: Evstigneev Andrey
- * Date: 30.09.2014
+ * Date: 02.11.2014
  * Time: 22:22
  */
 
 (function(global, initializer){
 
     global.Latte = initializer();
+    global.Latte.version = '6.0.0';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -18,26 +19,11 @@
 
     var Latte = {},
 
-        PROP_E = '_____####![E]',
+        PROP_L = '_____####![L]',
         PROP_PROMISE = '_____####![PROMISE]',
         PROP_STREAM = '_____####![STREAM]',
-        PROP_CALLBACK = '_____####![CALLBACK]',
-        NOTHING = new String('NOTHING'),
 
-        aslice = Array.prototype.slice,
         toString = Object.prototype.toString;
-
-    function noop(){}
-
-    function fconst(v){
-        return function(){
-            return v;
-        };
-    }
-
-    function not(v){
-        return !v;
-    }
 
     function lift(v){
         return function(f){
@@ -45,48 +31,8 @@
         };
     }
 
-    function bind(f, ctx){
-        var args = aslice.call(arguments, 2);
-        return function(){
-            return f.apply(ctx, args.concat(aslice.call(arguments)));
-        };
-    }
-
-    function compose(f, g){
-        return function(v){
-            return f(g(v));
-        };
-    }
-
-    function mix(oto, ofrom){
-        return Object.keys(ofrom || []).reduce(function(acc, prop){
-            acc[prop] = ofrom[prop];
-            return acc;
-        }, oto);
-    }
-
-    function cond(f, g, h){
-        return function(v){
-            return f(v) ? g(v) : h(v);
-        };
-    }
-
-    function prop(p){
-        return function(o){
-            return o[p];
-        };
-    }
-
     function isEntity(key, v){
         return toString.call(v) === '[object Object]' && !!v[key];
-    }
-
-    function unpackEntity(f, v){
-        Latte.isLatte(v) ? v.always(f) : f(v);
-    }
-
-    function isNothing(v){
-        return v === NOTHING;
     }
 
     function Build(params){
@@ -97,213 +43,231 @@
             }
 
             this[Latte._KEY_PRIVATE_STATE_PROP] = new Latte._State(bind(executor, ctx), params);
+            this[Latte._KEY_PRIVATE_STATE_PROP].init();
         }
 
-        Entity.prototype.always = function(f, ctx){
-            this[Latte._KEY_PRIVATE_STATE_PROP].on(bind(f, ctx));
-            return this;
+        Entity.prototype.listen = function(){
+
         };
 
-        Entity.prototype.next = function(f, ctx){
-            return this.always(cond(Latte.isE, noop, bind(f, ctx)));
+        Entity.prototype.listenL = function(){
+            
         };
 
-        Entity.prototype.fail = function(f, ctx){
-            return this.always(cond(Latte.isE, bind(f, ctx), noop));
+        Entity.prototype.listenR = function(){
+            
         };
 
-        Entity.prototype.when = function(f, ctx){
-            return new this.constructor(function(c){
-                this.next(cond(bind(f, ctx), c, noop)).fail(c);
-            }, this);
+        Entity.prototype.fthen = function(){
+
         };
 
-        Entity.prototype.unless = function(f, ctx){
-            return this.when(compose(not, bind(f, ctx)));
+        Entity.prototype.fthenL = function(){
+            
         };
 
-        Entity.prototype.fmap = function(f, ctx){
-            return new this.constructor(function(c){
-                this.next(compose(bind(unpackEntity, null, c), bind(f, ctx))).fail(c);
-            }, this);
+        Entity.prototype.fthenR = function(){
+            
         };
 
-        Entity.prototype.efmap = function(f, ctx){
-            return new this.constructor(function(c){
-                this.next(c).fail(compose(bind(unpackEntity, null, c), bind(f, ctx)));
-            }, this);
+        Entity.prototype.fdip = function(){
+
         };
 
-        Entity.prototype.fdip = function(f, ctx){
-            var fn = null;
-            return this.fmap(function(v){
-                fn = fn || f.call(ctx);
-                return fn(v);
-            });
+        Entity.prototype.fdipL = function(){
+            
         };
 
-        Entity.prototype.pass = function(v){
-            return this.fmap(fconst(v));
+        Entity.prototype.fdipR = function(){
+            
         };
 
-        Entity.prototype.debounce = function(delay){
-            return new this.constructor(function(c){
-                var state = this[Latte._KEY_PRIVATE_STATE_PROP],
-                    tid = null;
+        Entity.prototype.pass = function(){
 
-                this.always(function(){
-                    tid && clearTimeout(tid);
-                    tid = setTimeout(function(){
-                        c(state.get());
-                        tid = null;
-                    }, delay);
-                });
-            }, this);
         };
 
-        Entity.prototype.throttle = function(delay){
-            return new this.constructor(function(c){
-                var state = this[Latte._KEY_PRIVATE_STATE_PROP],
-                    tid = null;
-
-                this.always(function(){
-                    if(tid === null){
-                        tid = setTimeout(function(){
-                            c(state.get());
-                            tid = null;
-                        }, delay);
-                    }
-                });
-            }, this);
+        Entity.prototype.passL = function(){
+            
         };
 
-        Entity.prototype.gmap = function(g, ctx){
-            return this.fmap(this.constructor.gen(g, ctx));
+        Entity.prototype.passR = function(){
+            
         };
 
-        Entity.prototype.gacc = function(g, ctx){
-            return new this.constructor(function(c){
-                var gen = null;
+        Entity.prototype.when = function(){
 
-                this.next(function(v){
-                    var r = (gen = gen || g.call(ctx, v)).next(v);
-                    unpackEntity(cond(Latte.isE, c, function(val){
-                        if(r.done){
-                            c(val);
-                            gen = null;
-                        }
-                    }), r.value);
-                }).fail(c);
-            }, this);
         };
 
-        Entity.prototype.gtick = function(g, ctx){
-            return new this.constructor(function(c){
-                this.next(function(v){
-                    (function _iterate(gen, val){
-                        var r = gen.next(val);
-                        unpackEntity(function(vl){
-                            c(vl);
-                            !r.done && _iterate(gen, vl);
-                        }, r.value);
-                    }(g.call(ctx, v), v));
-                }).fail(c);
-            }, this);
+        Entity.prototype.whenL = function(){
+            
+        };
+
+        Entity.prototype.whenR = function(){
+            
+        };
+
+        Entity.prototype.unless = function(){
+
+        };
+
+        Entity.prototype.unlessL = function(){
+            
+        };
+
+        Entity.prototype.unlessR = function(){
+            
+        };
+
+        Entity.prototype.debounce = function(){
+
+        };
+
+        Entity.prototype.debounceL = function(){
+            
+        };
+
+        Entity.prototype.debounceR = function(){
+            
+        };
+
+        Entity.prototype.throttle = function(){
+
+        };
+
+        Entity.prototype.throttleL = function(){
+            
+        };
+
+        Entity.prototype.throttleR = function(){
+            
+        };
+
+        Entity.prototype.any = function(){
+
+        };
+
+        Entity.prototype.anyL = function(){
+            
+        };
+
+        Entity.prototype.anyR = function(){
+            
+        };
+
+        Entity.prototype.merge = function(){
+
+        };
+
+        Entity.prototype.mergeL = function(){
+            
+        };
+
+        Entity.prototype.mergeR = function(){
+            
+        };
+
+        Entity.prototype.gthen = function(){
+
+        };
+
+        Entity.prototype.gthenL = function(){
+            
+        };
+
+        Entity.prototype.gthenR = function(){
+            
+        };
+
+        Entity.prototype.gmult = function(){
+
+        };
+
+        Entity.prototype.gmultL = function(){
+            
+        };
+
+        Entity.prototype.gmultR = function(){
+            
+        };
+
+        Entity.prototype.gdiv = function(){
+
+        };
+
+        Entity.prototype.gdivL = function(){
+            
+        };
+
+        Entity.prototype.gdivR = function(){
+            
         };
 
         Entity.prototype.log = function(){
-            console && typeof console.log === 'function' && this.always(bind(console.log, console));
-            return this;
+
         };
 
-        Entity.prototype.combine = function(xs){
-            return this.constructor.collect([this].concat(xs));
+        Entity.prototype.logL = function(){
+            
         };
 
-        Entity.prototype.any = function(xs){
-            return this.constructor.any([this].concat(xs));
+        Entity.prototype.logR = function(){
+            
         };
 
-        Entity.init = function(v){
-            return new this(lift(v));
+        Entity.init = function(){
+
         };
 
-        Entity.collectAll = (function(isResetAcc){
-            return function(xs){
-                var len = xs.length;
+        Entity.any = function(){
 
-                return new this(len ? function(h){
-                    var acc = [];
-
-                    xs.forEach(function(x, i){
-                        unpackEntity(function(v){
-                            acc[i] = v;
-
-                            if(Object.keys(acc).length === len){
-                                h(acc.some(Latte.isE) ? Latte.E(acc.concat()) : acc.concat());
-                                isResetAcc && (acc = []);
-                            }
-                        }, x);
-                    });
-                } : lift([]));
-            };
-        }(params.immutable));
-
-        Entity.collect = function(xs){
-            return this.collectAll(xs).efmap(function(x){
-                return x.value.filter(Latte.isE)[0];
-            });
         };
 
-        Entity.any = function(xs){
-            return new this(function(h){
-                xs.forEach(bind(unpackEntity, null, h));
-            });
+        Entity.anyL = function(){
+            
         };
 
-        Entity.fun = function(f, ctx){
-            return bind(function(){
-                return this.collect(aslice.call(arguments)).fmap(function(v){
-                    var cbs = v.filter(Latte.isCallback),
-                        r = f.apply(ctx, v);
-
-                    return cbs.length ? this.any(cbs.map(prop(PROP_CALLBACK))) : r;
-                }, this);
-            }, this);
+        Entity.anyR = function(){
+            
         };
 
-        Entity.gen = function(g, ctx){
-            return bind(function(){
-                return this.collect(aslice.call(arguments)).fmap(function(v){
-                    return new this(function(h){
-                        var gen = g.apply(ctx, v);
+        Entity.merge = function(){
+            
+        };
+        
+        Entity.mergeL = function(){
+            
+        };
 
-                        (function _iterate(val){
-                            var state = gen.next(val);
-                            unpackEntity(state.done ? h : cond(Latte.isE, h, _iterate), state.value);
-                        }());
-                    });
-                }, this);
-            }, this);
+        Entity.mergeR = function(){
+            
+        };
+
+        Entity.fun = function(){
+            
+        };
+
+        Entity.funL = function(){
+            
+        };
+
+        Entity.funR = function(){
+            
+        };
+
+        Entity.gen = function(){
+            
+        };
+
+        Entity.genL = function(){
+            
+        };
+
+        Entity.genR = function(){
+            
         };
 
         Entity.shell = function(){
-            var s = new this(noop);
-
-            s.set = function(v){
-                this[Latte._KEY_PRIVATE_STATE_PROP].set(v);
-                return this;
-            };
-
-            return {
-
-                set : function(val){
-                    s.set(val);
-                    return this;
-                },
-
-                out : fconst(new this(s.always, s))
-            };
+            
         };
 
         Object.defineProperty(Entity.prototype, params.key, {value : true});
@@ -311,75 +275,42 @@
         return Entity;
     }
 
-    Latte.version = '5.6.0';
-
     Latte.Promise = Build({immutable : true, key : PROP_PROMISE});
     Latte.Stream = Build({immutable : false, key : PROP_STREAM});
 
     Latte.isPromise = bind(isEntity, null, PROP_PROMISE);
     Latte.isStream = bind(isEntity, null, PROP_STREAM);
-    Latte.isE = bind(isEntity, null, PROP_E);
-
-    Latte.E = function(v){
-        return Object.defineProperty({value : v}, PROP_E, {value : true});
-    };
-
-    Latte.isCallback = function(v){
-        return toString.call(v) === '[object Function]' && !!v[PROP_CALLBACK];
-    };
 
     Latte.isLatte = function(v){
         return Latte.isPromise(v) || Latte.isStream(v);
+    }; 
+
+    Latte.L = function(v){
+        return Object.defineProperty({value : v}, PROP_L, {value : true});
     };
 
-    Latte.callback = function(f, ctx){
-        var shell = Latte.Stream.shell();
-        return Object.defineProperty(function(){
-            var r = f.apply(ctx || this, arguments);
-            shell.set(r);
-            return r;
-        }, PROP_CALLBACK, {value : shell.out()});
+    Latte.isL = bind(isEntity, null, PROP_L);
+    Latte.isR = function(v){
+        return !Latte.isL(v); 
     };
 
-    Latte.extend = function(Entity, ext){
-        var Ctor;
 
-        ext = ext || {};
-
-        Ctor = ext.hasOwnProperty('constructor') ?
-            ext.constructor :
-            function Ctor(executor, ctx){
-                if(!(this instanceof Ctor)){
-                    return new Ctor(executor, ctx);
-                }
-
-                Entity.call(this, executor, ctx);
-            };
-
-        Ctor.prototype = Object.create(Entity.prototype);
-        Ctor.prototype.constructor = Ctor;
-        mix(Ctor.prototype, ext);
-
-        return mix(Ctor, Entity);
-    };
-
-    Latte._KEY_PRIVATE_STATE_PROP = '_____####![state]';
+    Latte._KEY_PRIVATE_STATE_PROP = '_____####![state]'; 
 
     Latte._State = function(executor, params){
-        this._params = params;
+        this._executor = executor;
+        his._params = params;
         this._queue = [];
-        this._val = NOTHING;
-        executor(bind(this.set, this));
+        this._val = this.constructor.NOTHING;
+    };
+
+    Latte._State.prototype.init = function(){
+        return this._executor(bind(this.set, this));
     };
 
     Latte._State.prototype.on = function(f){
         this._queue && this._queue.push(f);
-        !isNothing(this._val) && f(this._val);
-        return this;
-    };
-
-    Latte._State.prototype.set = function(v){
-        unpackEntity(bind(this._set, this), v);
+        !this._isNothing(this._val) && f(this._val);
         return this;
     };
 
@@ -387,8 +318,8 @@
         return this._val;
     };
 
-    Latte._State.prototype._set = function(v){
-        if(isNothing(this._val) || !this._params.immutable){
+    Latte._State.prototype.set = function(v){
+        if(this._isNothing(this._val) || !this._params.immutable){
             this._val = v;
             this._queue && this._queue.forEach(lift(this._val), this);
             this._params.immutable && (this._queue = null);
@@ -396,5 +327,12 @@
         return this;
     };
 
-    return Latte;
+    Latte._State.prototype._isNothing = function(v){
+        return v === this.constructor.NOTHING;
+    };
+
+    Latte._State.NOTHING = new String('NOTHING');
+
+    return Latte; 
+    
 }));
