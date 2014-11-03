@@ -20,10 +20,23 @@
     var Latte = {},
 
         PROP_L = '_____####![L]',
-        PROP_PROMISE = '_____####![PROMISE]',
-        PROP_STREAM = '_____####![STREAM]',
+        PROP_ISTREAM = '_____####![ISTREAM]',
+        PROP_MSTREAM = '_____####![MSTREAM]',
+        PROP_CALLBACK = '_____####![CALLBACK]',
+        PROP_STREAM_STATE = '_____####![STREAM_STATE]',
 
-        toString = Object.prototype.toString;
+        NOTHING = new String('NOTHING'),
+        PROP_L_VALUE = 'value',
+
+        toString = Object.prototype.toString,
+        aslice = Array.prototype.slice;
+
+    function bind(f, ctx){
+        var args = aslice.call(arguments, 2);
+        return function(){
+            return f.apply(ctx, args.concat(aslice.call(arguments)));
+        };
+    }
 
     function lift(v){
         return function(f){
@@ -31,281 +44,356 @@
         };
     }
 
-    function isEntity(key, v){
-        return toString.call(v) === '[object Object]' && !!v[key];
+    function not(v){
+        return !v;
     }
 
-    function Build(params){
+    function compose(f, g){
+        return function(v){
+            return f(g(v));
+        };
+    }
 
-        function Entity(executor, ctx){
-            if(!(this instanceof Entity)){
-                return new Entity(executor, ctx);
+    function mix(oto, ofrom){
+        return Object.keys(ofrom || []).reduce(function(acc, prop){
+            acc[prop] = ofrom[prop];
+            return acc;
+        }, oto);
+    }
+
+    function isObject(v){
+        return toString.call(v) === '[object Object]';
+    }
+
+    function isFunction(v){
+        return toString.call(v) === '[object Function]';
+    }
+
+    function isValueWithProp(typechecker, key, v){
+        return typechecker(v) && !!v[key];
+    }
+
+    function extractValue(v){
+        return Latte.isL(v) ? v[PROP_L_VALUE] : v; 
+    }
+
+    function BuildStream(params){
+
+        function Stream(executor, ctx){
+            if(!(this instanceof Stream)){
+                return new Stream(executor, ctx);
             }
 
-            this[Latte._KEY_PRIVATE_STATE_PROP] = new Latte._State(bind(executor, ctx), params);
-            this[Latte._KEY_PRIVATE_STATE_PROP].init();
+            this[Latte._PROP_STREAM_STATE] = new Latte._State(params, executor, ctx);
+            this[Latte._PROP_STREAM_STATE].init();
         }
 
-        Entity.prototype.listen = function(){
+        Stream.prototype.listen = function(f, ctx){
 
         };
 
-        Entity.prototype.listenL = function(){
+        Stream.prototype.listenL = function(f, ctx){
             
         };
 
-        Entity.prototype.listenR = function(){
+        Stream.prototype.listenR = function(f, ctx){
             
         };
 
-        Entity.prototype.fthen = function(){
+        Stream.prototype.fthen = function(f, ctx){
 
         };
 
-        Entity.prototype.fthenL = function(){
+        Stream.prototype.fthenL = function(f, ctx){
             
         };
 
-        Entity.prototype.fthenR = function(){
+        Stream.prototype.fthenR = function(f, ctx){
             
         };
 
-        Entity.prototype.fdip = function(){
+        Stream.prototype.fdip = function(f, ctx){
 
         };
 
-        Entity.prototype.fdipL = function(){
+        Stream.prototype.fdipL = function(f, ctx){
             
         };
 
-        Entity.prototype.fdipR = function(){
+        Stream.prototype.fdipR = function(f, ctx){
             
         };
 
-        Entity.prototype.pass = function(){
+        Stream.prototype.pass = function(v){
 
         };
 
-        Entity.prototype.passL = function(){
+        Stream.prototype.passL = function(v){
             
         };
 
-        Entity.prototype.passR = function(){
+        Stream.prototype.passR = function(v){
             
         };
 
-        Entity.prototype.when = function(){
+        Stream.prototype.when = function(f, ctx){
 
         };
 
-        Entity.prototype.whenL = function(){
+        Stream.prototype.whenL = function(f, ctx){
             
         };
 
-        Entity.prototype.whenR = function(){
+        Stream.prototype.whenR = function(f, ctx){
             
         };
 
-        Entity.prototype.unless = function(){
+        Stream.prototype.unless = function(f, ctx){
 
         };
 
-        Entity.prototype.unlessL = function(){
+        Stream.prototype.unlessL = function(f, ctx){
             
         };
 
-        Entity.prototype.unlessR = function(){
+        Stream.prototype.unlessR = function(f, ctx){
             
         };
 
-        Entity.prototype.debounce = function(){
+        Stream.prototype.debounce = function(t){
 
         };
 
-        Entity.prototype.debounceL = function(){
+        Stream.prototype.debounceL = function(t){
             
         };
 
-        Entity.prototype.debounceR = function(){
+        Stream.prototype.debounceR = function(t){
             
         };
 
-        Entity.prototype.throttle = function(){
+        Stream.prototype.throttle = function(t){
 
         };
 
-        Entity.prototype.throttleL = function(){
+        Stream.prototype.throttleL = function(t){
             
         };
 
-        Entity.prototype.throttleR = function(){
+        Stream.prototype.throttleR = function(t){
             
         };
 
-        Entity.prototype.any = function(){
+        Stream.prototype.any = function(ss){
 
         };
 
-        Entity.prototype.anyL = function(){
+        Stream.prototype.anyL = function(ss){
             
         };
 
-        Entity.prototype.anyR = function(){
+        Stream.prototype.anyR = function(ss){
             
         };
 
-        Entity.prototype.merge = function(){
+        Stream.prototype.merge = function(ss){
 
         };
 
-        Entity.prototype.mergeL = function(){
+        Stream.prototype.mergeL = function(ss){
             
         };
 
-        Entity.prototype.mergeR = function(){
+        Stream.prototype.mergeR = function(ss){
             
         };
 
-        Entity.prototype.gthen = function(){
+        Stream.prototype.gthen = function(g, ctx){
 
         };
 
-        Entity.prototype.gthenL = function(){
+        Stream.prototype.gthenL = function(g, ctx){
             
         };
 
-        Entity.prototype.gthenR = function(){
+        Stream.prototype.gthenR = function(g, ctx){
             
         };
 
-        Entity.prototype.gmult = function(){
+        Stream.prototype.gmult = function(g, ctx){
 
         };
 
-        Entity.prototype.gmultL = function(){
+        Stream.prototype.gmultL = function(g, ctx){
             
         };
 
-        Entity.prototype.gmultR = function(){
+        Stream.prototype.gmultR = function(g, ctx){
             
         };
 
-        Entity.prototype.gdiv = function(){
+        Stream.prototype.gdiv = function(g, ctx){
 
         };
 
-        Entity.prototype.gdivL = function(){
+        Stream.prototype.gdivL = function(g, ctx){
             
         };
 
-        Entity.prototype.gdivR = function(){
+        Stream.prototype.gdivR = function(g, ctx){
             
         };
 
-        Entity.prototype.log = function(){
+        Stream.prototype.log = function(){
 
         };
 
-        Entity.prototype.logL = function(){
+        Stream.prototype.logL = function(){
             
         };
 
-        Entity.prototype.logR = function(){
+        Stream.prototype.logR = function(){
             
         };
 
-        Entity.init = function(){
+        Stream.init = function(v){
 
         };
 
-        Entity.any = function(){
+        Stream.any = function(ss){
 
         };
 
-        Entity.anyL = function(){
+        Stream.anyL = function(ss){
             
         };
 
-        Entity.anyR = function(){
+        Stream.anyR = function(ss){
             
         };
 
-        Entity.merge = function(){
+        Stream.merge = function(ss){
             
         };
         
-        Entity.mergeL = function(){
+        Stream.mergeL = function(ss){
             
         };
 
-        Entity.mergeR = function(){
+        Stream.mergeR = function(ss){
             
         };
 
-        Entity.fun = function(){
+        Stream.fun = function(f, ctx){
             
         };
 
-        Entity.funL = function(){
+        Stream.funL = function(f, ctx){
             
         };
 
-        Entity.funR = function(){
+        Stream.funR = function(f, ctx){
             
         };
 
-        Entity.gen = function(){
+        Stream.gen = function(g, ctx){
             
         };
 
-        Entity.genL = function(){
+        Stream.genL = function(g, ctx){
             
         };
 
-        Entity.genR = function(){
+        Stream.genR = function(g, ctx){
             
         };
 
-        Entity.shell = function(){
-            
+        Stream.shell = function(){
+
+            return {
+
+                set : function(v){
+
+                },
+
+                out : function(){
+                    return true; 
+                }
+            };
         };
 
-        Object.defineProperty(Entity.prototype, params.key, {value : true});
+        Object.defineProperty(Stream.prototype, params.key, {value : true});
 
-        return Entity;
+        return Stream;
     }
 
-    Latte.Promise = Build({immutable : true, key : PROP_PROMISE});
-    Latte.Stream = Build({immutable : false, key : PROP_STREAM});
+    Latte.IStream = BuildStream({immutable : true, key : PROP_ISTREAM});
+    Latte.MStream = BuildStream({immutable : false, key : PROP_MSTREAM});
 
-    Latte.isPromise = bind(isEntity, null, PROP_PROMISE);
-    Latte.isStream = bind(isEntity, null, PROP_STREAM);
+    Latte.isIStream = bind(isValueWithProp, null, isObject, PROP_ISTREAM);
+    Latte.isMStream = bind(isValueWithProp, null, isObject, PROP_MSTREAM);
 
-    Latte.isLatte = function(v){
-        return Latte.isPromise(v) || Latte.isStream(v);
+    Latte.isStream = function(v){
+        return Latte.isIStream(v) || Latte.isMStream(v);
     }; 
 
     Latte.L = function(v){
-        return Object.defineProperty({value : v}, PROP_L, {value : true});
+        return Object.defineProperty(
+            Object.defineProperty({}, PROP_L_VALUE, {value : v}), 
+            PROP_L, 
+            {value : true}
+        );
     };
 
-    Latte.isL = bind(isEntity, null, PROP_L);
-    Latte.isR = function(v){
-        return !Latte.isL(v); 
+    Latte.isL = bind(isValueWithProp, null, isObject, PROP_L);
+    Latte.isR = compose(not, Latte.isL);
+
+    Latte.callback = function(f, ctx){
+        var shell = Latte.MStream.shell();
+
+        return Object.defineProperty(function(){
+            var r = f.apply(ctx || this, arguments);
+            shell.set(r);
+            return r;
+        }, PROP_CALLBACK, {value : shell.out()});
     };
 
+    Latte.isCallback = bind(isValueWithProp, null, isFunction, PROP_CALLBACK);
 
-    Latte._KEY_PRIVATE_STATE_PROP = '_____####![state]'; 
+    Latte.extend = function(Stream, ext){
+        var Ctor;
 
-    Latte._State = function(executor, params){
+        ext = ext || {};
+
+        Ctor = ext.hasOwnProperty('constructor') ?
+            ext.constructor :
+            function Ctor(executor, ctx){
+                if(!(this instanceof Ctor)){
+                    return new Ctor(executor, ctx);
+                }
+
+                Stream.call(this, executor, ctx);
+            };
+
+        Ctor.prototype = Object.create(Stream.prototype);
+        Ctor.prototype.constructor = Ctor;
+        mix(Ctor.prototype, ext);
+
+        return mix(Ctor, Stream);
+    };
+
+    Latte._PROP_STREAM_STATE = PROP_STREAM_STATE; 
+
+    Latte._State = function(params, executor, ctx){
+        this._params = params;
         this._executor = executor;
-        his._params = params;
+        this._ctx = ctx;
         this._queue = [];
-        this._val = this.constructor.NOTHING;
+        this._val = NOTHING;
     };
 
     Latte._State.prototype.init = function(){
-        return this._executor(bind(this.set, this));
+        return this._executor.call(this._ctx, bind(this.set, this));
     };
 
     Latte._State.prototype.on = function(f){
@@ -328,10 +416,8 @@
     };
 
     Latte._State.prototype._isNothing = function(v){
-        return v === this.constructor.NOTHING;
+        return v === NOTHING;
     };
-
-    Latte._State.NOTHING = new String('NOTHING');
 
     return Latte; 
     
