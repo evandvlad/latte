@@ -354,30 +354,6 @@
                 } : lift([]));
             };
         }(params.immutable));
-   
-        Stream.fun = function(f, ctx){
-            
-        };
-
-        Stream.funL = function(f, ctx){
-            
-        };
-
-        Stream.funR = function(f, ctx){
-            
-        };
-
-        Stream.gen = function(g, ctx){
-            
-        };
-
-        Stream.genL = function(g, ctx){
-            
-        };
-
-        Stream.genR = function(g, ctx){
-            
-        };
 
         Stream.shell = function(){
             var s = new this(noop);
@@ -433,6 +409,32 @@
     };
 
     Latte.isCallback = bind(isValueWithProp, null, isFunction, PROP_CALLBACK);
+    
+    Latte.fun = function(f, ctx){
+        return function(){
+            var args = aslice.call(arguments),
+                cbs = args.filter(Latte.isCallback),
+                r = f.apply(ctx, args);
+                
+            return new Latte.MStream(function(h){
+                cbs.length ? Latte.MStream.any(cbs.map(prop(PROP_CALLBACK))).listen(h) : h(r);
+            });
+        };
+    };
+    
+    Latte.gen = function(g, ctx){
+        return function(){
+            var args = aslice.call(arguments);
+            
+            return new Latte.IStream(function(h){
+                var gen = g.apply(ctx, args);
+                (function _iterate(val){
+                    var st = gen.next(val);
+                    unpacker(st.done ? h : cond(Latte.isL, h, _iterate))(st.value);
+                }());        
+            });
+        });
+    };
 
     Latte.extend = function(Stream, ext){
         var Ctor;
