@@ -27,9 +27,6 @@
         NOTHING = new String('NOTHING'),
         PROP_L_VALUE = 'value',
 
-        L_KEY = 'L',
-        R_KEY = 'R',
-
         toString = Object.prototype.toString,
         aslice = Array.prototype.slice;
 
@@ -153,11 +150,8 @@
         return v === NOTHING;
     }
 
-    function unpacker(f, tp){
-        var sf = compose(f, tp ? Latte[tp] : id),
-            vf = tp ? cond(Latte['is' + tp], f, noop) : f;
-        
-        return cond(Latte.isStream, meth('listen' + (tp || ''), sf), vf); 
+    function unpacker(f){
+        return cond(Latte.isStream, meth('listen', f), f);
     }
 
     function BuildStream(params){
@@ -167,21 +161,23 @@
                 return new Stream(executor, ctx);
             }
 
-            this[Latte._PROP_STREAM_STATE] = new Latte._State(bind(executor, ctx), params);
+            Object.defineProperty(this, Latte._PROP_STREAM_STATE, {
+                value : new Latte._State(bind(executor, ctx), params)
+            });
         }
 
         Stream.prototype.listen = function(f, ctx){
-            this[Latte._PROP_STREAM_STATE].on(compose(bind(f, ctx), Latte.val));
+            this[Latte._PROP_STREAM_STATE].on(bind(f, ctx));
             return this;
         };
 
         Stream.prototype.listenL = function(f, ctx){
-            this[Latte._PROP_STREAM_STATE].on(cond(Latte.isL, compose(bind(f, ctx), Latte.val), noop));
+            this[Latte._PROP_STREAM_STATE].on(cond(Latte.isL, bind(f, ctx), noop));
             return this;
         };
 
         Stream.prototype.listenR = function(f, ctx){
-            this[Latte._PROP_STREAM_STATE].on(cond(Latte.isR, compose(bind(f, ctx), Latte.val), noop));
+            this[Latte._PROP_STREAM_STATE].on(cond(Latte.isL, noop, bind(f, ctx)));
             return this;
         };
 
@@ -290,7 +286,7 @@
         };
 
         Stream.prototype.debounceR = function(t){
-            return this.dipR(debounce(t)).fmapL(Latte.L); 
+            return this.dipR(debounce(t)).fmapL(id); 
         };
 
         Stream.prototype.throttle = function(t){
@@ -302,31 +298,7 @@
         };
 
         Stream.prototype.throttleR = function(t){
-            return this.dipR(throttle(t)).fmapL(Latte.L);
-        };
-
-        Stream.prototype.any = function(ss){
-            return this.constructor.any([this].concat(ss)); 
-        };
-
-        Stream.prototype.anyL = function(ss){
-            return this.constructor.anyL([this].concat(ss)); 
-        };
-
-        Stream.prototype.anyR = function(ss){
-            return this.constructor.anyR([this].concat(ss)); 
-        };
-
-        Stream.prototype.merge = function(ss){
-            return this.constructor.merge([this].concat(ss));
-        };
-
-        Stream.prototype.mergeL = function(ss){
-            return this.constructor.mergeL([this].concat(ss));
-        };
-
-        Stream.prototype.mergeR = function(ss){
-            return this.constructor.mergeR([this].concat(ss));
+            return this.dipR(throttle(t)).fmapL(id);
         };
 
         Stream.prototype.log = function(){
@@ -341,8 +313,16 @@
             return this.listenR(log); 
         };
 
-        Stream.init = function(v){
+        Stream.prototype.any = function(ss){
+            return this.constructor.any([this].concat(ss)); 
+        };
 
+        Stream.prototype.merge = function(ss){
+            return this.constructor.merge([this].concat(ss));
+        };
+
+        Stream.init = function(v){
+            return new this(lift(v));
         };
 
         Stream.any = function(ss){
@@ -351,30 +331,30 @@
             }); 
         };
 
-        Stream.anyL = function(ss){
-            return new this(function(h){
-                ss.forEach(unpacker(h, L_KEY));
-            });
-        };
+        Stream.merge = (function(isResetAcc){
+            return function(xs){
+                var len = xs.length;
 
-        Stream.anyR = function(ss){
-            return new this(function(h){
-                ss.forEach(unpacker(h, R_KEY));
-            });
-        };
+                return new this(len ? function(h){
+                    var acc = [];
 
-        Stream.merge = function(ss){
-            
-        };
-        
-        Stream.mergeL = function(ss){
-            
-        };
+                    xs.forEach(function(x, i){
+                        unpacker(function(v){
+                            acc[i] = v;
 
-        Stream.mergeR = function(ss){
-            
-        };
-
+                            if(Object.keys(acc).length === len){
+                                h(acc.some(Latte.isL) ? 
+                                    Latte.L(acc.concat()) : 
+                                    acc.concat()
+                                );
+                                isResetAcc && (acc = []);
+                            }
+                        })(x);
+                    });
+                } : lift([]));
+            };
+        }(params.immutable));
+   
         Stream.fun = function(f, ctx){
             
         };
@@ -400,16 +380,16 @@
         };
 
         Stream.shell = function(){
-
+            var s = new this(noop);
+            
+            s.set = function(v){
+                this[Latte._PROP_STREAM_STATE].set(v);
+                return this;
+            };
+                        
             return {
-
-                set : function(v){
-
-                },
-
-                out : function(){
-                    return true; 
-                }
+                set : bind(s.set, s),
+                out : fconst(new this(s.listen, s))
             };
         };
 
