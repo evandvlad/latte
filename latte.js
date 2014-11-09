@@ -84,7 +84,7 @@
     }
     
     function mix(oto, ofrom){
-        return Object.keys(ofrom || []).reduce(function(acc, prop){
+        return Object.keys(ofrom).reduce(function(acc, prop){
             acc[prop] = ofrom[prop];
             return acc;
         }, oto);
@@ -138,8 +138,8 @@
         });
     }
 
-    function log(){
-        console && isFunction(console.log) && console.log.apply(console, arguments);
+    function log(v){
+        console && isFunction(console.log) && console.log('Latte log > ', v);
     }
 
     function isValueWithProp(typechecker, key, v){
@@ -259,46 +259,58 @@
             return this.whenR(compose(not, bind(f, ctx)));
         };
 
-        Stream.prototype.dip = function(f, ctx){
+        Stream.prototype.cdip = function(f, ctx){
             return new this.constructor(function(c){
                 this.listen(closure(bind(f, ctx, c))); 
             }, this);
         };
 
-        Stream.prototype.dipL = function(f, ctx){
+        Stream.prototype.cdipL = function(f, ctx){
             return new this.constructor(function(c){
                 this.listenL(closure(bind(f, ctx, c))).listenR(c); 
             }, this);
         };
 
-        Stream.prototype.dipR = function(f, ctx){
+        Stream.prototype.cdipR = function(f, ctx){
             return new this.constructor(function(c){
                 this.listenR(closure(bind(f, ctx, c))).listenL(c); 
             }, this);
         };
+        
+        Stream.prototype.fdip = function(f, ctx){
+            return this.then(closure(bind(f, ctx)));
+        };
+        
+        Stream.prototype.fdipL = function(f, ctx){
+            return this.thenL(closure(bind(f, ctx)));
+        };
+        
+        Stream.prototype.fdipR = function(f, ctx){
+            return this.thenR(closure(bind(f, ctx)));
+        };
 
         Stream.prototype.debounce = function(t){
-            return this.dip(debounce(t)); 
+            return this.cdip(debounce(t)); 
         };
 
         Stream.prototype.debounceL = function(t){
-            return this.dipL(debounce(t)).fmapR(id); 
+            return this.cdipL(debounce(t)).fmapR(id); 
         };
 
         Stream.prototype.debounceR = function(t){
-            return this.dipR(debounce(t)).fmapL(id); 
+            return this.cdipR(debounce(t)).fmapL(id); 
         };
 
         Stream.prototype.throttle = function(t){
-            return this.dip(throttle(t));
+            return this.cdip(throttle(t));
         };
 
         Stream.prototype.throttleL = function(t){
-            return this.dipL(throttle(t)).fmapR(id);
+            return this.cdipL(throttle(t)).fmapR(id);
         };
 
         Stream.prototype.throttleR = function(t){
-            return this.dipR(throttle(t)).fmapL(id);
+            return this.cdipR(throttle(t)).fmapL(id);
         };
 
         Stream.prototype.log = function(){
@@ -314,11 +326,11 @@
         };
 
         Stream.prototype.any = function(ss){
-            return this.constructor.any([this].concat(ss)); 
+            return this.constructor.any(ss ? [this].concat(ss) : [this]); 
         };
 
         Stream.prototype.merge = function(ss){
-            return this.constructor.merge([this].concat(ss));
+            return this.constructor.merge(ss ? [this].concat(ss) : [this]);
         };
 
         Stream.init = function(v){
@@ -354,6 +366,25 @@
                 } : lift([]));
             };
         }(params.immutable));
+
+        Stream.pipe = function(fs){
+            var hf,
+                tfs;
+                
+            if(!fs.length){
+                throw new Error('empty list');
+            }
+            
+            hf = fs[0];
+            tfs = fs.slice(1);
+            
+            return bind(function(){
+                var r = hf.apply.null(arguments);
+                return tfs.reduce(function(acc, f){
+                    return acc.thenR(f);
+                }, Latte.isStream(r) ? r : new this.constructor(lift(r)));
+            }, this);
+        }; 
 
         Stream.shell = function(){
             var s = new this(noop);
@@ -433,9 +464,9 @@
                     unpacker(st.done ? h : cond(Latte.isL, h, _iterate))(st.value);
                 }());        
             });
-        });
+        };
     };
-
+    
     Latte.extend = function(Stream, ext){
         var Ctor;
 
@@ -471,10 +502,6 @@
         this._queue && this._queue.push(f);
         !isNothing(this._val) && f(this._val);
         return this;
-    };
-
-    Latte._State.prototype.get = function(){
-        return this._val;
     };
 
     Latte._State.prototype.set = function(v){

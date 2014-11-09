@@ -63,6 +63,20 @@ describe('Streams > ', function(){
         assert.equal(Latte.isStream(s), true); 
     }); 
 
+    it('create IStream with context', function(done){
+        var spy = fspy(),
+            s = new Latte.IStream(function(h){
+                h(this.val); 
+            }, {val : 'test'});
+
+        s.listen(spy);
+        
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'test'); 
+            done();
+        }, 50);
+    }); 
+
     it('create MStream', function(){
         var s = new Latte.MStream(noop);
         assert.equal(Latte.isIStream(s), false); 
@@ -74,6 +88,20 @@ describe('Streams > ', function(){
         var s = Latte.MStream(noop);
         assert.equal(Latte.isMStream(s), true); 
         assert.equal(Latte.isStream(s), true); 
+    }); 
+
+    it('create MStream with context', function(done){
+        var spy = fspy(),
+            s = new Latte.MStream(function(h){
+                h(this.val); 
+            }, {val : 'test'});
+
+        s.listen(spy);
+        
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'test'); 
+            done();
+        }, 50);
     }); 
 
     it('isIStream', function(){
@@ -110,6 +138,26 @@ describe('callback > ', function(){
         assert.equal(Latte.isCallback({}), false); 
         assert.equal(Latte.isCallback(null), false); 
         assert.equal(Latte.isCallback(Latte.callback(noop)), true); 
+    });
+    
+    it('is function', function(){
+        assert.equal(typeof Latte.callback(noop) === 'function', true);
+    });
+    
+    it('return same value as original function', function(){
+        var cb = Latte.callback(function(v){
+            return v;
+        });
+        
+        assert.equal(cb('test'), 'test');
+    });
+    
+    it('take several arguments', function(){
+        var cb = Latte.callback(function(a, b, c, d){
+            return a + b + c + d;
+        });
+        
+        assert.equal(cb('t', 'e', 's', 't'), 'test');
     });
 });
 
@@ -241,6 +289,20 @@ describe('Stream instance methods > ', function(){
             }, 50);
         });
 
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.listen(function(v){
+                spy(v + this.sign);
+            }, {sign : '!'});
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
+                done();
+            }, 50);
+        });
+
         it('same instance', function(){
             var s = Latte.MStream(noop);
             assert.equal(s === s.listen(noop), true);
@@ -294,6 +356,20 @@ describe('Stream instance methods > ', function(){
             }, 50);
         });
 
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.listenL(function(v){
+                spy(Latte.val(v) + this.sign);
+            }, {sign : '!'});
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'error!');
+                done();
+            }, 50);
+        });
+
         it('same instance', function(){
             var s = Latte.MStream(noop);
             assert.equal(s === s.listenL(noop), true);
@@ -343,6 +419,20 @@ describe('Stream instance methods > ', function(){
             setTimeout(function(){
                 assert.equal(spy.args[0], 'rest');
                 assert.equal(spy.count, 2);
+                done();
+            }, 50);
+        });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.listenR(function(v){
+                spy(v + this.sign);
+            }, {sign : '!'});
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
                 done();
             }, 50);
         });
@@ -535,6 +625,20 @@ describe('Stream instance methods > ', function(){
                 assert.equal(Latte.val(spy1.args[0]), 'error!');
                 assert.equal(spy2.called, false);
                 assert.equal(Latte.val(spy3.args[0]), 'error!');
+                done();
+            }, 50);
+        });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.then(function(v){
+                return v + this.sign;
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
                 done();
             }, 50);
         });
@@ -732,6 +836,20 @@ describe('Stream instance methods > ', function(){
             }, 50);
         });
 
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.thenL(function(v){
+                return Latte.val(v) + this.sign;
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'error!');
+                done();
+            }, 50);
+        });
+
         it('not same instance', function(){
             var s = Latte.MStream(noop);
             assert.equal(s !== s.thenL(noop), true);
@@ -924,6 +1042,20 @@ describe('Stream instance methods > ', function(){
                 done();
             }, 50);
         });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.thenR(function(v){
+                return v + this.sign;
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
+                done();
+            }, 50);
+        });
         
         it('not same instance', function(){
             var s = Latte.MStream(noop);
@@ -1031,6 +1163,20 @@ describe('Stream instance methods > ', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isStream(spy.args[0]), true);
+                done();
+            }, 50);
+        });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fmap(function(v){
+                return v + this.sign;
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
                 done();
             }, 50);
         });
@@ -1144,6 +1290,20 @@ describe('Stream instance methods > ', function(){
                 done();
             }, 50);
         });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fmapL(function(v){
+                return Latte.val(v) + this.sign;
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'error!');
+                done();
+            }, 50);
+        });
         
         it('not same instance', function(){
             var s = Latte.MStream(noop);
@@ -1251,6 +1411,20 @@ describe('Stream instance methods > ', function(){
 
             setTimeout(function(){
                 assert.equal(Latte.isStream(spy.args[0]), true);
+                done();
+            }, 50);
+        });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fmapR(function(v){
+                return v + this.sign;
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
                 done();
             }, 50);
         });
@@ -1835,6 +2009,20 @@ describe('Stream instance methods > ', function(){
             }, 50); 
         });
 
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.when(function(v){
+                return v === this.val;
+            }, {val : 'test'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                done();
+            }, 50);
+        });
+
         it('not same instance', function(){
             var s = Latte.MStream(noop);
             assert.equal(s !== s.when(noop), true);
@@ -1937,6 +2125,20 @@ describe('Stream instance methods > ', function(){
                 assert.equal(Latte.val(spy.args[0]), 'error');
                 done();
             }, 50); 
+        });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.whenL(function(v){
+                return Latte.val(v) === this.val;
+            }, {val : 'error'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(Latte.val(spy.args[0]), 'error');
+                done();
+            }, 50);
         });
 
         it('not same instance', function(){
@@ -2043,6 +2245,20 @@ describe('Stream instance methods > ', function(){
             }, 50); 
         });
 
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.whenR(function(v){
+                return v === this.val;
+            }, {val : 'test'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                done();
+            }, 50);
+        });
+
         it('not same instance', function(){
             var s = Latte.MStream(noop);
             assert.equal(s !== s.whenR(noop), true);
@@ -2142,6 +2358,20 @@ describe('Stream instance methods > ', function(){
                 assert.equal(spy.called, false);
                 done();
             }, 50); 
+        });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.unless(function(v){
+                return v !== this.val;
+            }, {val : 'test'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                done();
+            }, 50);
         });
 
         it('not same instance', function(){
@@ -2248,6 +2478,20 @@ describe('Stream instance methods > ', function(){
             }, 50); 
         });
 
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.unlessL(function(v){
+                return Latte.val(v) !== this.val;
+            }, {val : 'error'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(Latte.val(spy.args[0]), 'error');
+                done();
+            }, 50);
+        });
+
         it('not same instance', function(){
             var s = Latte.MStream(noop);
             assert.equal(s !== s.unlessL(noop), true);
@@ -2352,6 +2596,20 @@ describe('Stream instance methods > ', function(){
             }, 50); 
         });
 
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.unlessR(function(v){
+                return v !== this.val;
+            }, {val : 'test'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                done();
+            }, 50);
+        });
+
         it('not same instance', function(){
             var s = Latte.MStream(noop);
             assert.equal(s !== s.unlessR(noop), true);
@@ -2359,7 +2617,7 @@ describe('Stream instance methods > ', function(){
 
     });
 
-    describe('dip > ', function(){
+    describe('cdip > ', function(){
         
         it('lazy initialization', function(done){
             var spy = fspy(),
@@ -2370,7 +2628,7 @@ describe('Stream instance methods > ', function(){
                     }, 0);
                 });
 
-            s.dip(function(h){
+            s.cdip(function(h){
                 spy2();
                 return function(v){
                     h(v + '!'); 
@@ -2390,7 +2648,7 @@ describe('Stream instance methods > ', function(){
             var spy = fspy(),
                 s = Latte.IStream(lift('test'));
 
-            s.dip(function(h){
+            s.cdip(function(h){
                 return function(v){
                     h(v + '!'); 
                     return 'rest'
@@ -2407,7 +2665,7 @@ describe('Stream instance methods > ', function(){
             var spy = fspy(),
                 s = Latte.IStream(lift(Latte.L('error')));
 
-            s.dip(function(h){
+            s.cdip(function(h){
                 return function(v){
                     h(Latte.val(v) + '!'); 
                 }; 
@@ -2423,7 +2681,7 @@ describe('Stream instance methods > ', function(){
             var spy = fspy(),
                 s = Latte.MStream(lift('test'));
 
-            s.dip(function(h){
+            s.cdip(function(h){
                 return function(v){
                     setTimeout(function(){
                         h(v + '!');
@@ -2450,7 +2708,7 @@ describe('Stream instance methods > ', function(){
                     }, 0); 
                 });
 
-            s.dip(function(h){
+            s.cdip(function(h){
                 var count = 0;
                 return function(v){
                     count += 1;
@@ -2475,7 +2733,7 @@ describe('Stream instance methods > ', function(){
                     }, 0); 
                 });
 
-            s.dip(function(h){
+            s.cdip(function(h){
                 h('init');
                 return noop; 
             }).listen(spy);
@@ -2491,7 +2749,7 @@ describe('Stream instance methods > ', function(){
             var spy = fspy(),
                 s = Latte.MStream(lift(Latte.IStream(lift('test'))));
 
-            s.dip(function(h){
+            s.cdip(function(h){
                 return h; 
             }).listen(spy);
 
@@ -2501,20 +2759,37 @@ describe('Stream instance methods > ', function(){
             }, 50); 
         }); 
 
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.cdip(function(h){
+                var self = this;
+                return function(v){
+                    h(v + self.sign); 
+                };
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
+                done();
+            }, 50);
+        });
+
         it('not same instance', function(){
             var s = Latte.MStream(noop);
-            assert.equal(s !== s.dip(noop), true);
+            assert.equal(s !== s.cdip(noop), true);
         }); 
 
     }); 
 
-    describe('dipL > ', function(){
+    describe('cdipL > ', function(){
         
         it('L value', function(done){
             var spy = fspy(),
                 s = Latte.IStream(lift(Latte.L('error')));
 
-            s.dipL(function(h){
+            s.cdipL(function(h){
                 return function(v){
                     h(Latte.val(v) + '!'); 
                 }; 
@@ -2530,7 +2805,7 @@ describe('Stream instance methods > ', function(){
             var spy = fspy(),
                 s = Latte.IStream(lift('test'));
 
-            s.dipL(function(h){
+            s.cdipL(function(h){
                 return function(v){
                     h(v + '!'); 
                 }; 
@@ -2546,7 +2821,7 @@ describe('Stream instance methods > ', function(){
             var spy = fspy(),
                 s = Latte.MStream(lift(Latte.L('error')));
 
-            s.dipL(function(h){
+            s.cdipL(function(h){
                 return function(v){
                     setTimeout(function(){
                         h(Latte.val(v) + '!');
@@ -2573,7 +2848,7 @@ describe('Stream instance methods > ', function(){
                     }, 0); 
                 });
 
-            s.dipL(function(h){
+            s.cdipL(function(h){
                 var count = 0;
                 return function(v){
                     count += 1;
@@ -2592,7 +2867,7 @@ describe('Stream instance methods > ', function(){
             var spy = fspy(),
                 s = Latte.MStream(lift(Latte.IStream(lift(Latte.L('error')))));
 
-            s.dipL(function(h){
+            s.cdipL(function(h){
                 return h;
             }).listen(spy);
 
@@ -2602,20 +2877,37 @@ describe('Stream instance methods > ', function(){
             }, 50); 
         }); 
 
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.cdipL(function(h){
+                var self = this;
+                return function(v){
+                    h(Latte.val(v) + self.sign); 
+                };
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'error!');
+                done();
+            }, 50);
+        });
+
         it('not same instance', function(){
             var s = Latte.MStream(noop);
-            assert.equal(s !== s.dipL(noop), true);
+            assert.equal(s !== s.cdipL(noop), true);
         }); 
 
     });  
 
-    describe('dipR > ', function(){
+    describe('cdipR > ', function(){
         
         it('L value', function(done){
             var spy = fspy(),
                 s = Latte.IStream(lift(Latte.L('error')));
 
-            s.dipR(function(h){
+            s.cdipR(function(h){
                 return function(v){
                     h(v + '!'); 
                 }; 
@@ -2631,7 +2923,7 @@ describe('Stream instance methods > ', function(){
             var spy = fspy(),
                 s = Latte.IStream(lift('test'));
 
-            s.dipR(function(h){
+            s.cdipR(function(h){
                 return function(v){
                     h(v + '!'); 
                 }; 
@@ -2647,7 +2939,7 @@ describe('Stream instance methods > ', function(){
             var spy = fspy(),
                 s = Latte.MStream(lift('test'));
 
-            s.dipR(function(h){
+            s.cdipR(function(h){
                 return function(v){
                     setTimeout(function(){
                         h(v + '!');
@@ -2674,7 +2966,7 @@ describe('Stream instance methods > ', function(){
                     }, 0); 
                 });
 
-            s.dipR(function(h){
+            s.cdipR(function(h){
                 var count = 0;
                 return function(v){
                     count += 1;
@@ -2693,7 +2985,7 @@ describe('Stream instance methods > ', function(){
             var spy = fspy(),
                 s = Latte.MStream(lift(Latte.IStream(lift('test'))));
 
-            s.dipR(function(h){
+            s.cdipR(function(h){
                 return h;
             }).listen(spy);
 
@@ -2703,12 +2995,734 @@ describe('Stream instance methods > ', function(){
             }, 50); 
         }); 
 
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.cdipR(function(h){
+                var self = this;
+                return function(v){
+                    h(v + self.sign); 
+                };
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
+                done();
+            }, 50);
+        });
+
         it('not same instance', function(){
             var s = Latte.MStream(noop);
-            assert.equal(s !== s.dipR(noop), true);
+            assert.equal(s !== s.cdipR(noop), true);
         }); 
 
     });
+
+    describe('fdip > ', function(){
+        
+        it('lazy initialization', function(done){
+            var spy = fspy(),
+                spy2 = fspy(),
+                s = Latte.IStream(function(h){
+                    setTimeout(function(){
+                        h('test'); 
+                    }, 0);
+                });
+
+            s.fdip(function(h){
+                spy2();
+                return function(v){
+                    return v + '!'; 
+                }; 
+            }).listen(spy);
+            
+            assert.equal(spy2.called, false);
+
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
+                assert.equal(spy2.called, true);
+                done(); 
+            }, 50); 
+        }); 
+
+        it('L -> L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdip(function(){
+                return function(v){
+                    return Latte.L(Latte.val(v) + '!'); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'error!');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'error!');
+                done(); 
+            }, 50);     
+        });
+
+        it('L -> R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdip(function(){
+                return function(v){
+                    return Latte.val(v) + '!'; 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'error!');
+                assert.equal(Latte.val(spy3.args[0]), 'error!');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdip(function(){
+                return function(v){
+                    return Latte.L(Latte.val(v) + '!'); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'test!');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'test!');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdip(function(){
+                return function(v){
+                    return Latte.val(v) + '!'; 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'test!');
+                assert.equal(Latte.val(spy3.args[0]), 'test!');
+                done(); 
+            }, 50);     
+        });
+
+        it('L -> Stream L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdip(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.L(Latte.val(v) + '!'))); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'error!');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'error!');
+                done(); 
+            }, 50);     
+        });
+
+        it('L -> Stream R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdip(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.val(v) + '!')); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'error!');
+                assert.equal(Latte.val(spy3.args[0]), 'error!');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> Stream L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdip(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.L(Latte.val(v) + '!'))); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'test!');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'test!');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> Stream R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdip(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.val(v) + '!')); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'test!');
+                assert.equal(Latte.val(spy3.args[0]), 'test!');
+                done(); 
+            }, 50);     
+        });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdip(function(h){
+                var self = this;
+                return function(v){
+                    return v + self.sign; 
+                };
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
+                done();
+            }, 50);
+        });
+
+        it('not same instance', function(){
+            var s = Latte.MStream(noop);
+            assert.equal(s !== s.fdip(noop), true);
+        }); 
+
+    }); 
+
+    describe('fdipL > ', function(){
+        
+        it('lazy initialization', function(done){
+            var spy = fspy(),
+                spy2 = fspy(),
+                s = Latte.IStream(function(h){
+                    setTimeout(function(){
+                        h('test'); 
+                    }, 0);
+                });
+
+            s.fdipL(function(h){
+                spy2();
+                return function(v){
+                    return v + '!'; 
+                }; 
+            }).listen(spy);
+            
+            assert.equal(spy2.called, false);
+
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                assert.equal(spy2.called, false);
+                done(); 
+            }, 50); 
+        }); 
+
+        it('L -> L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdipL(function(){
+                return function(v){
+                    return Latte.L(Latte.val(v) + '!'); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'error!');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'error!');
+                done(); 
+            }, 50);     
+        });
+
+        it('L -> R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdipL(function(){
+                return function(v){
+                    return Latte.val(v) + '!'; 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'error!');
+                assert.equal(Latte.val(spy3.args[0]), 'error!');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdipL(function(){
+                return function(v){
+                    return Latte.L(Latte.val(v) + '!'); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'test');
+                assert.equal(Latte.val(spy3.args[0]), 'test');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdipL(function(){
+                return function(v){
+                    return Latte.val(v) + '!'; 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'test');
+                assert.equal(Latte.val(spy3.args[0]), 'test');
+                done(); 
+            }, 50);     
+        });
+
+        it('L -> Stream L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdipL(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.L(Latte.val(v) + '!'))); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'error!');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'error!');
+                done(); 
+            }, 50);     
+        });
+
+        it('L -> Stream R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdipL(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.val(v) + '!')); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'error!');
+                assert.equal(Latte.val(spy3.args[0]), 'error!');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> Stream L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdipL(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.L(Latte.val(v) + '!'))); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'test');
+                assert.equal(Latte.val(spy3.args[0]), 'test');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> Stream R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdipL(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.val(v) + '!')); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'test');
+                assert.equal(Latte.val(spy3.args[0]), 'test');
+                done(); 
+            }, 50);     
+        });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdipL(function(h){
+                var self = this;
+                return function(v){
+                    return Latte.val(v) + self.sign; 
+                };
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'error!');
+                done();
+            }, 50);
+        });
+
+        it('not same instance', function(){
+            var s = Latte.MStream(noop);
+            assert.equal(s !== s.fdipL(noop), true);
+        }); 
+
+    });   
+
+    describe('fdipR > ', function(){
+        
+        it('lazy initialization', function(done){
+            var spy = fspy(),
+                spy2 = fspy(),
+                s = Latte.IStream(function(h){
+                    setTimeout(function(){
+                        h('test'); 
+                    }, 0);
+                });
+
+            s.fdipR(function(h){
+                spy2();
+                return function(v){
+                    return v + '!'; 
+                }; 
+            }).listen(spy);
+            
+            assert.equal(spy2.called, false);
+
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
+                assert.equal(spy2.called, true);
+                done(); 
+            }, 50); 
+        }); 
+
+        it('L -> L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdipR(function(){
+                return function(v){
+                    return Latte.L(Latte.val(v) + '!'); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'error');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'error');
+                done(); 
+            }, 50);     
+        });
+
+        it('L -> R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdipR(function(){
+                return function(v){
+                    return Latte.val(v) + '!'; 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'error');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'error');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdipR(function(){
+                return function(v){
+                    return Latte.L(Latte.val(v) + '!'); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'test!');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'test!');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdipR(function(){
+                return function(v){
+                    return Latte.val(v) + '!'; 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'test!');
+                assert.equal(Latte.val(spy3.args[0]), 'test!');
+                done(); 
+            }, 50);     
+        });
+
+        it('L -> Stream L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdipR(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.L(Latte.val(v) + '!'))); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'error');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'error');
+                done(); 
+            }, 50);     
+        });
+
+        it('L -> Stream R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+
+            s.fdipR(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.val(v) + '!')); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'error');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'error');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> Stream L', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdipR(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.L(Latte.val(v) + '!'))); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy1.args[0]), true);
+                assert.equal(Latte.isL(spy3.args[0]), true);
+
+                assert.equal(Latte.val(spy1.args[0]), 'test!');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0]), 'test!');
+                done(); 
+            }, 50);     
+        });
+
+        it('R -> Stream R', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdipR(function(){
+                return function(v){
+                    return Latte.IStream(lift(Latte.val(v) + '!')); 
+                };
+            }).listenL(spy1).listenR(spy2).listen(spy3);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy2.args[0]), false);
+                assert.equal(Latte.isL(spy3.args[0]), false);
+
+                assert.equal(spy1.called, false);
+                assert.equal(Latte.val(spy2.args[0]), 'test!');
+                assert.equal(Latte.val(spy3.args[0]), 'test!');
+                done(); 
+            }, 50);     
+        });
+
+        it('with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+
+            s.fdip(function(h){
+                var self = this;
+                return function(v){
+                    return v + self.sign; 
+                };
+            }, {sign : '!'}).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
+                done();
+            }, 50);
+        });
+
+        it('not same instance', function(){
+            var s = Latte.MStream(noop);
+            assert.equal(s !== s.fdipR(noop), true);
+        }); 
+
+    });     
 
     describe('debounce > ', function(){
         
@@ -2996,6 +4010,39 @@ describe('Stream instance methods > ', function(){
             var s = Latte.MStream(noop);
             assert.equal(s !== s.throttleR(10), true);
         }); 
+    });
+
+    describe('log > ', function(){
+        
+        it('call with R value', function(){
+            Latte.IStream(lift('R value for log')).log(); 
+        }); 
+
+        it('call with L value', function(){
+            Latte.IStream(lift(Latte.L('L value for log'))).log(); 
+        }); 
+    }); 
+
+    describe('logL > ', function(){
+        
+        it('call with R value', function(){
+            Latte.IStream(lift('R value for logL')).logL(); 
+        }); 
+
+        it('call with L value', function(){
+            Latte.IStream(lift(Latte.L('L value for logL'))).logL(); 
+        }); 
+    }); 
+
+    describe('logR > ', function(){
+        
+        it('call with R value', function(){
+            Latte.IStream(lift('R value for logR')).logR(); 
+        }); 
+
+        it('call with L value', function(){
+            Latte.IStream(lift(Latte.L('L value for logR'))).logR(); 
+        }); 
     }); 
     
     describe('any > ', function(){
@@ -3030,6 +4077,689 @@ describe('Stream instance methods > ', function(){
                 assert.equal(Latte.val(spy3.args[0]), 'error');
                 done();
             }, 50);
+        });
+
+        it('+1 Stream, R value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(lift('test'));
+                
+            s.any(Latte.IStream(function(h){
+                setTimeout(function(){
+                    h('rest'); 
+                }, 10); 
+            })).listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(spy3.count, 2);
+                assert.equal(spy1.called, false);
+                assert.equal(spy2.args[0], 'rest');
+                assert.equal(spy3.args[0], 'rest');
+                done();
+            }, 50);
+        });
+
+        it('+1 Stream, L value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(lift('test'));
+                
+            s.any(Latte.IStream(function(h){
+                setTimeout(function(){
+                    h(Latte.L('error')); 
+                }, 10); 
+            })).listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(spy3.count, 2);
+                assert.equal(Latte.val(spy1.args[0]), 'error');
+                assert.equal(spy2.args[0], 'test');
+                assert.equal(Latte.val(spy3.args[0]), 'error');
+                done();
+            }, 50);
+        });
+
+        it('+1, R value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(function(h){
+                     setTimeout(function(){
+                         h('test');  
+                     }, 0);   
+                });
+                
+            s.any('rest').listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(spy3.count, 2);
+                assert.equal(spy1.called, false);
+                assert.equal(spy2.args[0], 'test');
+                assert.equal(spy3.args[0], 'test');
+                done();
+            }, 50);
+        });
+
+        it('+1, L value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(function(h){
+                     setTimeout(function(){
+                         h('test');  
+                     }, 0);   
+                });
+                
+            s.any(Latte.L('error')).listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(spy3.count, 2);
+                assert.equal(Latte.val(spy1.args[0]), 'error');
+                assert.equal(spy2.args[0], 'test');
+                assert.equal(spy3.args[0], 'test');
+                done();
+            }, 50);
+        });
+
+        it('list, R value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(function(h){
+                     setTimeout(function(){
+                         h('test');  
+                     }, 0);   
+                });
+                
+            s.any(['rest', Latte.IStream(function(h){
+                setTimeout(function(){
+                     h('west');  
+                 }, 10); 
+            })]).listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(spy3.count, 3);
+                assert.equal(spy1.called, false);
+                assert.equal(spy2.args[0], 'west');
+                assert.equal(spy3.args[0], 'west');
+                done();
+            }, 50);
+        });
+
+        it('list, L value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(function(h){
+                     setTimeout(function(){
+                         h('test');  
+                     }, 0);   
+                });
+                
+            s.any(['rest', Latte.IStream(function(h){
+                setTimeout(function(){
+                     h(Latte.L('error'));  
+                 }, 10); 
+            })]).listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(spy3.count, 3);
+                assert.equal(Latte.val(spy1.args[0]), 'error');
+                assert.equal(spy2.args[0], 'test');
+                assert.equal(Latte.val(spy3.args[0]), 'error');
+                done();
+            }, 50);
+        });
+
+        it('not same instance', function(){
+            var s = Latte.MStream(noop);
+            assert.equal(s !== s.any(), true);
+        }); 
+    }); 
+
+    describe('merge > ', function(){
+        
+        it('without argument, R value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift('test'));
+                
+            s.merge().listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(spy1.called, false);
+                assert.equal(JSON.stringify(spy2.args[0]), '["test"]');
+                assert.equal(JSON.stringify(spy3.args[0]), '["test"]');
+                done();
+            }, 50);
+        });
+
+        it('without argument, L value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.IStream(lift(Latte.L('error')));
+                
+            s.merge().listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(Latte.val(Latte.val(spy1.args[0])[0]), 'error');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(Latte.val(spy3.args[0])[0]), 'error');
+
+                assert.equal(Latte.val(spy1.args[0]).length, 1);
+                assert.equal(Latte.val(spy3.args[0]).length, 1);
+                done();
+            }, 50);
+        });
+
+        it('+1 Stream, R value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(lift('test'));
+                
+            s.merge(Latte.IStream(function(h){
+                setTimeout(function(){
+                    h('rest'); 
+                }, 10); 
+            })).listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(spy1.called, false);
+                assert.equal(JSON.stringify(spy2.args[0]), '["test","rest"]');
+                assert.equal(JSON.stringify(spy3.args[0]), '["test","rest"]');
+                done();
+            }, 50);
+        });
+
+        it('+1 Stream, L value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(lift('test'));
+                
+            s.merge(Latte.IStream(function(h){
+                setTimeout(function(){
+                    h(Latte.L('error')); 
+                }, 10); 
+            })).listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(Latte.val(spy1.args[0])[0], 'test');
+                assert.equal(Latte.val(Latte.val(spy1.args[0])[1]), 'error');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0])[0], 'test');
+                assert.equal(Latte.val(Latte.val(spy3.args[0])[1]), 'error');
+                done();
+            }, 50);
+        });
+
+        it('+1, R value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(function(h){
+                     setTimeout(function(){
+                         h('test');  
+                     }, 0);   
+                });
+                
+            s.merge('rest').listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(spy1.called, false);
+                assert.equal(JSON.stringify(spy2.args[0]), '["test","rest"]');
+                assert.equal(JSON.stringify(spy3.args[0]), '["test","rest"]');
+                done();
+            }, 50);
+        });
+
+        it('+1, L value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(function(h){
+                     setTimeout(function(){
+                         h('test');  
+                     }, 0);   
+                });
+                
+            s.merge(Latte.L('error')).listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(Latte.val(spy1.args[0])[0], 'test');
+                assert.equal(Latte.val(Latte.val(spy1.args[0])[1]), 'error');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0])[0], 'test');
+                assert.equal(Latte.val(Latte.val(spy3.args[0])[1]), 'error');
+                done();
+            }, 50);
+        });
+
+        it('list, R value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(function(h){
+                     setTimeout(function(){
+                         h('test');  
+                     }, 0);   
+                });
+                
+            s.merge(['rest', Latte.IStream(function(h){
+                setTimeout(function(){
+                     h('west');  
+                 }, 10); 
+            })]).listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(spy1.called, false);
+                assert.equal(JSON.stringify(spy2.args[0]), '["test","rest","west"]');
+                assert.equal(JSON.stringify(spy3.args[0]), '["test","rest","west"]');
+                done();
+            }, 50);
+        });
+
+        it('list, L value', function(done){
+            var spy1 = fspy(),
+                spy2 = fspy(),
+                spy3 = fspy(),
+                s = Latte.MStream(function(h){
+                     setTimeout(function(){
+                         h('test');  
+                     }, 0);   
+                });
+                
+            s.merge(['rest', Latte.IStream(function(h){
+                setTimeout(function(){
+                     h(Latte.L('error'));  
+                 }, 10); 
+            })]).listenL(spy1).listenR(spy2).listen(spy3);
+            
+            setTimeout(function(){
+                assert.equal(Latte.val(spy1.args[0])[0], 'test');
+                assert.equal(Latte.val(spy1.args[0])[1], 'rest');
+                assert.equal(Latte.val(Latte.val(spy1.args[0])[2]), 'error');
+                assert.equal(spy2.called, false);
+                assert.equal(Latte.val(spy3.args[0])[0], 'test');
+                assert.equal(Latte.val(spy3.args[0])[1], 'rest');
+                assert.equal(Latte.val(Latte.val(spy3.args[0])[2]), 'error');
+                done();
+            }, 50);
+        });
+
+        it('not same instance', function(){
+            var s = Latte.MStream(noop);
+            assert.equal(s !== s.merge(), true);
+        }); 
+    }); 
+});
+
+describe('Stream static methods > ', function(){
+    
+    describe('init', function(){
+        
+        it('IStream', function(){
+             var s = Latte.IStream.init('v');
+             assert.equal(Latte.isStream(s), true);
+             assert.equal(Latte.isIStream(s), true);
+             assert.equal(Latte.isMStream(s), false);
+        });  
+
+        it('MStream', function(){
+             var s = Latte.MStream.init('v');
+             assert.equal(Latte.isStream(s), true);
+             assert.equal(Latte.isIStream(s), false);
+             assert.equal(Latte.isMStream(s), true);
+        }); 
+
+        it('R', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.init('test');
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), false);
+                assert.equal(spy.args[0], 'test');
+                done(); 
+            }); 
+        });
+
+        it('L', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.init(Latte.L('error'));
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), true);
+                assert.equal(Latte.val(spy.args[0]), 'error');
+                done(); 
+            }); 
+        });
+
+        it('Stream R', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.init(Latte.IStream.init('test'));
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isStream(spy.args[0]), true);
+                done(); 
+            }); 
+        });
+
+        it('Stream L', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.init(Latte.IStream.init(Latte.L('error')));
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isStream(spy.args[0]), true);
+                done(); 
+            }); 
+        });
+    }); 
+     
+    describe('any > ', function(){
+    
+        it('empty list', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.any([]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(spy.called, false);
+                done(); 
+            }, 50); 
+        });
+
+        it('Stream R value', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.any([Latte.IStream(lift('test'))]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                done(); 
+            }, 50); 
+        });
+
+        it('Stream L value', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.any([Latte.IStream(lift(Latte.L('error')))]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), true);
+                assert.equal(Latte.val(spy.args[0]), 'error');
+                done(); 
+            }, 50); 
+        });
+
+        it('R value', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.any(['test']);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                done(); 
+            }, 50); 
+        });
+
+        it('L value', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.any([Latte.L('error')]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), true);
+                assert.equal(Latte.val(spy.args[0]), 'error');
+                done(); 
+            }, 50); 
+        });
+
+        it('all R values', function(done){
+            var spy = fspy(),
+                s = Latte.MStream.any(['test', Latte.IStream(function(h){
+                    setTimeout(function(){
+                        h('rest'); 
+                    }, 0);
+                })]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'rest');
+                done(); 
+            }, 50); 
+        });
+
+        it('has L value', function(done){
+            var spy = fspy(),
+                s = Latte.MStream.any(['test', Latte.IStream(function(h){
+                    setTimeout(function(){
+                        h(Latte.L('error')); 
+                    }, 0);
+                })]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), true);
+                assert.equal(Latte.val(spy.args[0]), 'error');
+                done(); 
+            }, 50); 
+        });
+    });
+
+    describe('merge > ', function(){
+        
+        it('empty list', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.merge([]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(JSON.stringify(spy.args[0]), '[]');
+                done(); 
+            }, 50); 
+        });
+
+        it('Stream R value', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.merge([Latte.IStream(lift('test'))]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(JSON.stringify(spy.args[0]), '["test"]');
+                done(); 
+            }, 50); 
+        });
+
+        it('Stream L value', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.merge([Latte.IStream(lift(Latte.L('error')))]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), true);
+                assert.equal(Latte.val(Latte.val(spy.args[0])[0]), 'error');
+                done(); 
+            }, 50); 
+        });
+
+        it('R value', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.merge(['test']);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(JSON.stringify(spy.args[0]), '["test"]');
+                done(); 
+            }, 50); 
+        });
+
+        it('L value', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.merge([Latte.L('error')]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), true);
+                assert.equal(Latte.val(Latte.val(spy.args[0])[0]), 'error');
+                done(); 
+            }, 50); 
+        });
+
+        it('all R values', function(done){
+            var spy = fspy(),
+                s = Latte.MStream.merge(['test', Latte.IStream(function(h){
+                    setTimeout(function(){
+                        h('rest'); 
+                    }, 0);
+                })]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(JSON.stringify(spy.args[0]), '["test","rest"]');
+                done(); 
+            }, 50); 
+        });
+
+        it('has L value', function(done){
+            var spy = fspy(),
+                s = Latte.MStream.merge(['test', Latte.IStream(function(h){
+                    setTimeout(function(){
+                        h(Latte.L('error')); 
+                    }, 0);
+                })]);
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), true);
+                assert.equal(Latte.val(spy.args[0])[0], 'test');
+                assert.equal(Latte.val(Latte.val(spy.args[0])[1]), 'error');
+                done(); 
+            }, 50); 
+        });
+    });  
+
+    describe('shell', function(){
+        
+        it('IStream insterface', function(){
+            var sh = Latte.IStream.shell();
+
+            assert.equal(typeof sh.set === 'function', true); 
+            assert.equal(Latte.isIStream(sh.out()), true);
+            assert.equal(sh.out() === sh.out(), true); 
+        }); 
+
+        it('MStream insterface', function(){
+            var sh = Latte.MStream.shell();
+
+            assert.equal(typeof sh.set === 'function', true); 
+            assert.equal(Latte.isMStream(sh.out()), true);
+            assert.equal(sh.out() === sh.out(), true); 
+        }); 
+
+        it('set value before listener', function(done){
+            var spy = fspy(),
+                sh = Latte.IStream.shell();
+
+            sh.set('test');
+            sh.out().listen(spy);
+
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                done(); 
+            }, 50); 
+        });
+
+        it('set value after listener', function(done){
+            var spy = fspy(),
+                sh = Latte.IStream.shell();
+
+            sh.out().listen(spy);
+            sh.set('test');
+
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                done(); 
+            }, 50); 
+        });
+
+        it('R', function(done){
+            var spy = fspy(),
+                sh = Latte.IStream.shell();
+
+            sh.out().listen(spy);
+            sh.set('test');
+
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                done(); 
+            }, 50); 
+        });
+
+        it('L', function(done){
+            var spy = fspy(),
+                sh = Latte.IStream.shell();
+
+            sh.out().listen(spy);
+            sh.set(Latte.L('error'));
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), true);
+                assert.equal(Latte.val(spy.args[0]), 'error');
+                done(); 
+            }, 50); 
+        });
+
+        it('Stream R', function(done){
+            var spy = fspy(),
+                sh = Latte.IStream.shell();
+
+            sh.out().listen(spy);
+            sh.set(Latte.IStream(lift('test')));
+
+            setTimeout(function(){
+                assert.equal(Latte.isStream(spy.args[0]), true);
+                done(); 
+            }, 50); 
+        });
+
+        it('Stream L', function(done){
+            var spy = fspy(),
+                sh = Latte.IStream.shell();
+
+            sh.out().listen(spy);
+            sh.set(Latte.IStream(lift(Latte.L('error'))));
+
+            setTimeout(function(){
+                assert.equal(Latte.isStream(spy.args[0]), true);
+                done(); 
+            }, 50); 
         });
     }); 
 });
