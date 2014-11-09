@@ -90,7 +90,7 @@
         }, oto);
     }
 
-    function closure(f){
+    function clos(f){
         var fn = null;
         return function(v){
             fn = fn || f();
@@ -261,32 +261,32 @@
 
         Stream.prototype.cdip = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(closure(bind(f, ctx, c))); 
+                this.listen(clos(bind(f, ctx, c))); 
             }, this);
         };
 
         Stream.prototype.cdipL = function(f, ctx){
             return new this.constructor(function(c){
-                this.listenL(closure(bind(f, ctx, c))).listenR(c); 
+                this.listenL(clos(bind(f, ctx, c))).listenR(c); 
             }, this);
         };
 
         Stream.prototype.cdipR = function(f, ctx){
             return new this.constructor(function(c){
-                this.listenR(closure(bind(f, ctx, c))).listenL(c); 
+                this.listenR(clos(bind(f, ctx, c))).listenL(c); 
             }, this);
         };
         
         Stream.prototype.fdip = function(f, ctx){
-            return this.then(closure(bind(f, ctx)));
+            return this.then(clos(bind(f, ctx)));
         };
         
         Stream.prototype.fdipL = function(f, ctx){
-            return this.thenL(closure(bind(f, ctx)));
+            return this.thenL(clos(bind(f, ctx)));
         };
         
         Stream.prototype.fdipR = function(f, ctx){
-            return this.thenR(closure(bind(f, ctx)));
+            return this.thenR(clos(bind(f, ctx)));
         };
 
         Stream.prototype.debounce = function(t){
@@ -333,10 +333,6 @@
             return this.constructor.merge(ss ? [this].concat(ss) : [this]);
         };
 
-        Stream.init = function(v){
-            return new this(lift(v));
-        };
-
         Stream.any = function(ss){
             return new this(function(h){
                 ss.forEach(unpacker(h));
@@ -366,25 +362,6 @@
                 } : lift([]));
             };
         }(params.immutable));
-
-        Stream.pipe = function(fs){
-            var hf,
-                tfs;
-                
-            if(!fs.length){
-                throw new Error('empty list');
-            }
-            
-            hf = fs[0];
-            tfs = fs.slice(1);
-            
-            return bind(function(){
-                var r = hf.apply.null(arguments);
-                return tfs.reduce(function(acc, f){
-                    return acc.thenR(f);
-                }, Latte.isStream(r) ? r : new this.constructor(lift(r)));
-            }, this);
-        }; 
 
         Stream.shell = function(){
             var s = new this(noop);
@@ -465,6 +442,10 @@
                 }());        
             });
         };
+    };
+    
+    Latte.pack = function(v){
+        return new Latte.IStream(lift(v));
     };
     
     Latte.extend = function(Stream, ext){
