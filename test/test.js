@@ -4047,13 +4047,13 @@ describe('Stream instance methods > ', function(){
     
     describe('any > ', function(){
         
-        it('without argument, R value', function(done){
+        it('with empty list, R value', function(done){
             var spy1 = fspy(),
                 spy2 = fspy(),
                 spy3 = fspy(),
                 s = Latte.IStream(lift('test'));
                 
-            s.any().listenL(spy1).listenR(spy2).listen(spy3);
+            s.any([]).listenL(spy1).listenR(spy2).listen(spy3);
             
             setTimeout(function(){
                 assert.equal(spy1.called, false);
@@ -4063,13 +4063,13 @@ describe('Stream instance methods > ', function(){
             }, 50);
         });
 
-        it('without argument, L value', function(done){
+        it('with empty list, L value', function(done){
             var spy1 = fspy(),
                 spy2 = fspy(),
                 spy3 = fspy(),
                 s = Latte.IStream(lift(Latte.L('error')));
                 
-            s.any().listenL(spy1).listenR(spy2).listen(spy3);
+            s.any([]).listenL(spy1).listenR(spy2).listen(spy3);
             
             setTimeout(function(){
                 assert.equal(Latte.val(spy1.args[0]), 'error');
@@ -4221,13 +4221,13 @@ describe('Stream instance methods > ', function(){
 
     describe('merge > ', function(){
         
-        it('without argument, R value', function(done){
+        it('with empty list, R value', function(done){
             var spy1 = fspy(),
                 spy2 = fspy(),
                 spy3 = fspy(),
                 s = Latte.IStream(lift('test'));
                 
-            s.merge().listenL(spy1).listenR(spy2).listen(spy3);
+            s.merge([]).listenL(spy1).listenR(spy2).listen(spy3);
             
             setTimeout(function(){
                 assert.equal(spy1.called, false);
@@ -4237,13 +4237,13 @@ describe('Stream instance methods > ', function(){
             }, 50);
         });
 
-        it('without argument, L value', function(done){
+        it('with empty list, L value', function(done){
             var spy1 = fspy(),
                 spy2 = fspy(),
                 spy3 = fspy(),
                 s = Latte.IStream(lift(Latte.L('error')));
                 
-            s.merge().listenL(spy1).listenR(spy2).listen(spy3);
+            s.merge([]).listenL(spy1).listenR(spy2).listen(spy3);
             
             setTimeout(function(){
                 assert.equal(Latte.val(Latte.val(spy1.args[0])[0]), 'error');

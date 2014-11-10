@@ -326,11 +326,11 @@
         };
 
         Stream.prototype.any = function(ss){
-            return this.constructor.any(ss ? [this].concat(ss) : [this]); 
+            return this.constructor.any([this].concat(ss)); 
         };
 
         Stream.prototype.merge = function(ss){
-            return this.constructor.merge(ss ? [this].concat(ss) : [this]);
+            return this.constructor.merge([this].concat(ss));
         };
 
         Stream.any = function(ss){
