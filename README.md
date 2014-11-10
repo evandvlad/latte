@@ -243,7 +243,7 @@ M(umable)Stream - поток с изменяемым значением, при 
 
 ##### log (logL, logR) #####
 
-Метод вывода текущего значения в консоль (console.log), если она доступна. Метод не принимает параметров. 
+Метод вывода текущего значения в консоль (*console.log*), если она доступна. Метод не принимает параметров. 
 
     Latte.MStream(function(handle){
         setInterval(function(){
@@ -281,4 +281,39 @@ M(umable)Stream - поток с изменяемым значением, при 
 
 
 #### Статические методы ####
+
+##### any #####
+
+Метод с той же функциональностью что и метод any от экземпляра потока, но принимает только массив значений.
+
+    Latte.MStream.any(['value', Latte.MStream(function(handle){
+        setTimeout(function(){
+            handle('new value');
+        }, 100);
+    })]); 
+    
+##### merge #####
+
+Метод с той же функциональностью что и метод merge от экземпляра потока, но принимает только массив значений.
+
+    Latte.MStream.merge(['other value', Latte.MStream(function(handle){
+        setTimeout(function(){
+            handle('new value');
+        }, 100);
+    })]); 
+    
+##### shell #####
+
+Метод для ручного управления потоком. Метод не принимает параметров и возвращает объект с методами *set* и *out*.
+Метод *set* - для передачи значения в поток, метод *out* - возвращает экземпляр потока (один и тот же экземпляр).
+
+    var shell = Latte.MStream.shell();
+    
+    shell.out().log();
+    
+    shell.set('value-1');
+    shell.set('value-2'); 
+
+### Latte.fun & Latte.callback ###
+
 

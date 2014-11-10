@@ -90,7 +90,7 @@
         }, oto);
     }
 
-    function clos(f){
+    function thunk(f){
         var fn = null;
         return function(v){
             fn = fn || f();
@@ -261,32 +261,32 @@
 
         Stream.prototype.cdip = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(clos(bind(f, ctx, c))); 
+                this.listen(thunk(bind(f, ctx, c))); 
             }, this);
         };
 
         Stream.prototype.cdipL = function(f, ctx){
             return new this.constructor(function(c){
-                this.listenL(clos(bind(f, ctx, c))).listenR(c); 
+                this.listenL(thunk(bind(f, ctx, c))).listenR(c); 
             }, this);
         };
 
         Stream.prototype.cdipR = function(f, ctx){
             return new this.constructor(function(c){
-                this.listenR(clos(bind(f, ctx, c))).listenL(c); 
+                this.listenR(thunk(bind(f, ctx, c))).listenL(c); 
             }, this);
         };
         
         Stream.prototype.fdip = function(f, ctx){
-            return this.then(clos(bind(f, ctx)));
+            return this.then(thunk(bind(f, ctx)));
         };
         
         Stream.prototype.fdipL = function(f, ctx){
-            return this.thenL(clos(bind(f, ctx)));
+            return this.thenL(thunk(bind(f, ctx)));
         };
         
         Stream.prototype.fdipR = function(f, ctx){
-            return this.thenR(clos(bind(f, ctx)));
+            return this.thenR(thunk(bind(f, ctx)));
         };
 
         Stream.prototype.debounce = function(t){
