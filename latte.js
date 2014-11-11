@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.0.0';
+    global.Latte.version = '6.1.0';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -362,6 +362,10 @@
                 } : lift([]));
             };
         }(params.immutable));
+        
+        Stream.pack = function(v){
+            return new this(lift(v));
+        };
 
         Stream.shell = function(){
             var s = new this(noop);
@@ -444,8 +448,19 @@
         };
     };
     
-    Latte.pack = function(v){
-        return new Latte.IStream(lift(v));
+    Latte.recur = function(f, ctx){
+        var s = Latte.MStream.shell();
+        
+        function callf(v){
+            setTimeout(function(){
+                f.call(ctx, callf, v).listen(s.set, s);
+            }, 0);
+        }
+        
+        return function(v){
+            callf(v);
+            return s.out();
+        };
     };
     
     Latte.extend = function(Stream, ext){

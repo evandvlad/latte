@@ -4596,6 +4596,71 @@ describe('Stream static methods > ', function(){
                 done(); 
             }, 50); 
         });
+    }); 
+    
+    describe('pack', function(){
+    
+        it('types', function(){
+            var s1 = Latte.IStream.pack('test'),
+                s2 = Latte.MStream.pack('test');
+            
+            assert.equal(Latte.isStream(s1), true);
+            assert.equal(Latte.isStream(s2), true);
+            assert.equal(Latte.isIStream(s1), true);
+            assert.equal(Latte.isIStream(s2), false);
+            assert.equal(Latte.isMStream(s1), false);
+            assert.equal(Latte.isMStream(s2), true);
+        });
+             
+        it('R', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.pack('test');
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), false);
+                assert.equal(spy.args[0], 'test');
+                done(); 
+            }); 
+        });
+
+        it('L', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.pack(Latte.L('error'));
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isL(spy.args[0]), true);
+                assert.equal(Latte.val(spy.args[0]), 'error');
+                done(); 
+            }); 
+        });
+
+        it('Stream R', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.pack(Latte.IStream.pack('test'));
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isStream(spy.args[0]), true);
+                done(); 
+            }); 
+        });
+
+        it('Stream L', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.pack(Latte.IStream.pack(Latte.L('error')));
+
+            s.listen(spy);
+
+            setTimeout(function(){
+                assert.equal(Latte.isStream(spy.args[0]), true);
+                done(); 
+            }); 
+        });
     });  
 
     describe('shell', function(){
@@ -4746,7 +4811,7 @@ describe('fun', function(){
         var spy = fspy(),
             s = Latte.fun(function(v){
                 return v;
-            })(Latte.pack('test'));
+            })(Latte.IStream.pack('test'));
             
         s.listen(spy);
         
@@ -4788,6 +4853,87 @@ describe('fun', function(){
         var s = Latte.fun(function(){})();
         assert.equal(Latte.isMStream(s), true);
     });
+});
+
+describe('recur', function(){
+   
+    it('R', function(done){
+        var spy = fspy();
+        
+        Latte.recur(function(f, v){
+            return Latte.IStream.pack(v).fmap(function(val){
+                return val + '!';
+            }).when(function(v){
+                return v.length < 8;    
+            }).listen(f);
+        })('test').listen(spy);
+        
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'test!!!');
+            assert.equal(spy.count, 3);
+            done();
+        }, 100);
+    });
+    
+    it('L', function(done){
+        var spy = fspy();
+        
+        Latte.recur(function(f, v){
+            return Latte.IStream.pack(Latte.val(v)).fmap(function(val){
+                return val + '!';
+            }).when(function(v){
+                return v.length < 8;    
+            }).fmap(Latte.L).listen(f);
+        })('test').listen(spy);
+        
+        setTimeout(function(){
+            assert.equal(Latte.isL(spy.args[0]), true);
+            assert.equal(Latte.val(spy.args[0]), 'test!!!');
+            assert.equal(spy.count, 3);
+            done();
+        }, 100);
+    });
+    
+    it('with context', function(done){
+        var spy = fspy();
+        
+        Latte.recur(function(f, v){
+            return Latte.IStream.pack(v).fmap(function(val){
+                return val + this.sign;
+            }, this).when(function(v){
+                return v.length < 8;    
+            }).listen(f);
+        }, {sign : "!"})('test').listen(spy);
+        
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'test!!!');
+            assert.equal(spy.count, 3);
+            done();
+        }, 100);
+    });
+    
+    it('in chain', function(done){
+        var spy = fspy();
+        
+        Latte.MStream(function(h){
+            setTimeout(function(){
+                h('test');
+            }, 0);
+        }).then(Latte.recur(function(f, v){
+            return Latte.IStream.pack(v).fmap(function(val){
+                return val + '!';
+            }).when(function(v){
+                return v.length < 8;    
+            }).listen(f);
+        })).listen(spy);
+        
+        setTimeout(function(){
+            assert.equal(spy.args[0], 'test!!!');
+            assert.equal(spy.count, 3);
+            done();
+        }, 100);
+    });
+    
 });
 
 describe('gen', function(){
@@ -4866,7 +5012,7 @@ describe('gen', function(){
                     }),
                     y = 'west';
                 
-                return Latte.pack([v, x, y].join(','));
+                return Latte.IStream.pack([v, x, y].join(','));
             })('test');
             
         s.listen(spy);
@@ -4887,7 +5033,7 @@ describe('gen', function(){
                     }),
                     y = 'west';
                 
-                return Latte.pack([v, x, y].join(','));
+                return Latte.IStream.pack([v, x, y].join(','));
             })('test');
             
         s.listen(spy);
@@ -4919,63 +5065,3 @@ describe('gen', function(){
         assert.equal(Latte.isIStream(s), true);
     });
 });
-
-describe('pack', function(){
-    
-    it('types', function(){
-        var s = Latte.pack('test');
-        
-        assert.equal(Latte.isStream(s), true);
-        assert.equal(Latte.isIStream(s), true);
-    });
-         
-    it('R', function(done){
-        var spy = fspy(),
-            s = Latte.pack('test');
-
-        s.listen(spy);
-
-        setTimeout(function(){
-            assert.equal(Latte.isL(spy.args[0]), false);
-            assert.equal(spy.args[0], 'test');
-            done(); 
-        }); 
-    });
-
-    it('L', function(done){
-        var spy = fspy(),
-            s = Latte.pack(Latte.L('error'));
-
-        s.listen(spy);
-
-        setTimeout(function(){
-            assert.equal(Latte.isL(spy.args[0]), true);
-            assert.equal(Latte.val(spy.args[0]), 'error');
-            done(); 
-        }); 
-    });
-
-    it('Stream R', function(done){
-        var spy = fspy(),
-            s = Latte.pack(Latte.pack('test'));
-
-        s.listen(spy);
-
-        setTimeout(function(){
-            assert.equal(Latte.isStream(spy.args[0]), true);
-            done(); 
-        }); 
-    });
-
-    it('Stream L', function(done){
-        var spy = fspy(),
-            s = Latte.pack(Latte.pack(Latte.L('error')));
-
-        s.listen(spy);
-
-        setTimeout(function(){
-            assert.equal(Latte.isStream(spy.args[0]), true);
-            done(); 
-        }); 
-    });
-}); 
