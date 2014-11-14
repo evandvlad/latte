@@ -49,7 +49,7 @@
         };
     }
 
-    function lift(v){
+    function ap(v){
         return function(f){
             return f(v);
         };
@@ -359,16 +359,20 @@
                             }
                         })(x);
                     });
-                } : lift([]));
+                } : ap([]));
             };
         }(params.immutable));
         
         Stream.pack = function(v){
-            return new this(lift(v));
+            return new this(ap(v));
+        };
+        
+        Stream.never = function(){
+            return new this(noop);
         };
 
         Stream.shell = function(){
-            var s = new this(noop);
+            var s = this.never();
             
             s.set = function(v){
                 this[Latte._PROP_STREAM_STATE].set(v);
@@ -440,9 +444,9 @@
             
             return new Latte.IStream(function(h){
                 var gen = g.apply(ctx, args);
-                (function _iterate(val){
+                (function iterate(val){
                     var st = gen.next(val);
-                    unpacker(st.done ? h : cond(Latte.isL, h, _iterate))(st.value);
+                    unpacker(st.done ? h : cond(Latte.isL, h, iterate))(st.value);
                 }());        
             });
         };
@@ -503,7 +507,7 @@
     Latte._State.prototype.set = function(v){
         if(isNothing(this._val) || !this._params.immutable){
             this._val = v;
-            this._queue && this._queue.forEach(lift(this._val), this);
+            this._queue && this._queue.forEach(ap(this._val), this);
             this._params.immutable && (this._queue = null);
         }
         return this;

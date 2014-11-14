@@ -4663,6 +4663,21 @@ describe('Stream static methods > ', function(){
         });
     });  
 
+    describe('never', function(){
+        
+        it('check', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.never();
+                
+            s.listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.called, false);
+                done();
+            }, 100);
+        });
+    });
+
     describe('shell', function(){
         
         it('IStream insterface', function(){
