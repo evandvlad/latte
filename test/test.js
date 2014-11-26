@@ -4775,6 +4775,68 @@ describe('Stream static methods > ', function(){
             }, 50); 
         });
     }); 
+
+    describe('lazy', function(){
+        
+        it('check type', function(){
+            var s = Latte.IStream.lazy(noop);
+            assert.equal(Latte.isStream(s), true);
+            assert.equal(Latte.isIStream(s), true);
+        });
+        
+        it('not call executor if has not listeners', function(done){
+            var spy = fspy();
+            
+            Latte.MStream.lazy(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.called, false);
+                done();
+            }, 50);
+        });
+        
+        it('call executor once', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.lazy(spy);
+                
+            s.listen(noop);
+            s.listen(noop);
+            s.listen(noop);
+            
+            setTimeout(function(){
+                assert.equal(spy.count, 1);
+                done();
+            }, 50);
+        });
+        
+        it('call executor with context', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.lazy(function(handle){
+                    handle('test' + this.sign);
+                }, {sign : '!'});
+                
+            s.listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
+                done();
+            }, 50);
+        });
+        
+        it('with method which return new instance', function(done){
+            var spy = fspy(),
+                s = Latte.IStream.lazy(function(handle){
+                    handle('test' + this.sign);
+                }, {sign : '!'});
+                
+            s.fmap(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test!');
+                done();
+            }, 50);
+        });
+    }); 
 });
 
 describe('fun', function(){

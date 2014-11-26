@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.1.0';
+    global.Latte.version = '6.2.0';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -89,6 +89,13 @@
             return acc;
         }, oto);
     }
+    
+    function inherit(P, C, ext){
+        C.prototype = Object.create(P.prototype);
+        C.prototype.constructor = C;
+        mix(C.prototype, ext || {});
+        return C;
+    }
 
     function thunk(f){
         var fn = null;
@@ -153,6 +160,61 @@
     function unpacker(f){
         return cond(Latte.isStream, meth('listen', f), f);
     }
+    
+    function State(executor, params){
+        this._params = params;
+        this._queue = [];
+        this._val = NOTHING;
+        this._isInit = false;
+        this._executor = executor;
+    };
+    
+    State.prototype.on = function(f){
+        this._queue && this._queue.push(f);
+        !isNothing(this._val) && f(this._val);
+        return this;
+    };
+
+    State.prototype.set = function(v){
+        if(!this._isInit){
+            return this;
+        }
+        
+        if(isNothing(this._val) || !this._params.immutable){
+            this._val = v;
+            this._queue && this._queue.forEach(ap(this._val), this);
+            this._params.immutable && (this._queue = null);
+        }
+        
+        return this;
+    };
+    
+     State.prototype._init = function(){
+        if(!this._isInit){
+            this._isInit = true;
+            this._executor(bind(this.set, this));
+        }
+        return this;
+    };
+    
+    function StateStrict(){
+        State.apply(this, arguments);
+        this._init();
+    }
+    
+    inherit(State, StateStrict);
+    
+    function StateLazy(){
+        State.apply(this, arguments);
+    }
+    
+    inherit(State, StateLazy, {
+        on : function(){
+            this._init();
+            State.prototype.on.apply(this, arguments);
+            return this;
+        }
+    });
 
     function BuildStream(params){
 
@@ -162,7 +224,7 @@
             }
 
             Object.defineProperty(this, Latte._PROP_STREAM_STATE, {
-                value : new Latte._State(bind(executor, ctx), params)
+                value : new StateStrict(bind(executor, ctx), params)
             });
         }
 
@@ -370,6 +432,16 @@
         Stream.never = function(){
             return new this(noop);
         };
+        
+        Stream.lazy = function(executor, ctx){
+            var inst = Object.create(Stream.prototype);
+            
+            Object.defineProperty(inst, Latte._PROP_STREAM_STATE, {
+                value : new StateLazy(bind(executor, ctx), params)
+            });
+            
+            return inst;
+        };
 
         Stream.shell = function(){
             var s = this.never();
@@ -409,7 +481,6 @@
     };
 
     Latte.R = id;
-
     Latte.isL = bind(isValueWithProp, null, isObject, PROP_L);
     Latte.isR = compose(not, Latte.isL);
     Latte.val = cond(Latte.isL, prop(PROP_L_VALUE), id);
@@ -468,50 +539,18 @@
     };
     
     Latte.extend = function(Stream, ext){
-        var Ctor;
+        var Ctor = (ext || {}).hasOwnProperty('constructor') ? ext.constructor : function Ctor(executor, ctx){
+            if(!(this instanceof Ctor)){
+                return new Ctor(executor, ctx);
+            }
 
-        ext = ext || {};
+            Stream.call(this, executor, ctx);
+        };
 
-        Ctor = ext.hasOwnProperty('constructor') ?
-            ext.constructor :
-            function Ctor(executor, ctx){
-                if(!(this instanceof Ctor)){
-                    return new Ctor(executor, ctx);
-                }
-
-                Stream.call(this, executor, ctx);
-            };
-
-        Ctor.prototype = Object.create(Stream.prototype);
-        Ctor.prototype.constructor = Ctor;
-        mix(Ctor.prototype, ext);
-
-        return mix(Ctor, Stream);
+        return mix(inherit(Stream, Ctor, ext), Stream);
     };
 
     Latte._PROP_STREAM_STATE = '_____####![STREAM_STATE]'; 
-
-    Latte._State = function(executor, params){
-        this._params = params;
-        this._queue = [];
-        this._val = NOTHING;
-        executor(bind(this.set, this));
-    };
-
-    Latte._State.prototype.on = function(f){
-        this._queue && this._queue.push(f);
-        !isNothing(this._val) && f(this._val);
-        return this;
-    };
-
-    Latte._State.prototype.set = function(v){
-        if(isNothing(this._val) || !this._params.immutable){
-            this._val = v;
-            this._queue && this._queue.forEach(ap(this._val), this);
-            this._params.immutable && (this._queue = null);
-        }
-        return this;
-    };
 
     return Latte; 
 }));
