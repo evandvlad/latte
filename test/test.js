@@ -4692,6 +4692,7 @@ describe('Stream static methods > ', function(){
             var sh = Latte.MStream.shell();
 
             assert.equal(typeof sh.set === 'function', true); 
+            assert.equal(typeof sh.get === 'function', true); 
             assert.equal(Latte.isMStream(sh.out()), true);
             assert.equal(sh.out() === sh.out(), true); 
         }); 
@@ -4718,6 +4719,34 @@ describe('Stream static methods > ', function(){
 
             setTimeout(function(){
                 assert.equal(spy.args[0], 'test');
+                done(); 
+            }, 50); 
+        });
+        
+        it('get method', function(done){
+            var spy = fspy(),
+                sh = Latte.IStream.shell();
+
+            sh.out().listen(spy);
+            sh.set('test');
+
+            setTimeout(function(){
+                assert.equal(spy.args[0], 'test');
+                assert.equal(sh.get(), 'test');
+                done(); 
+            }, 50); 
+        });
+        
+        it('get method with default value', function(done){
+            var spy = fspy(),
+                sh = Latte.IStream.shell();
+
+            sh.out().listen(spy);
+
+            setTimeout(function(){
+                assert.equal(spy.called, false);
+                assert.equal(sh.get(), undefined);
+                assert.equal(sh.get('nothing'), 'nothing');
                 done(); 
             }, 50); 
         });
@@ -4773,6 +4802,44 @@ describe('Stream static methods > ', function(){
                 assert.equal(Latte.isStream(spy.args[0]), true);
                 done(); 
             }, 50); 
+        });
+    }); 
+
+    describe('shellify', function(){
+        
+        it('IStream', function(done){
+            var spy = fspy(),
+                sh1 = Latte.MStream.shell(),
+                sh2 = Latte.IStream.shellify(sh1.out());
+            
+            sh2.out().listen(spy);
+            sh1.set('test');
+            sh1.set('west');
+            
+            setTimeout(function(){
+                assert.equal(spy.count, 1);
+                assert.equal(spy.args[0], 'test');
+                done();
+            }, 50);
+            
+        });
+        
+        it('MStream', function(done){
+            var spy = fspy(),
+                sh1 = Latte.MStream.shell(),
+                sh2 = Latte.MStream.shellify(sh1.out());
+            
+            sh2.out().listen(spy);
+            sh1.set('test');
+            sh1.set(Latte.L('error'));
+            
+            setTimeout(function(){
+                assert.equal(spy.count, 2);
+                assert.equal(Latte.isL(spy.args[0]), true);
+                assert.equal(Latte.val(spy.args[0]), 'error');
+                done();
+            }, 50);
+            
         });
     }); 
 

@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.2.0';
+    global.Latte.version = '6.3.0';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -27,8 +27,8 @@
         NOTHING = new String('NOTHING'),
         PROP_L_VALUE = 'value',
 
-        toString = Object.prototype.toString,
-        aslice = Array.prototype.slice;
+        toString = Function.prototype.call.bind(Object.prototype.toString),
+        aslice = Function.prototype.call.bind(Array.prototype.slice);
 
     function noop(){}
 
@@ -43,9 +43,9 @@
     }
 
     function bind(f, ctx){
-        var args = aslice.call(arguments, 2);
+        var args = aslice(arguments, 2);
         return function(){
-            return f.apply(ctx, args.concat(aslice.call(arguments)));
+            return f.apply(ctx, args.concat(aslice(arguments)));
         };
     }
 
@@ -106,11 +106,11 @@
     }
 
     function isObject(v){
-        return toString.call(v) === '[object Object]';
+        return toString(v) === '[object Object]';
     }
 
     function isFunction(v){
-        return toString.call(v) === '[object Function]';
+        return toString(v) === '[object Function]';
     }
 
     function stdamper(f){
@@ -187,6 +187,10 @@
         }
         
         return this;
+    };
+    
+    State.prototype.get = function(dv){
+        return isNothing(this._val) ? dv : this._val;
     };
     
      State.prototype._init = function(){
@@ -450,11 +454,22 @@
                 this[Latte._PROP_STREAM_STATE].set(v);
                 return this;
             };
+            
+            s.get = function(dv){
+                return this[Latte._PROP_STREAM_STATE].get(dv);
+            };
                         
             return {
                 set : bind(s.set, s),
+                get : bind(s.get, s),
                 out : fconst(new this(s.listen, s))
             };
+        };
+        
+        Stream.shellify = function(s){
+            var sh = this.shell();
+            s.listen(sh.set, sh);
+            return sh;
         };
 
         Object.defineProperty(Stream.prototype, params.key, {value : true});
@@ -499,7 +514,7 @@
     
     Latte.fun = function(f, ctx){
         return function(){
-            var args = aslice.call(arguments),
+            var args = aslice(arguments),
                 cbs = args.filter(Latte.isCallback),
                 r = f.apply(ctx, args);
                 
@@ -511,7 +526,7 @@
     
     Latte.gen = function(g, ctx){
         return function(){
-            var args = aslice.call(arguments);
+            var args = aslice(arguments);
             
             return new Latte.IStream(function(h){
                 var gen = g.apply(ctx, args);
