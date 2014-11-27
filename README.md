@@ -125,7 +125,7 @@ M(umable)Stream - поток с изменяемым значением, при 
         setInterval(function(){
             handle(Date.now()); 
         }, 1000); 
-    }).then(function(value){
+    }).fmapR(function(value){
         return 'now: ' + value;
     });
 
