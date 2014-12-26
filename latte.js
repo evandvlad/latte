@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.3.0';
+    global.Latte.version = '6.4.0';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -97,7 +97,7 @@
         return C;
     }
 
-    function thunk(f){
+    function susp(f){
         var fn = null;
         return function(v){
             fn = fn || f();
@@ -219,6 +219,18 @@
             return this;
         }
     });
+    
+    function Puller(onVal, onPull, st, s){
+        s.listen(function(v){
+            st = onVal(st, v);
+        });
+        
+        return function(f, ctx){
+            var shell = Latte.IStream.shell();
+            st = onPull(st, shell, f ? bind(f, ctx) : fconst(true));
+            return shell.out();
+        };
+    }
 
     function BuildStream(params){
 
@@ -327,32 +339,32 @@
 
         Stream.prototype.cdip = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(thunk(bind(f, ctx, c))); 
+                this.listen(susp(bind(f, ctx, c))); 
             }, this);
         };
 
         Stream.prototype.cdipL = function(f, ctx){
             return new this.constructor(function(c){
-                this.listenL(thunk(bind(f, ctx, c))).listenR(c); 
+                this.listenL(susp(bind(f, ctx, c))).listenR(c); 
             }, this);
         };
 
         Stream.prototype.cdipR = function(f, ctx){
             return new this.constructor(function(c){
-                this.listenR(thunk(bind(f, ctx, c))).listenL(c); 
+                this.listenR(susp(bind(f, ctx, c))).listenL(c); 
             }, this);
         };
         
         Stream.prototype.fdip = function(f, ctx){
-            return this.then(thunk(bind(f, ctx)));
+            return this.then(susp(bind(f, ctx)));
         };
         
         Stream.prototype.fdipL = function(f, ctx){
-            return this.thenL(thunk(bind(f, ctx)));
+            return this.thenL(susp(bind(f, ctx)));
         };
         
         Stream.prototype.fdipR = function(f, ctx){
-            return this.thenR(thunk(bind(f, ctx)));
+            return this.thenR(susp(bind(f, ctx)));
         };
 
         Stream.prototype.debounce = function(t){
@@ -471,7 +483,7 @@
             s.listen(sh.set, sh);
             return sh;
         };
-
+        
         Object.defineProperty(Stream.prototype, params.key, {value : true});
 
         return Stream;
@@ -551,6 +563,32 @@
             callf(v);
             return s.out();
         };
+    };
+    
+    Latte.puller = function(s){
+        return Puller(function(st, v){
+            st.q.length && st.q[0].filter(v) ? st.q.shift().shell.set(v) : (st.fv = v);
+            return st;
+        }, function(st, shell, filter){
+            if(!isNothing(st.fv) && filter(st.fv)){
+                shell.set(st.fv);
+                st.fv = NOTHING;
+            }
+            else{
+                st.q.push({shell : shell, filter : filter});
+            }
+            return st;
+        }, {q : [], fv : NOTHING}, s);
+    };
+    
+    Latte.apuller = function(s){
+        return Puller(function(st, v){
+            st.q.length && st.q[0].filter(v) && st.q.shift().shell.set(v);
+            return st;
+        }, function(st, shell, filter){
+            st.q.push({shell : shell, filter : filter});
+            return st;
+        }, {q : []}, s);
     };
     
     Latte.extend = function(Stream, ext){
