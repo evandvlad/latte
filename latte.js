@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.4.0';
+    global.Latte.version = '6.5.0';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -219,18 +219,6 @@
             return this;
         }
     });
-    
-    function Puller(onVal, onPull, st, s){
-        s.listen(function(v){
-            st = onVal(st, v);
-        });
-        
-        return function(f, ctx){
-            var shell = Latte.IStream.shell();
-            st = onPull(st, shell, f ? bind(f, ctx) : fconst(true));
-            return shell.out();
-        };
-    }
 
     function BuildStream(params){
 
@@ -566,29 +554,41 @@
     };
     
     Latte.puller = function(s){
-        return Puller(function(st, v){
-            st.q.length && st.q[0].filter(v) ? st.q.shift().shell.set(v) : (st.fv = v);
-            return st;
-        }, function(st, shell, filter){
-            if(!isNothing(st.fv) && filter(st.fv)){
-                shell.set(st.fv);
-                st.fv = NOTHING;
+        var fv = NOTHING,
+            q = [];
+            
+        function createQItem(f, ctx){
+            return {
+                shell : Latte.IStream.shell(), 
+                filter : f ? bind(f, ctx) : fconst(true)
+            };
+        }
+            
+        s.listen(function(v){
+            q.length && q[0].filter(v) ? q.shift().shell.set(v) : (fv = v);
+        });
+        
+        return {
+            
+            pull : function(f, ctx){
+                var qitem = createQItem(f, ctx);
+                
+                if(!isNothing(fv) && qitem.filter(fv)){
+                    qitem.shell.set(fv);
+                    fv = NOTHING;
+                }
+                else{
+                    q.push(qitem);
+                }
+                return qitem.shell.out();
+            },
+            
+            apull : function(f, ctx){
+                var qitem = createQItem(f, ctx);
+                q.push(qitem);
+                return qitem.shell.out();
             }
-            else{
-                st.q.push({shell : shell, filter : filter});
-            }
-            return st;
-        }, {q : [], fv : NOTHING}, s);
-    };
-    
-    Latte.apuller = function(s){
-        return Puller(function(st, v){
-            st.q.length && st.q[0].filter(v) && st.q.shift().shell.set(v);
-            return st;
-        }, function(st, shell, filter){
-            st.q.push({shell : shell, filter : filter});
-            return st;
-        }, {q : []}, s);
+        };
     };
     
     Latte.extend = function(Stream, ext){
