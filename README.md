@@ -431,6 +431,45 @@ callback функциями в потоки Latte.IStream/Latte.MStream.
         }).listen(f);
     })('test').log(); 
     
+### Latte.puller & Latte.apuller ###
+
+С помощью этих методов можно разбивать поток на последовательность фрагментов данных, обернутых в значение
+IStream. Методы возвращают функцию, при вызове которой возвращается очередной фрагмент последовательности 
+событий.
+
+     var stream = Latte.fun(document.addEventListener, document)('click', Latte.callback(function(e){
+            return {
+                target : e.target
+            };
+        }), false),
+        
+        puller = Latte.apuller(stream),
+        firstClick = puller(),
+        secondClick = puller();
+        
+    firstClick.log();
+    secondClick.log();
+    
+Методы *Latte.puller* и *Latte.apuller* отличаются тем, каким образом происходит разбивка на фрагменты. 
+Метод *Latte.apuller* делит на фрагменты таким образом, что новый фрагмент всегда будет ожидать нового 
+значения в потоке (await), в то время как *Latte.puller* позволяет работать со значением, 
+которое могло быть получено до задания фрагмента. 
+
+Функции, разбивающей поток на фрагменты, можно передавать функцию фильтрации с контекстом для нее, по
+умолчанию, когда функция не принимает фильтр, пропускаются все значения, в том числе и L-значения.
+
+    var stream = Latte.fun(document.addEventListener, document)('keydown', Latte.callback(function(e){
+            return e;
+        }), false),
+        
+        puller = Latte.apuller(stream),
+        
+        enterPress = puller(function(e){
+            return e.keyCode === 13;
+        });
+        
+В примере, приведенном выше, идет ожидание нажатия клавиши ENTER, начиная с текущего времени.
+    
 ### Расширение Latte.IStream/Latte.MStream ###
 
 Метод *Latte.extend* позволяет создать пользовательский тип потока на основе уже имеющихся (IStream/MStream), 
