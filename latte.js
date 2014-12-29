@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.5.0';
+    global.Latte.version = '6.5.1';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -193,7 +193,7 @@
         return isNothing(this._val) ? dv : this._val;
     };
     
-     State.prototype._init = function(){
+    State.prototype._init = function(){
         if(!this._isInit){
             this._isInit = true;
             this._executor(bind(this.set, this));
@@ -585,6 +585,7 @@
             
             apull : function(f, ctx){
                 var qitem = createQItem(f, ctx);
+                fv = NOTHING;
                 q.push(qitem);
                 return qitem.shell.out();
             }
