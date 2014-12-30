@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.5.1';
+    global.Latte.version = '6.5.2';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -189,8 +189,8 @@
         return this;
     };
     
-    State.prototype.get = function(dv){
-        return isNothing(this._val) ? dv : this._val;
+    State.prototype.get = function(){
+        return this._val;
     };
     
     State.prototype._init = function(){
@@ -219,6 +219,12 @@
             return this;
         }
     });
+    
+    function BuildStreamImpl(self, State, executor, ctx, params){
+        return Object.defineProperty(self, Latte._PROP_STREAM_STATE, {
+            value : new State(bind(executor, ctx), params)
+        });
+    }
 
     function BuildStream(params){
 
@@ -227,9 +233,7 @@
                 return new Stream(executor, ctx);
             }
 
-            Object.defineProperty(this, Latte._PROP_STREAM_STATE, {
-                value : new StateStrict(bind(executor, ctx), params)
-            });
+            BuildStreamImpl(this, StateStrict, executor, ctx, params); 
         }
 
         Stream.prototype.listen = function(f, ctx){
@@ -404,30 +408,24 @@
                 ss.forEach(unpacker(h));
             }); 
         };
+        
+        Stream.merge = function(ss){
+            var len = ss.length;
 
-        Stream.merge = (function(isResetAcc){
-            return function(xs){
-                var len = xs.length;
+            return new this(len ? function(h){
+                var acc = [];
 
-                return new this(len ? function(h){
-                    var acc = [];
+                ss.forEach(function(s, i){
+                    unpacker(function(v){
+                        acc[i] = v;
 
-                    xs.forEach(function(x, i){
-                        unpacker(function(v){
-                            acc[i] = v;
-
-                            if(Object.keys(acc).length === len){
-                                h(acc.some(Latte.isL) ? 
-                                    Latte.L(acc.concat()) : 
-                                    acc.concat()
-                                );
-                                isResetAcc && (acc = []);
-                            }
-                        })(x);
-                    });
-                } : ap([]));
-            };
-        }(params.immutable));
+                        if(Object.keys(acc).length === len){
+                            h(acc.some(Latte.isL) ? Latte.L(acc.concat()) : acc.concat());
+                        }
+                    })(s);
+                });
+            } : ap([]));
+        };
         
         Stream.pack = function(v){
             return new this(ap(v));
@@ -438,13 +436,7 @@
         };
         
         Stream.lazy = function(executor, ctx){
-            var inst = Object.create(Stream.prototype);
-            
-            Object.defineProperty(inst, Latte._PROP_STREAM_STATE, {
-                value : new StateLazy(bind(executor, ctx), params)
-            });
-            
-            return inst;
+            return BuildStreamImpl(Object.create(Stream.prototype), StateLazy, executor, ctx, params); 
         };
 
         Stream.shell = function(){
@@ -456,7 +448,8 @@
             };
             
             s.get = function(dv){
-                return this[Latte._PROP_STREAM_STATE].get(dv);
+                var v = this[Latte._PROP_STREAM_STATE].get();
+                return isNothing(v) ? dv : v;
             };
                         
             return {

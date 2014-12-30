@@ -4255,6 +4255,31 @@ describe('Stream instance methods > ', function(){
                 done();
             }, 50);
         });
+        
+        it('IStream & several values from MStream', function(done){
+            var spy = fspy(),
+                s = Latte.IStream(lift('test'));
+                
+            s.merge([
+                Latte.MStream(function(h){
+                    h('west');
+                    setTimeout(function(){
+                        h('rest');
+                        
+                        setTimeout(function(){
+                            h('fest');
+                        }, 10);
+                    }, 0)
+                })
+            ]).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0][0], 'test');
+                assert.equal(spy.args[0][1], 'west');
+                assert.equal(spy.count, 1); 
+                done();
+            }, 50);
+        });
 
         it('+1 Stream, R value', function(done){
             var spy1 = fspy(),
@@ -4511,6 +4536,31 @@ describe('Stream static methods > ', function(){
                 assert.equal(JSON.stringify(spy.args[0]), '[]');
                 done(); 
             }, 50); 
+        });
+        
+        it('IStream & several values from MStream', function(done){
+            var spy = fspy();
+                
+            Latte.IStream.merge([
+                'test', 
+                Latte.MStream(function(h){
+                    h('west');
+                    setTimeout(function(){
+                        h('rest');
+                        
+                        setTimeout(function(){
+                            h('fest');
+                        }, 10);
+                    }, 0)
+                })
+            ]).listen(spy);
+            
+            setTimeout(function(){
+                assert.equal(spy.args[0][0], 'test');
+                assert.equal(spy.args[0][1], 'west');
+                assert.equal(spy.count, 1); 
+                done();
+            }, 50);
         });
 
         it('Stream R value', function(done){
