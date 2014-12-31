@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.5.2';
+    global.Latte.version = '6.5.3';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -214,8 +214,8 @@
     
     inherit(State, StateLazy, {
         on : function(){
-            this._init();
             State.prototype.on.apply(this, arguments);
+            this._init();
             return this;
         }
     });
