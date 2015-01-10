@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.5.5';
+    global.Latte.version = '6.5.6';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -89,8 +89,8 @@
     }
     
     function mix(oto, ofrom){
-        return Object.keys(ofrom).reduce(function(acc, prop){
-            acc[prop] = ofrom[prop];
+        return Object.keys(ofrom).reduce(function(acc, p){
+            acc[p] = ofrom[p];
             return acc;
         }, oto);
     }
@@ -172,6 +172,10 @@
         return cond(Latte.isStream, meth('listen', f), f);
     }
     
+    function condVal(lf, rf){
+        return cond(Latte.isL, lf, rf);
+    }
+    
     function State(executor, params){
         this._params = params;
         this._queue = [];
@@ -196,7 +200,6 @@
             this._queue && this._queue.forEach(ap(this._val), this);
             this._params.immutable && (this._queue = null);
         }
-        
         return this;
     };
     
@@ -251,12 +254,12 @@
         };
 
         Stream.prototype.listenL = function(f, ctx){
-            this[PROP_STREAM_STATE].on(when(Latte.isL, bind(f, ctx)));
+            this[PROP_STREAM_STATE].on(condVal(bind(f, ctx), noop));
             return this;
         };
 
         Stream.prototype.listenR = function(f, ctx){
-            this[PROP_STREAM_STATE].on(when(Latte.isR, bind(f, ctx)));
+            this[PROP_STREAM_STATE].on(condVal(noop, bind(f, ctx)));
             return this;
         };
 
@@ -268,13 +271,13 @@
 
         Stream.prototype.thenL = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(cond(Latte.isL, compose(unpacker(c), bind(f, ctx)), c));
+                this.listen(condVal(compose(unpacker(c), bind(f, ctx)), c));
             }, this);
         };
 
         Stream.prototype.thenR = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(cond(Latte.isL, c, compose(unpacker(c), bind(f, ctx))));
+                this.listen(condVal(c, compose(unpacker(c), bind(f, ctx))));
             }, this);
         };
 
@@ -286,13 +289,13 @@
 
         Stream.prototype.fmapL = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(cond(Latte.isL, compose(c, bind(f, ctx)), c));
+                this.listen(condVal(compose(c, bind(f, ctx)), c));
             }, this);
         };
 
         Stream.prototype.fmapR = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(cond(Latte.isL, c, compose(c, bind(f, ctx))));
+                this.listen(condVal(c, compose(c, bind(f, ctx))));
             }, this);
         };
 
@@ -316,13 +319,13 @@
 
         Stream.prototype.whenL = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(cond(Latte.isL, when(bind(f, ctx), c), c));
+                this.listen(condVal(when(bind(f, ctx), c), c));
             }, this); 
         };
 
         Stream.prototype.whenR = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(cond(Latte.isL, c, when(bind(f, ctx), c)));
+                this.listen(condVal(c, when(bind(f, ctx), c)));
             }, this); 
         };
 
@@ -346,13 +349,13 @@
 
         Stream.prototype.cdipL = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(cond(Latte.isL, susp(bind(f, ctx, c)), c)); 
+                this.listen(condVal(susp(bind(f, ctx, c)), c)); 
             }, this);
         };
 
         Stream.prototype.cdipR = function(f, ctx){
             return new this.constructor(function(c){
-                this.listen(cond(Latte.isL, c, susp(bind(f, ctx, c)))); 
+                this.listen(condVal(c, susp(bind(f, ctx, c)))); 
             }, this);
         };
         
@@ -451,9 +454,9 @@
             };
             
             s.get = function(dv){
-                return cond(isNothing, fconst(dv), id)(this[PROP_STREAM_STATE].get());
+                return when(isNothing, fconst(dv))(this[PROP_STREAM_STATE].get());
             };
-                        
+            
             return {
                 set : bind(s.set, s),
                 get : bind(s.get, s),
@@ -490,10 +493,9 @@
     Latte.isL = bind(isValueWithProp, null, isObject, PROP_L);
     Latte.isR = compose(not, Latte.isL);
     Latte.val = when(Latte.isL, prop(PROP_L_VALUE));
-
+    
     Latte.callback = function(f, ctx){
         var shell = Latte.MStream.shell();
-
         return oDefineProp(function(){
             shell.set(f.apply(ctx || this, arguments));
             return shell.get();
@@ -517,7 +519,6 @@
     Latte.gen = function(g, ctx){
         return function(){
             var args = aslice(arguments);
-            
             return new Latte.IStream(function(h){
                 (function iterate(gen, val){
                     var st = gen.next(val);
@@ -561,14 +562,7 @@
             
             pull : function(f, ctx){
                 var qitem = createQItem(f, ctx);
-                
-                if(!isNothing(fv) && qitem.filter(fv)){
-                    qitem.shell.set(fv);
-                    fv = NOTHING;
-                }
-                else{
-                    q.push(qitem);
-                }
+                !isNothing(fv) && qitem.filter(fv) ? (qitem.shell.set(fv), (fv = NOTHING)) : q.push(qitem);
                 return qitem.shell.out();
             },
             
