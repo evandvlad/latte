@@ -4956,6 +4956,69 @@ describe('Stream static methods > ', function(){
     }); 
 });
 
+describe('fromPromise', function(){
+    
+    it('success', function(done){
+        var p = new Promise(function(h, g){
+                h('test');
+            }),
+            spy = fspy();
+            
+        Latte.fromPromise(p).listen(spy);
+        
+        setTimeout(function(){
+            assert.equal(Latte.isL(spy.args[0]), false);
+            assert.equal(spy.args[0], 'test');
+            done();
+        }, 50);
+    });
+    
+    it('fail', function(done){
+        var p = new Promise(function(h, g){
+                g('error');
+            }),
+            spy = fspy();
+            
+        Latte.fromPromise(p).listen(spy);
+        
+        setTimeout(function(){
+            assert.equal(Latte.isL(spy.args[0]), true);
+            assert.equal(Latte.val(spy.args[0]), 'error');
+            done();
+        }, 50);
+    });
+    
+    it('success with several arguments', function(done){
+        var p = new Promise(function(h, g){
+                h('test', 'rest', 'west');
+            }),
+            spy = fspy();
+            
+        Latte.fromPromise(p).listen(spy);
+        
+        setTimeout(function(){
+            assert.equal(Latte.isL(spy.args[0]), false);
+            assert.equal(spy.args[0], 'test');
+            done();
+        }, 50);
+    });
+    
+    it('fail with several arguments', function(done){
+        var p = new Promise(function(h, g){
+                g('error', 'other error');
+            }),
+            spy = fspy();
+            
+        Latte.fromPromise(p).listen(spy);
+        
+        setTimeout(function(){
+            assert.equal(Latte.isL(spy.args[0]), true);
+            assert.equal(Latte.val(spy.args[0]), 'error');
+            done();
+        }, 50);
+    });
+});
+
 describe('fun', function(){
        
     it('R', function(done){

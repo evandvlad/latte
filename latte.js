@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.5.6';
+    global.Latte.version = '6.5.7';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -503,6 +503,12 @@
     };
 
     Latte.isCallback = bind(isValueWithProp, null, isFunction, PROP_CALLBACK);
+    
+    Latte.fromPromise = function(p){
+        return new Latte.IStream(function(h){
+            p.then(h, compose(h, Latte.L));
+        });
+    };
     
     Latte.fun = function(f, ctx){
         return function(){

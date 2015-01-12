@@ -359,6 +359,16 @@ M(umable)Stream - поток с изменяемым значением, при 
     var shell = Latte.MStream.shellify(stream);
     
     shell.out().log(); 
+    
+### Latte.fromPromise ###
+
+Метод преобразует ES6 Promise в объект *IStream*.
+
+    Latte.fromPromise(new Promise(function(resolve, reject){
+        setTimeout(function(){
+            resolve('test');
+        }, 100);
+    })).log();
 
 ### Latte.fun & Latte.callback ###
 
