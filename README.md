@@ -349,26 +349,6 @@ M(umable)Stream - поток с изменяемым значением, при 
     
     shell.set('value-1');
     shell.set('value-2'); 
-    
-##### shellify #####
-
-Метод преобразования экземпляра потока в экземпляр shell, при котором shell-экземпляр соединяется с переданным потоком.
-Метод принимает поток и возвращает экземпляр shell
-
-    var stream = Latte.IStream.pack('value');
-    var shell = Latte.MStream.shellify(stream);
-    
-    shell.out().log(); 
-    
-### Latte.fromPromise ###
-
-Метод преобразует ES6 Promise в объект *IStream*.
-
-    Latte.fromPromise(new Promise(function(resolve, reject){
-        setTimeout(function(){
-            resolve('test');
-        }, 100);
-    })).log();
 
 ### Latte.fun & Latte.callback ###
 
@@ -424,60 +404,6 @@ callback функциями в потоки Latte.IStream/Latte.MStream.
     
 Метод может возвращать на любом этапе (yield/return) значение любого типа, в том числе и потоки. 
 Если возвращается *Latte.L*, то происходит выход из генератора с возвратом этого значения.
-
-### Latte.recur ###
-
-С помощью метода *Latte.recur* можно организовывать рекурсивные вызовы. Метод принимает функцию, которой
-передавается функция для рекурсивного вызова и текущее значение, а также, 
-контекст для вызова функции и возвращает функцию, в которую передается 
-начальное значение, она же возвращает MStream поток. 
-Рекурсивные вызовы определены с нулевым таймаутом.
-
-    Latte.recur(function(f, v){
-        return Latte.IStream.pack(v).fmap(function(val){
-            return val + '!';
-        }).when(function(v){
-            return v.length < 8;    
-        }).listen(f);
-    })('test').log(); 
-    
-### Latte.puller ###
-
-С помощью этого метода можно разбивать поток на последовательность фрагментов данных, обернутых в значение
-IStream. Метод принимает поток и возвращает объект с методами *pull* и *apull*
-
-     var stream = Latte.fun(document.addEventListener, document)('click', Latte.callback(function(e){
-            return {
-                target : e.target
-            };
-        }), false),
-        
-        puller = Latte.puller(stream),
-        firstClick = puller.apull(),
-        secondClick = puller.apull();
-        
-    firstClick.log();
-    secondClick.log();
-    
-Методы *pull* и *apull* отличаются тем, каким образом происходит разбивка на фрагменты. 
-Метод *apull* делит на фрагменты таким образом, что новый фрагмент всегда будет ожидать нового 
-значения в потоке (await), в то время как *pull* позволяет работать со значением, 
-которое могло быть получено до задания фрагмента. 
-
-Этим методам, можно передавать функцию фильтрации с контекстом для нее, по
-умолчанию, когда функция не принимает фильтр, пропускаются все значения, в том числе и L-значения.
-
-    var stream = Latte.fun(document.addEventListener, document)('keydown', Latte.callback(function(e){
-            return e;
-        }), false),
-        
-        puller = Latte.puller(stream),
-        
-        enterPress = puller.apull(function(e){
-            return e.keyCode === 13;
-        });
-        
-В примере, приведенном выше, идет ожидание нажатия клавиши ENTER, начиная с текущего времени.
     
 ### Расширение Latte.IStream/Latte.MStream ###
 

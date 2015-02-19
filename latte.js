@@ -7,7 +7,7 @@
 (function(global, initializer){
 
     global.Latte = initializer();
-    global.Latte.version = '6.5.7';
+    global.Latte.version = '6.6.0';
 
     if(typeof module !== 'undefined' && module.exports){
         module.exports = global.Latte;
@@ -182,7 +182,7 @@
         this._val = NOTHING;
         this._isInit = false;
         this._executor = executor;
-    };
+    }
     
     State.prototype.on = function(f){
         this._queue && this._queue.push(f);
@@ -464,12 +464,6 @@
             };
         };
         
-        Stream.shellify = function(s){
-            var sh = this.shell();
-            s.listen(sh.set, sh);
-            return sh;
-        };
-        
         oDefineProp(Stream.prototype, params.key, true);
 
         return Stream;
@@ -504,12 +498,6 @@
 
     Latte.isCallback = bind(isValueWithProp, null, isFunction, PROP_CALLBACK);
     
-    Latte.fromPromise = function(p){
-        return new Latte.IStream(function(h){
-            p.then(h, compose(h, Latte.L));
-        });
-    };
-    
     Latte.fun = function(f, ctx){
         return function(){
             var args = aslice(arguments),
@@ -531,53 +519,6 @@
                     unpacker(st.done ? h : cond(Latte.isL, h, bind(iterate, null, gen)))(st.value);
                 }(g.apply(ctx, args)));
             });
-        };
-    };
-    
-    Latte.recur = function(f, ctx){
-        var s = Latte.MStream.shell();
-        
-        function callf(v){
-            setTimeout(function(){
-                f.call(ctx, callf, v).listen(s.set, s);
-            }, 0);
-        }
-        
-        return function(v){
-            callf(v);
-            return s.out();
-        };
-    };
-    
-    Latte.puller = function(s){
-        var fv = NOTHING,
-            q = [];
-            
-        function createQItem(f, ctx){
-            return {
-                shell : Latte.IStream.shell(), 
-                filter : f ? bind(f, ctx) : fconst(true)
-            };
-        }
-            
-        s.listen(function(v){
-            q.length && q[0].filter(v) ? q.shift().shell.set(v) : (fv = v);
-        });
-        
-        return {
-            
-            pull : function(f, ctx){
-                var qitem = createQItem(f, ctx);
-                !isNothing(fv) && qitem.filter(fv) ? (qitem.shell.set(fv), (fv = NOTHING)) : q.push(qitem);
-                return qitem.shell.out();
-            },
-            
-            apull : function(f, ctx){
-                var qitem = createQItem(f, ctx);
-                fv = NOTHING;
-                q.push(qitem);
-                return qitem.shell.out();
-            }
         };
     };
     
