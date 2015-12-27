@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/evandvlad/latte.svg?branch=version-6)](https://travis-ci.org/evandvlad/latte)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/da8aca6f52be4d5d82ef339ef8c2de19)](https://www.codacy.com/app/evandvlad/latte)
+[![Codacy Badge](https://api.codacy.com/project/badge/coverage/da8aca6f52be4d5d82ef339ef8c2de19)](https://www.codacy.com/app/evandvlad/latte)
+
 Библиотека для работы с асинхронным кодом с помощью потоков. 
 Определено два вида потоков - изменяемый (MStream) и неизменяемый (IStream).
 
