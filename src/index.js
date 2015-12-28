@@ -66,7 +66,7 @@ function mix(dest, source){
     }, dest);
 }
 
-function inherit(Parent, Child, ext = {}){
+function inherit(Parent, Child, ext){
     Child.prototype = Object.create(Parent.prototype);
     Child.prototype.constructor = Child;
     mix(Child.prototype, ext);
@@ -95,7 +95,7 @@ function isFunction(value){
 
 function stdamper(func){
      return callback => {
-        let state = {value : undefined, mark : null};
+        let state = {/*value : undefined, */mark : null};
 
         return value => {
             state.value = value; 
@@ -222,18 +222,15 @@ class StateLazy extends AbstractState {
     }
 }
 
-function BuildStreamImpl(instance, State, executor, context, params){
-    return oDefineProp(instance, PROP_STREAM_STATE, new State(bind(executor, context), params));
-}
-
-function BuildStream(params){
+function createStream(params){
 
     function Stream(executor, context){
         if(!(this instanceof Stream)){
             return new Stream(executor, context);
         }
-
-        BuildStreamImpl(this, StateStrict, executor, context, params); 
+        
+        let state = new StateStrict(bind(executor, context), params);
+        oDefineProp(this, PROP_STREAM_STATE, state);
     }
 
     Stream.prototype = {
@@ -438,7 +435,10 @@ function BuildStream(params){
     };
     
     Stream.lazy = function(executor, context){
-        return BuildStreamImpl(Object.create(Stream.prototype), StateLazy, executor, context, params); 
+        let instance = Object.create(Stream.prototype),
+            state = new StateLazy(bind(executor, context), params);
+        
+        return oDefineProp(instance, PROP_STREAM_STATE, state);
     };
 
     Stream.shell = function(){
@@ -465,8 +465,8 @@ function BuildStream(params){
     return Stream;
 }
 
-Latte.IStream = BuildStream({immutable : true, key : PROP_ISTREAM});
-Latte.MStream = BuildStream({immutable : false, key : PROP_MSTREAM});
+Latte.IStream = createStream({immutable : true, key : PROP_ISTREAM});
+Latte.MStream = createStream({immutable : false, key : PROP_MSTREAM});
 
 Latte.isIStream = bind(isValueWithProp, null, isObject, PROP_ISTREAM);
 Latte.isMStream = bind(isValueWithProp, null, isObject, PROP_MSTREAM);
