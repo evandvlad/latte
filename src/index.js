@@ -6,453 +6,457 @@
 
 'use strict';
 
-import nothing from './nothing';
-
 const PROP_L = '_____####![L]';
 const PROP_ISTREAM = '_____####![ISTREAM]';
 const PROP_MSTREAM = '_____####![MSTREAM]';
 const PROP_CALLBACK = '_____####![CALLBACK]';
 const PROP_STREAM_STATE = '_____####![STREAM_STATE]';
-
 const PROP_L_VALUE = 'value';
 
-let Latte = {},
-    toString = Function.prototype.call.bind(Object.prototype.toString),
-    aslice = Function.prototype.call.bind(Array.prototype.slice);
+const NOTHING = { toString : () => 'NOTHING' };
+
+let Latte = {};
 
 function noop(){}
 
-function id(v){
-    return v;
+function id(value){
+    return value;
 }
 
-function fconst(v){
-    return () => v;
+function fconst(value){
+    return () => value;
 }
 
-function bind(f, ctx, ...args){
-    return (...innerArgs) => f.apply(ctx, args.concat(innerArgs));
+function bind(func, context, ...args){
+    return (...adArgs) => func.apply(context, args.concat(adArgs));
 }
 
-function ap(v){
-    return f => f(v);
+function ap(value){
+    return func => func(value);
 }
 
-function not(v){
-    return !v;
+function not(value){
+    return !value;
 }
 
-function compose(f, g){
-    return v => f(g(v));
+function compose(oFunc, iFunc){
+    return value => oFunc(iFunc(value));
 }
 
-function cond(f, g, h){
-    return v => f(v) ? g(v) : h(v);
+function cond(cFunc, tFunc, fFunc){
+    return value => cFunc(value) ? tFunc(value) : fFunc(value);
 }
 
-function when(f, g){
-    return cond(f, g, id);
+function when(cFunc, tFunc){
+    return cond(cFunc, tFunc, id);
 }
 
-function prop(p){
-    return o => o[p];
+function prop(field){
+    return obj => obj[field];
 }
 
-function meth(m, v){
-    return o => o[m](v);
+function meth(method, param){
+    return obj => obj[method](param);
 }
 
-function mix(oto, ofrom){
-    return Object.keys(ofrom).reduce((acc, p) => {
-        acc[p] = ofrom[p];
+function mix(dest, source){
+    return Object.keys(source).reduce((acc, key) => {
+        acc[key] = source[key];
         return acc;
-    }, oto);
+    }, dest);
 }
 
-function inherit(P, C, ext = {}){
-    C.prototype = Object.create(P.prototype);
-    C.prototype.constructor = C;
-    mix(C.prototype, ext);
-    return C;
+function inherit(Parent, Child, ext = {}){
+    Child.prototype = Object.create(Parent.prototype);
+    Child.prototype.constructor = Child;
+    mix(Child.prototype, ext);
+    return Child;
 }
 
-function susp(f){
+function susp(func){
     let fn = null;
-    return v => {
-        fn = fn || f();
-        return fn(v); 
+    return value => {
+        fn = fn || func();
+        return fn(value); 
     }; 
 }
 
-function oDefineProp(o, p, v){
-    return Object.defineProperty(o, p, {value : v});
+function oDefineProp(obj, property, value){
+    return Object.defineProperty(obj, property, {value});
 }
 
-function isObject(v){
-    return toString(v) === '[object Object]';
+function isObject(value){
+    return Object.prototype.toString.call(value) === '[object Object]';
 }
 
-function isFunction(v){
-    return toString(v) === '[object Function]';
+function isFunction(value){
+    return Object.prototype.toString.call(value) === '[object Function]';
 }
 
-function asize(a){
-    return Object.keys(a).length;
-}
+function stdamper(func){
+     return callback => {
+        let state = {value : undefined, mark : null};
 
-function stdamper(f){
-     return c => {
-        let st = {v : undefined, mark : null};
-
-        return v => {
-            st.v = v; 
+        return value => {
+            state.value = value; 
             
-            f(t => {
+            func(timeout => {
                 return setTimeout(() => {
-                    c(st.v);
-                    st.mark = null;
-                }, t);
-            }, st); 
+                    callback(state.value);
+                    state.mark = null;
+                }, timeout);
+            }, state); 
         }; 
     };
 }
 
-function throttle(t){
-    return stdamper((runtf, st) => {
-        if(st.mark === null){
-            st.mark = runtf(t);
+function throttle(timeout){
+    return stdamper((runner, state) => {
+        if(state.mark === null){
+            state.mark = runner(timeout);
         }
     });
 }
 
-function debounce(t){
-    return stdamper((runtf, st) => {
-        if(st.mark){
-            clearTimeout(st.mark);
+function debounce(timeout){
+    return stdamper((runner, state) => {
+        if(state.mark){
+            clearTimeout(state.mark);
         }
         
-        st.mark = runtf(t);
+        state.mark = runner(timeout);
     });
 }
 
-function log(v){
+function log(value){
     if(console && isFunction(console.log)){
-        console.log('Latte log > ', v);
+        console.log('Latte log > ', value);
     }
 }
 
-function isValueWithProp(typechecker, key, v){
-    return typechecker(v) && !!v[key];
+function isNothing(value){
+    return value === NOTHING;
 }
 
-function unpacker(f){
-    return cond(Latte.isStream, meth('listen', f), f);
+function isValueWithProp(typechecker, key, value){
+    return typechecker(value) && !!value[key];
 }
 
-function condVal(lf, rf){
-    return cond(Latte.isL, lf, rf);
+function unpacker(func){
+    return cond(Latte.isStream, meth('listen', func), func);
 }
 
-function State(executor, params){
-    this._params = params;
-    this._queue = [];
-    this._val = nothing.create();
-    this._isInit = false;
-    this._executor = executor;
+function condVal(leftFunc, rightFunc){
+    return cond(Latte.isL, leftFunc, rightFunc);
 }
 
-State.prototype.on = function(f){
-    if(this._queue){
-        this._queue.push(f);
+class AbstractState {
+    
+    constructor(executor, params){
+        this._params = params;
+        this._queue = [];
+        this._val = NOTHING;
+        this._isInit = false;
+        this._executor = executor;
     }
     
-    if(!nothing.is(this._val)){
-        f(this._val);
-    }
-    
-    return this;
-};
-
-State.prototype.set = function(v){
-    if(!this._isInit){
-        return this;
-    }
-    
-    if(nothing.is(this._val) || !this._params.immutable){
-        this._val = v;
-        
+    on(func){
         if(this._queue){
-            this._queue.forEach(ap(this._val), this);
+            this._queue.push(func);
         }
         
-        if(this._params.immutable){
-            this._queue = null;
+        if(!isNothing(this._val)){
+            func(this._val);
         }
-    }
-    return this;
-};
-
-State.prototype.get = function(){
-    return this._val;
-};
-
-State.prototype._init = function(){
-    if(!this._isInit){
-        this._isInit = true;
-        this._executor(bind(this.set, this));
-    }
-    return this;
-};
-
-function StateStrict(){
-    State.apply(this, arguments);
-    this._init();
-}
-
-inherit(State, StateStrict);
-
-function StateLazy(){
-    State.apply(this, arguments);
-}
-
-inherit(State, StateLazy, {
-    on (){
-        State.prototype.on.apply(this, arguments);
-        setTimeout(bind(this._init, this), 0);
+        
         return this;
     }
-});
 
-function BuildStreamImpl(self, St, executor, ctx, params){
-    return oDefineProp(self, PROP_STREAM_STATE, new St(bind(executor, ctx), params));
+    set(value){
+        if(!this._isInit){
+            return this;
+        }
+        
+        if(isNothing(this._val) || !this._params.immutable){
+            this._val = value;
+            
+            if(this._queue){
+                this._queue.forEach(ap(this._val), this);
+            }
+            
+            if(this._params.immutable){
+                this._queue = null;
+            }
+        }
+        
+        return this;
+    }
+
+    get(){
+        return this._val;
+    }
+
+    _init(){
+        if(!this._isInit){
+            this._isInit = true;
+            this._executor(bind(this.set, this));
+        }
+        
+        return this;
+    }
+}
+
+class StateStrict extends AbstractState {
+    
+    constructor(...args){
+        super(...args);
+        this._init();
+    }
+}
+
+class StateLazy extends AbstractState {
+    
+    on(...args){
+        super.on(...args);
+        setTimeout(bind(this._init, this), 0);
+    }
+}
+
+function BuildStreamImpl(instance, State, executor, context, params){
+    return oDefineProp(instance, PROP_STREAM_STATE, new State(bind(executor, context), params));
 }
 
 function BuildStream(params){
 
-    function Stream(executor, ctx){
+    function Stream(executor, context){
         if(!(this instanceof Stream)){
-            return new Stream(executor, ctx);
+            return new Stream(executor, context);
         }
 
-        BuildStreamImpl(this, StateStrict, executor, ctx, params); 
+        BuildStreamImpl(this, StateStrict, executor, context, params); 
     }
 
-    Stream.prototype.listen = function(f, ctx){
-        this[PROP_STREAM_STATE].on(bind(f, ctx));
-        return this;
+    Stream.prototype = {
+        
+        constructor : Stream,
+        
+        listen(func, context){
+            this[PROP_STREAM_STATE].on(bind(func, context));
+            return this;
+        },
+        
+        listenL(func, context){
+            this[PROP_STREAM_STATE].on(condVal(bind(func, context), noop));
+            return this;
+        },
+        
+        listenR(func, context){
+            this[PROP_STREAM_STATE].on(condVal(noop, bind(func, context)));
+            return this;
+        },
+
+        then(func, context){
+            return new this.constructor(continuator => {
+                this.listen(compose(unpacker(continuator), bind(func, context)));
+            });
+        },
+
+        thenL(func, context){
+            return new this.constructor(continuator => {
+                this.listen(condVal(compose(unpacker(continuator), bind(func, context)), continuator));
+            });
+        },
+
+        thenR(func, context){
+            return new this.constructor(continuator => {
+                this.listen(condVal(continuator, compose(unpacker(continuator), bind(func, context))));
+            });
+        },
+
+        fmap(func, context){
+            return new this.constructor(continuator => {
+                this.listen(compose(continuator, bind(func, context)));
+            });
+        },
+
+        fmapL(func, context){
+            return new this.constructor(continuator => {
+                this.listen(condVal(compose(continuator, bind(func, context)), continuator));
+            });
+        },
+
+        fmapR(func, context){
+            return new this.constructor(continuator => {
+                this.listen(condVal(continuator, compose(continuator, bind(func, context))));
+            });
+        },
+
+        pass(value){
+            return this.then(fconst(value)); 
+        },
+
+        passL(value){
+            return this.thenL(fconst(value)); 
+        },
+
+        passR(value){
+            return this.thenR(fconst(value)); 
+        },
+
+        when(func, context){
+            return new this.constructor(continuator => {
+                this.listen(when(bind(func, context), continuator));
+            }); 
+        },
+
+        whenL(func, context){
+            return new this.constructor(continuator => {
+                this.listen(condVal(when(bind(func, context), continuator), continuator));
+            }); 
+        },
+
+        whenR(func, context){
+            return new this.constructor(continuator => {
+                this.listen(condVal(continuator, when(bind(func, context), continuator)));
+            }); 
+        },
+
+        unless(func, context){
+            return this.when(compose(not, bind(func, context)));
+        },
+
+        unlessL(func, context){
+            return this.whenL(compose(not, bind(func, context)));
+        },
+
+        unlessR(func, context){
+            return this.whenR(compose(not, bind(func, context)));
+        },
+
+        cdip(func, context){
+            return new this.constructor(continuator => {
+                this.listen(susp(bind(func, context, continuator))); 
+            });
+        },
+
+        cdipL(func, context){
+            return new this.constructor(continuator => {
+                this.listen(condVal(susp(bind(func, context, continuator)), continuator)); 
+            });
+        },
+
+        cdipR(func, context){
+            return new this.constructor(continuator => {
+                this.listen(condVal(continuator, susp(bind(func, context, continuator)))); 
+            });
+        },
+        
+        fdip(func, context){
+            return this.then(susp(bind(func, context)));
+        },
+        
+        fdipL(func, context){
+            return this.thenL(susp(bind(func, context)));
+        },
+        
+        fdipR(func, context){
+            return this.thenR(susp(bind(func, context)));
+        },
+
+        debounce(timeout){
+            return this.cdip(debounce(timeout)); 
+        },
+
+        debounceL(timeout){
+            return this.cdipL(debounce(timeout)); 
+        },
+
+        debounceR(timeout){
+            return this.cdipR(debounce(timeout)); 
+        },
+
+        throttle(timeout){
+            return this.cdip(throttle(timeout));
+        },
+
+        throttleL(timeout){
+            return this.cdipL(throttle(timeout));
+        },
+
+        throttleR(timeout){
+            return this.cdipR(throttle(timeout));
+        },
+
+        log(){
+            return this.listen(log); 
+        },
+
+        logL(){
+            return this.listenL(log); 
+        },
+
+        logR(){
+            return this.listenR(log); 
+        },
+
+        any(streams){
+            return this.constructor.any([this].concat(streams)); 
+        },
+
+        merge(streams){
+            return this.constructor.merge([this].concat(streams));
+        } 
     };
 
-    Stream.prototype.listenL = function(f, ctx){
-        this[PROP_STREAM_STATE].on(condVal(bind(f, ctx), noop));
-        return this;
-    };
-
-    Stream.prototype.listenR = function(f, ctx){
-        this[PROP_STREAM_STATE].on(condVal(noop, bind(f, ctx)));
-        return this;
-    };
-
-    Stream.prototype.then = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(compose(unpacker(c), bind(f, ctx)));
-        }, this);
-    };
-
-    Stream.prototype.thenL = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(condVal(compose(unpacker(c), bind(f, ctx)), c));
-        }, this);
-    };
-
-    Stream.prototype.thenR = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(condVal(c, compose(unpacker(c), bind(f, ctx))));
-        }, this);
-    };
-
-    Stream.prototype.fmap = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(compose(c, bind(f, ctx)));
-        }, this);
-    };
-
-    Stream.prototype.fmapL = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(condVal(compose(c, bind(f, ctx)), c));
-        }, this);
-    };
-
-    Stream.prototype.fmapR = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(condVal(c, compose(c, bind(f, ctx))));
-        }, this);
-    };
-
-    Stream.prototype.pass = function(v){
-        return this.then(fconst(v)); 
-    };
-
-    Stream.prototype.passL = function(v){
-        return this.thenL(fconst(v)); 
-    };
-
-    Stream.prototype.passR = function(v){
-        return this.thenR(fconst(v)); 
-    };
-
-    Stream.prototype.when = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(when(bind(f, ctx), c));
-        }, this); 
-    };
-
-    Stream.prototype.whenL = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(condVal(when(bind(f, ctx), c), c));
-        }, this); 
-    };
-
-    Stream.prototype.whenR = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(condVal(c, when(bind(f, ctx), c)));
-        }, this); 
-    };
-
-    Stream.prototype.unless = function(f, ctx){
-        return this.when(compose(not, bind(f, ctx)));
-    };
-
-    Stream.prototype.unlessL = function(f, ctx){
-        return this.whenL(compose(not, bind(f, ctx)));
-    };
-
-    Stream.prototype.unlessR = function(f, ctx){
-        return this.whenR(compose(not, bind(f, ctx)));
-    };
-
-    Stream.prototype.cdip = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(susp(bind(f, ctx, c))); 
-        }, this);
-    };
-
-    Stream.prototype.cdipL = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(condVal(susp(bind(f, ctx, c)), c)); 
-        }, this);
-    };
-
-    Stream.prototype.cdipR = function(f, ctx){
-        return new this.constructor(function(c){
-            this.listen(condVal(c, susp(bind(f, ctx, c)))); 
-        }, this);
+    Stream.any = function(streams){
+        return new this(compose(bind(streams.forEach, streams), unpacker));
     };
     
-    Stream.prototype.fdip = function(f, ctx){
-        return this.then(susp(bind(f, ctx)));
-    };
-    
-    Stream.prototype.fdipL = function(f, ctx){
-        return this.thenL(susp(bind(f, ctx)));
-    };
-    
-    Stream.prototype.fdipR = function(f, ctx){
-        return this.thenR(susp(bind(f, ctx)));
-    };
+    Stream.merge = function(streams){
+        let len = streams.length;
 
-    Stream.prototype.debounce = function(t){
-        return this.cdip(debounce(t)); 
-    };
-
-    Stream.prototype.debounceL = function(t){
-        return this.cdipL(debounce(t)); 
-    };
-
-    Stream.prototype.debounceR = function(t){
-        return this.cdipR(debounce(t)); 
-    };
-
-    Stream.prototype.throttle = function(t){
-        return this.cdip(throttle(t));
-    };
-
-    Stream.prototype.throttleL = function(t){
-        return this.cdipL(throttle(t));
-    };
-
-    Stream.prototype.throttleR = function(t){
-        return this.cdipR(throttle(t));
-    };
-
-    Stream.prototype.log = function(){
-        return this.listen(log); 
-    };
-
-    Stream.prototype.logL = function(){
-        return this.listenL(log); 
-    };
-
-    Stream.prototype.logR = function(){
-        return this.listenR(log); 
-    };
-
-    Stream.prototype.any = function(ss){
-        return this.constructor.any([this].concat(ss)); 
-    };
-
-    Stream.prototype.merge = function(ss){
-        return this.constructor.merge([this].concat(ss));
-    };
-
-    Stream.any = function(ss){
-        return new this(compose(bind(ss.forEach, ss), unpacker));
-    };
-    
-    Stream.merge = function(ss){
-        let len = ss.length;
-
-        return new this(len ? h => {
-            ss.reduce((acc, s, i) => {
-                unpacker(v => {
-                    acc[i] = v;
+        return new this(len ? handler => {
+            streams.reduce((acc, stream, index) => {
+                unpacker(value => {
+                    acc[index] = value;
                     
-                    if(asize(acc) === len){
-                        h(acc.some(Latte.isL) ? Latte.L(acc.slice()) : acc.slice());
+                    if(Object.keys(acc).length === len){
+                        handler(acc.some(Latte.isL) ? Latte.L(acc.slice()) : acc.slice());
                     }
-                })(s);
+                })(stream);
                 return acc;
             }, []);
         } : ap([]));
     };
     
-    Stream.pack = function(v){
-        return new this(ap(v));
+    Stream.pack = function(value){
+        return new this(ap(value));
     };
     
     Stream.never = function(){
         return new this(noop);
     };
     
-    Stream.lazy = function(executor, ctx){
-        return BuildStreamImpl(Object.create(Stream.prototype), StateLazy, executor, ctx, params); 
+    Stream.lazy = function(executor, context){
+        return BuildStreamImpl(Object.create(Stream.prototype), StateLazy, executor, context, params); 
     };
 
     Stream.shell = function(){
-        let s = this.never();
+        let stream = this.never();
         
-        s.set = function(v){
-            this[PROP_STREAM_STATE].set(v);
+        stream.set = function(value){
+            this[PROP_STREAM_STATE].set(value);
             return this;
         };
         
-        s.get = function(dv){
-            return when(nothing.is, fconst(dv))(this[PROP_STREAM_STATE].get());
+        stream.get = function(defaultValue){
+            return when(isNothing, fconst(defaultValue))(this[PROP_STREAM_STATE].get());
         };
         
         return {
-            set : bind(s.set, s),
-            get : bind(s.get, s),
-            out : fconst(new this(s.listen, s))
+            set : bind(stream.set, stream),
+            get : bind(stream.get, stream),
+            out : fconst(new this(stream.listen, stream))
         };
     };
     
@@ -467,12 +471,12 @@ Latte.MStream = BuildStream({immutable : false, key : PROP_MSTREAM});
 Latte.isIStream = bind(isValueWithProp, null, isObject, PROP_ISTREAM);
 Latte.isMStream = bind(isValueWithProp, null, isObject, PROP_MSTREAM);
 
-Latte.isStream = function(v){
-    return Latte.isIStream(v) || Latte.isMStream(v);
+Latte.isStream = function(value){
+    return Latte.isIStream(value) || Latte.isMStream(value);
 }; 
 
-Latte.L = function(v){
-    return oDefineProp(oDefineProp({}, PROP_L_VALUE, v), PROP_L, true);
+Latte.L = function(value){
+    return oDefineProp(oDefineProp({}, PROP_L_VALUE, value), PROP_L, true);
 };
 
 Latte.R = id;
@@ -480,52 +484,55 @@ Latte.isL = bind(isValueWithProp, null, isObject, PROP_L);
 Latte.isR = compose(not, Latte.isL);
 Latte.val = when(Latte.isL, prop(PROP_L_VALUE));
 
-Latte.callback = function(f, ctx){
+Latte.callback = function(func, context){
     let shell = Latte.MStream.shell();
+    
     return oDefineProp(function(){
-        shell.set(f.apply(ctx || this, arguments));
+        shell.set(func.apply(context || this, arguments));
         return shell.get();
     }, PROP_CALLBACK, shell.out());
 };
 
 Latte.isCallback = bind(isValueWithProp, null, isFunction, PROP_CALLBACK);
 
-Latte.fun = function(f, ctx){
-    return function(){
-        let args = aslice(arguments),
-            r = f.apply(ctx, args);
+Latte.fun = function(func, context){
+    
+    return function(...args){
+        let result = func.apply(context, args);
             
-        return new Latte.MStream(h => {
-            let cbs = args.filter(Latte.isCallback);
-            if(cbs.length){
-                Latte.MStream.any(cbs.map(prop(PROP_CALLBACK))).listen(h);
+        return new Latte.MStream(handler => {
+            let callbacks = args.filter(Latte.isCallback);
+            
+            if(callbacks.length){
+                Latte.MStream.any(callbacks.map(prop(PROP_CALLBACK))).listen(handler);
             }
             else{
-                h(r);
+                handler(result);
             }
         });
     };
 };
 
-Latte.gen = function(g, ctx){
-    return function(){
-        let args = aslice(arguments);
-        return new Latte.IStream(h => {
-            (function iterate(gen, val){
-                let st = gen.next(val);
-                unpacker(st.done ? h : cond(Latte.isL, h, bind(iterate, null, gen)))(st.value);
-            }(g.apply(ctx, args)));
+Latte.gen = function(generator, context){
+    
+    return function(...args){
+        
+        return new Latte.IStream(handler => {
+            (function iterate(gen, value){
+                let state = gen.next(value);
+                unpacker(state.done ? handler : cond(Latte.isL, handler, bind(iterate, null, gen)))(state.value);
+            }(generator.apply(context, args)));
         });
     };
 };
 
 Latte.extend = function(Stream, ext = {}){
-    let Ctor = ext.hasOwnProperty('constructor') ? ext.constructor : function Ctor(executor, ctx){
+    let Ctor = ext.hasOwnProperty('constructor') ? ext.constructor : function Ctor(executor, context){
         if(!(this instanceof Ctor)){
-            return new Ctor(executor, ctx);
+            return new Ctor(executor, context);
         }
 
-        Stream.call(this, executor, ctx);
+        Stream.call(this, executor, context);
     };
 
     return mix(inherit(Stream, Ctor, ext), Stream);
