@@ -6,17 +6,17 @@
 
 'use strict';
 
-var Latte = {},
+import nothing from './nothing';
 
-    PROP_L = '_____####![L]',
-    PROP_ISTREAM = '_____####![ISTREAM]',
-    PROP_MSTREAM = '_____####![MSTREAM]',
-    PROP_CALLBACK = '_____####![CALLBACK]',
-    PROP_STREAM_STATE = '_____####![STREAM_STATE]',
+const PROP_L = '_____####![L]';
+const PROP_ISTREAM = '_____####![ISTREAM]';
+const PROP_MSTREAM = '_____####![MSTREAM]';
+const PROP_CALLBACK = '_____####![CALLBACK]';
+const PROP_STREAM_STATE = '_____####![STREAM_STATE]';
 
-    NOTHING = {toString : () => 'NOTHING'},
-    PROP_L_VALUE = 'value',
+const PROP_L_VALUE = 'value';
 
+let Latte = {},
     toString = Function.prototype.call.bind(Object.prototype.toString),
     aslice = Function.prototype.call.bind(Array.prototype.slice);
 
@@ -27,22 +27,15 @@ function id(v){
 }
 
 function fconst(v){
-    return function(){
-        return v;
-    };
+    return () => v;
 }
 
-function bind(f, ctx){
-    var args = aslice(arguments, 2);
-    return function(){
-        return f.apply(ctx, args.concat(aslice(arguments)));
-    };
+function bind(f, ctx, ...args){
+    return (...innerArgs) => f.apply(ctx, args.concat(innerArgs));
 }
 
 function ap(v){
-    return function(f){
-        return f(v);
-    };
+    return f => f(v);
 }
 
 function not(v){
@@ -50,15 +43,11 @@ function not(v){
 }
 
 function compose(f, g){
-    return function(v){
-        return f(g(v));
-    };
+    return v => f(g(v));
 }
 
 function cond(f, g, h){
-    return function(v){
-        return f(v) ? g(v) : h(v);
-    };
+    return v => f(v) ? g(v) : h(v);
 }
 
 function when(f, g){
@@ -66,34 +55,30 @@ function when(f, g){
 }
 
 function prop(p){
-    return function(o){
-        return o[p];
-    };
+    return o => o[p];
 }
 
 function meth(m, v){
-    return function(o){
-        return o[m](v); 
-    };
+    return o => o[m](v);
 }
 
 function mix(oto, ofrom){
-    return Object.keys(ofrom).reduce(function(acc, p){
+    return Object.keys(ofrom).reduce((acc, p) => {
         acc[p] = ofrom[p];
         return acc;
     }, oto);
 }
 
-function inherit(P, C, ext){
+function inherit(P, C, ext = {}){
     C.prototype = Object.create(P.prototype);
     C.prototype.constructor = C;
-    mix(C.prototype, ext || {});
+    mix(C.prototype, ext);
     return C;
 }
 
 function susp(f){
-    var fn = null;
-    return function(v){
+    let fn = null;
+    return v => {
         fn = fn || f();
         return fn(v); 
     }; 
@@ -116,14 +101,14 @@ function asize(a){
 }
 
 function stdamper(f){
-     return function(c){
-        var st = {v : undefined, mark : null};
+     return c => {
+        let st = {v : undefined, mark : null};
 
-        return function(v){
+        return v => {
             st.v = v; 
             
-            f(function(t){
-                return setTimeout(function(){
+            f(t => {
+                return setTimeout(() => {
                     c(st.v);
                     st.mark = null;
                 }, t);
@@ -133,7 +118,7 @@ function stdamper(f){
 }
 
 function throttle(t){
-    return stdamper(function(runtf, st){
+    return stdamper((runtf, st) => {
         if(st.mark === null){
             st.mark = runtf(t);
         }
@@ -141,7 +126,7 @@ function throttle(t){
 }
 
 function debounce(t){
-    return stdamper(function(runtf, st){
+    return stdamper((runtf, st) => {
         if(st.mark){
             clearTimeout(st.mark);
         }
@@ -160,10 +145,6 @@ function isValueWithProp(typechecker, key, v){
     return typechecker(v) && !!v[key];
 }
 
-function isNothing(v){
-    return v === NOTHING;
-}
-
 function unpacker(f){
     return cond(Latte.isStream, meth('listen', f), f);
 }
@@ -175,7 +156,7 @@ function condVal(lf, rf){
 function State(executor, params){
     this._params = params;
     this._queue = [];
-    this._val = NOTHING;
+    this._val = nothing.create();
     this._isInit = false;
     this._executor = executor;
 }
@@ -185,7 +166,7 @@ State.prototype.on = function(f){
         this._queue.push(f);
     }
     
-    if(!isNothing(this._val)){
+    if(!nothing.is(this._val)){
         f(this._val);
     }
     
@@ -197,7 +178,7 @@ State.prototype.set = function(v){
         return this;
     }
     
-    if(isNothing(this._val) || !this._params.immutable){
+    if(nothing.is(this._val) || !this._params.immutable){
         this._val = v;
         
         if(this._queue){
@@ -235,7 +216,7 @@ function StateLazy(){
 }
 
 inherit(State, StateLazy, {
-    on : function(){
+    on (){
         State.prototype.on.apply(this, arguments);
         setTimeout(bind(this._init, this), 0);
         return this;
@@ -428,11 +409,11 @@ function BuildStream(params){
     };
     
     Stream.merge = function(ss){
-        var len = ss.length;
+        let len = ss.length;
 
-        return new this(len ? function(h){
-            ss.reduce(function(acc, s, i){
-                unpacker(function(v){
+        return new this(len ? h => {
+            ss.reduce((acc, s, i) => {
+                unpacker(v => {
                     acc[i] = v;
                     
                     if(asize(acc) === len){
@@ -457,7 +438,7 @@ function BuildStream(params){
     };
 
     Stream.shell = function(){
-        var s = this.never();
+        let s = this.never();
         
         s.set = function(v){
             this[PROP_STREAM_STATE].set(v);
@@ -465,7 +446,7 @@ function BuildStream(params){
         };
         
         s.get = function(dv){
-            return when(isNothing, fconst(dv))(this[PROP_STREAM_STATE].get());
+            return when(nothing.is, fconst(dv))(this[PROP_STREAM_STATE].get());
         };
         
         return {
@@ -500,7 +481,7 @@ Latte.isR = compose(not, Latte.isL);
 Latte.val = when(Latte.isL, prop(PROP_L_VALUE));
 
 Latte.callback = function(f, ctx){
-    var shell = Latte.MStream.shell();
+    let shell = Latte.MStream.shell();
     return oDefineProp(function(){
         shell.set(f.apply(ctx || this, arguments));
         return shell.get();
@@ -511,11 +492,11 @@ Latte.isCallback = bind(isValueWithProp, null, isFunction, PROP_CALLBACK);
 
 Latte.fun = function(f, ctx){
     return function(){
-        var args = aslice(arguments),
+        let args = aslice(arguments),
             r = f.apply(ctx, args);
             
-        return new Latte.MStream(function(h){
-            var cbs = args.filter(Latte.isCallback);
+        return new Latte.MStream(h => {
+            let cbs = args.filter(Latte.isCallback);
             if(cbs.length){
                 Latte.MStream.any(cbs.map(prop(PROP_CALLBACK))).listen(h);
             }
@@ -528,18 +509,18 @@ Latte.fun = function(f, ctx){
 
 Latte.gen = function(g, ctx){
     return function(){
-        var args = aslice(arguments);
-        return new Latte.IStream(function(h){
+        let args = aslice(arguments);
+        return new Latte.IStream(h => {
             (function iterate(gen, val){
-                var st = gen.next(val);
+                let st = gen.next(val);
                 unpacker(st.done ? h : cond(Latte.isL, h, bind(iterate, null, gen)))(st.value);
             }(g.apply(ctx, args)));
         });
     };
 };
 
-Latte.extend = function(Stream, ext){
-    var Ctor = (ext || {}).hasOwnProperty('constructor') ? ext.constructor : function Ctor(executor, ctx){
+Latte.extend = function(Stream, ext = {}){
+    let Ctor = ext.hasOwnProperty('constructor') ? ext.constructor : function Ctor(executor, ctx){
         if(!(this instanceof Ctor)){
             return new Ctor(executor, ctx);
         }
