@@ -1,578 +1,429 @@
-Библиотека для работы с асинхронным кодом с помощью обещаний (promise) и потоков (stream).
+[![Build Status](https://travis-ci.org/evandvlad/latte.svg?branch=version-6)](https://travis-ci.org/evandvlad/latte)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/da8aca6f52be4d5d82ef339ef8c2de19)](https://www.codacy.com/app/evandvlad/latte)
+[![Codacy Badge](https://api.codacy.com/project/badge/coverage/da8aca6f52be4d5d82ef339ef8c2de19)](https://www.codacy.com/app/evandvlad/latte)
 
-Потоки (Stream) и обещания (Promise) имеют один интерфейс и отличаются тем, что потоки могут изменять внутреннее состояние, 
-в то время как обещания - нет, значение может быть задано, но после его задания оно не может быть изменено.
+Библиотека для работы с асинхронным кодом с помощью потоков. 
+Определено два вида потоков - изменяемый (MStream) и неизменяемый (IStream).
 
-### Создание Promise/Stream ###
+### Типы значений ###
 
-Конструкторы примают два параметра - функцию инициализации и опционально, контекст для нее. Функция инициализации принимает в 
-качестве параметра функцию изменения внутреннего состояния (для передачи данных в обещание/поток). Если в качестве значения 
-передается экземпляр Promise/Stream, по это значение распаковывается. Возвращаемое значение из функции инициализации 
-игнорируется. Функция вызывается сразу же при создании обещания/потока. 
+Для значений потоков определены два типа данных - L(eft) и R(ight).
+Все имеющиеся значения укладываются в объединение этих типов. 
+Тип Left определяет значение которое будет трактоваться как ошибка, 
+либо значение, которое должно быть отброшено. В каком то смысле, 
+эти два типа задают два канала внутри потока, 
+что позволяет определять обработчики для каждого канала или сразу для обоих. 
 
-    new Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle(Date.now());
-        }, 1000);
-    });
+Тип L представляет собой объект с меткой, по которой и различается этот тип, 
+тип R - остальные значения. 
     
-Конструкторы могут быть вызваны как с ключевым словом new, так и без него.
+    Latte.isL('error') === false;
+    Latte.isL(Latte.L('error')) === true;
+    Latte.isR('value') === true;
+    Latte.isR(Latte.L()) === false;
 
-    Latte.Stream(function(handle){
+Метод *Latte.val* распаковывает значение из типа L, но также может работать и 
+с типом R, у которого нет обертки, метод просто возвращает сами данные. 
+Есть конструктор значения R - функция возвращающая полученный аргумент 
+без преобразований.
+
+    Latte.val(Latte.L('error')) === 'error';
+    Latte.val('value') === 'value';
+    Latte.val(Latte.R('value')) === 'value';
+
+
+### Типы потоков и их создание ###
+
+I(mmutable)Stream - поток с константным значением, значение заданное один раз не может быть изменено.
+
+M(umable)Stream - поток с изменяемым значением, при изменении значения идет вызов обработчиков по цепочке.
+
+Для проверки что значение является потоком и для определения типа потока, 
+заданы методы: *Latte.isStream*, *Latte.isIStream* и *Latte.isMStream*. 
+
+    Latte.isStream({}) === false;
+
+Объекты IStream и MStream реализуют один интерфейс и создаются с 
+помощью конструкторов *Latte.IStream* и *Latte.MStream* соответственно.
+
+    Latte.IStream(function(handle){
+        setTimeout(function(){
+            handle(Date.now()); 
+        }, 1000); 
+    });
+
+    Latte.MStream(function(handle){
         setInterval(function(){
-            handle(this.caption + Date.now());
-        }.bind(this), 1000);
-    }, {
-        caption : 'Timestamp: '
+            handle(Date.now()); 
+        }, 1000); 
     });
 
-### Методы проверки Promise/Stream ###
+Конструкторы принимают в качестве параметра функцию инициализации и
+контекст для этой функции в качестве второго параметра. 
+Функции инициализации передается функция задания значения в поток, 
+принимающая один аргумент. Возвращаемое значение из функции 
+инициализации игнорируется.
 
-Latte.isLatte - метод проверяющий что аргумент является экземпляром Promise или Stream.
+Также потоки могут быть созданы с помощью методов *Latte.fun* и *Latte.gen*, которые будут рассмотрены далее.
 
-    Latte.isLatte(Latte.Promise(function(){})) === true;
-    Latte.isLatte({}) === false;
-    
-Latte.isPromise - метод проверяющий что аргумент является экземпляром Promise.
+### Методы потока ###
 
-    Latte.isPromise(Latte.Promise(function(){})) === true;
-    Latte.isPromise(Latte.Stream(function(){})) === false;
-    
-Latte.isStream - метод проверяющий что аргумент является экземпляром Stream.
+#### Методы экземпляра ####
 
-    Latte.isStream(Latte.Stream(function(){})) === true;
-    Latte.isStream(Latte.Promise(function(){})) === false;
-    
-Указанные методы также работают и для расширенных экземпляров Promise/Stream (расширенных с помощью Latte.extend).
+Многие из методов экземпляра содержат фильтры на входные значения (L/R значения), 
+если после названия метода идет суффикс L или R (*listenL*, *fmapR* и т.д.), 
+то этот метод обрабатывает только указанные типы значений в переданном 
+в него обработчике, если суффикс не указан, то обрабатываются оба 
+канала и фильтрации не происходит. 
+Методы экземпляра можно условно разбить на несколько категорий:
 
-### Latte.E ###
+1. Методы слушатели, не изменяющие значений - *listen*, *listenL*, *listenR*, *log*, *logL*, *logR*.
+2. Методы обработки значений - *then*, *thenL*, *thenR*, *fmap*, *fmapL*, *fmapR*, *pass*, *passL*, *passR*.
+3. Методы работы с состоянием - *fdip*, *fdipL*, *fdipR*, *cdip*, *cdipL*, *cdipR*.
+4. Методы фильтрации потока - *when*, *whenL*, *whenR*, *unless*, *unlessL*, *unlessR*.
+5. Методы торможения/ускорения потока - *cdip*, *cdipL*, *cdipR*, *throttle*, *throttleL*, *throttleR*, *debounce*, *debounceL*, *debounceR*.
+6. Методы объединения потоков - *any*, *merge*
 
-Значение E может трактоваться как ошибка, пустое или отброшенное значение, с его помощью реализуется ветвление, 
-различающее успешное и неуспешное выполнение. Конструктор принимает один параметр и возвращает объект E с полем value, 
-хранящее переданные данные.
+##### listen (listenL, listenR) #####
 
-    var error = Latte.E('error');
-    var empty = Latte.E();
-    
-    error.value === 'error'; // true
-    empty.value === undefined; // true
-    
-Для проверки на значение E есть метод Latte.isE
+Метод прослушивающий изменения потока, принимает в качестве параметра 
+функцию-слушатель и контекст для нее. Возвращаемое методом значение игнорируется.
 
-    Latte.isE(Latte.E()) === true;
-    Latte.isE({value : ''}) === false; 
- 
-### Методы объекта Promise/Stream ###
-
-Как было сказано ранее, Promise и Stream реализуют один интерфейс. 
-
-Методы: always, next, fail, when, unless, fmap, efmap - принимают в качестве параметров, функцию обработки и контекст для нее 
-(опционально). Функция принимает один параметр - текущее значение. 
-
-Методы: combine, any - принимают в качестве параметра одно значение или массив значений. В качестве значения могут выступать
-как экземпляры Promise/Stream, так и любые другие значения.
-
-Методы: always, next, fail, log - возвращают текущий экземпляр (используются ради побочных эффектов, 
-возвращаемый результат из функции обработки игнорируется), в то время как остальные методы создают новые экземпляры.
-
-##### always #####
-
-Метод предназначен для побочных эффектов и вызывает переданную в него функцию независимо от того успешное значение или нет (значение E). 
-Возвращаемое значение из переданной в него функции игнорируется.
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).always(function(value){
-        value === 'test'; // true
-    });
-    
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle(Latte.E(this.message));
-        }.bind(this), 1000);
-    }, {message : 'error'}).always(function(value){
-        Latte.isE(value); // true
-        value.value === 'error'; // true
-    });
-    
-##### next #####
-
-Метод предназначен для побочных эффектов и вызывает переданную в него функцию при успешном значении. 
-Возвращаемое значение из переданной в него функции игнорируется.
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).next(function(value){
-        value === 'test'; // true
-    });
-    
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle(Latte.E(this.message));
-        }.bind(this), 1000);
-    }, {message : 'error'}).next(function(value){
-        // функция не будет вызвана
-    });
-
-##### fail #####
-
-Метод предназначен для побочных эффектов вызывает переданную в него функцию при значении E. 
-Возвращаемое значение из переданной в него функции игнорируется.
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).fail(function(value){
-        // функция не будет вызвана
-    });
-    
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle(Latte.E(this.message));
-        }.bind(this), 1000);
-    }, {message : 'error'}).fail(function(value){
-        Latte.isE(value); // true
-        value.value === 'error'; // true
-    });
-    
-##### when #####
-
-Управляющий метод, переданная в него функция определяет продолжать ли далее передавать значение по цепочке или нет, возвращаемое значение 
-функции приводится к типу Boolean. Обрабатываются только успешные значения (не типа E).
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).when(function(value){
-        return value === 'test';
-    }).next(function(value){
-        value === 'test'; // true
-    });
-    
-##### unless #####
-
-Управляющий метод, переданная в него функция определяет прекратить ли передачу по цепочке или продолжить, возвращаемое значение 
-функции приводится к типу Boolean. Обрабатываются только успешные значения (не типа E).
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).unless(function(value){
-        return value !== 'test';
-    }).next(function(value){
-        value === 'test'; // true
-    });
-    
-##### pass #####
-
-Метод заменяющий текущее значение в цепочке новым значением или новым экземпляром, 
-принимает один параметр - новое значение или новый экземпляр Promise/Stream.
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).pass('new value').next(function(value){
-        value === 'new value'; // true
-    });
-    
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).pass(Latte.Promise(function(handle){
-        handle(Latte.E('error'));
-    }).next(function(value){
-        // функция не будет вызвана
-    }).fail(function(e){
-        e.value === 'error' // true;
-    });
-    
-##### fmap #####
-
-Метод преобразования успешного значения. При необходимости можно вернуть E значение.
-Также может возвращать экземпляр Promise/Stream.
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).fmap(function(value){
-        return value + '-1';
-    }).next(function(value){
-        value === 'test-1'; // true
-    });
-    
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).fmap(function(value){
-        return Latte.Promise(function(handle){
-            handle(Latte.E('error'));
-        });
-    }).next(function(value){
-        // функция не будет вызвана
-    }).fail(function(e){
-        e.value === 'error' // true;
-    });
-    
-##### efmap #####
-
-Метод преобразования значения E. Если метод возвращает не E значение, то считается что тип значения исправлен на успешный.
-Также может возвращать экземпляр Promise/Stream.
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle(Latte.E('error'));
-        }, 1000);
-    }).efmap(function(e){
-        return Latte.E('new ' + e.value);
-    }).fail(function(e){
-        e.value === 'new error'; // true
-    });
-    
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle(Latte.E('test'));
-        }, 1000);
-    }).efmap(function(value){
-        return Latte.Promise(function(handle){
-            handle('not error');
-        });
-    }).next(function(value){
-        value === 'not error'; // true
-    });
-    
-##### fdip #####
-
-Метод опускает функцию в экземпляр. Метод принимает функцию инициализации, не принимающую аргументов и опционально, 
-контекст для нее. Функция инициализации должна вернуть функцию, которая будет работать аналогично обработчику в fmap, но 
-выполняться внутри экземпляра. Функция инициализации вызывается при получении первого значения не типа E единожды.
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).fdip(function(){
-        var values = [];
-        return function(value){
-            values.push(value);
-            return values;
-        };
-    });
-       
-##### debounce #####
-
-Метод задержки вызова. Для обещаний метод просто задерживает передачу данных по цепочке, для потоков - задерживает последовательность 
-быстрых вызовов до тех пор, пока не сработает таймаут и не будет сгенерировано новых событий.
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).debounce(4000).next(function(value){
-        value === 'test'; // true
-    });
-    
-##### throttle #####
-
-Метод задержки вызова. Для обещаний метод просто задерживает передачу данных по цепочке, для потоков - задерживает последовательность 
-быстрых вызовов на определенное время.
-
-    Latte.Promise(function(handle){
-        setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).throttle(4000).next(function(value){
-        value === 'test'; // true
-    });
-    
-##### gacc #####
-
-Метод накапливания данных с помощью генератора (или функции возвращающей объект реализующий интерфейс генератора), метод в
-качестве параметров принимает генератор и опционально, контекст для него.
-
-    Latte.Stream(function(handle){
-        var i = 0,
-        iid = setInterval(function(){
-            handle(++i);
-            i > 2 && clearInterval(iid);
-        }, 1000);
-    }).gacc(function*(value){
-        var result = [value];
-
-        while(result.length < 3){
-            result.push(yield);
-        }
-
-        return result;
-    }).next(function(value){
-        // value - [1, 2, 3]
-    });
-    
-Реализация с функцией
-
-    Latte.Stream(function(handle){
-        var i = 0,
-            iid = setInterval(function(){
-                handle(++i);
-                i > 2 && clearInterval(iid);
-            }, 1000);
-    }).gacc(function(){
-        var result = [];
-
-        return {
-            next : function(value){
-                result.push(value);
-                return {done : result.length >= 3, value : result};
-            }
-        };
-    }).next(function(value){
-        // value - [1, 2, 3]
-    });
-
-##### gtick #####
-
-Метод обратный gacc, в отличии от него, он распространяет несколько событий от одного пришедшего с помощью генератора,
-на каждый его тик, так же распаковывая значения экземпляров Latte.Promise/Latte.Stream.
-
-    Latte.Stream(function(handle){
-        var i = 0;
+    Latte.MStream(function(handle){
         setInterval(function(){
-            handle(++i);  
-        }, 5000);
-    }).gtick(function*(value){
-        yield value + '.1';
-        yield value + '.2';
-        return value + '.3';
+            handle(Date.now()); 
+        }, 1000); 
+    }).listen(function(value){
+        console.log('now: ' + value);    
+    });
+
+##### then (thenL, thenR) #####
+
+Метод преобразования значения потока, принимает в качестве параметра 
+функцию-обработки и контекст для нее. Метод может вернуть как экземпляр потока, 
+так и любое другое значение, в первом случае, значение разворачивается и далее 
+по цепочке уже передается это значение.
+
+    Latte.MStream(function(handle){
+        setInterval(function(){
+            handle(Date.now()); 
+        }, 1000); 
+    }).then(function(value){
+        return Latte.MStream(function(handle){
+             setInterval(function(){
+                handle({
+                    prev : value, 
+                    current : Date.now()
+                }); 
+            }, 1000); 
+        });
+    });
+
+##### fmap (fmapL, fmapR) #####
+
+Метод преобразования значения потока, принимает в качестве параметра 
+функцию-обработки и контекст для нее. Данный метод, в отличии от then, 
+не разворачивает значение потока, если оно было возвращено функцией-обработчиком.
+
+    Latte.MStream(function(handle){
+        setInterval(function(){
+            handle(Date.now()); 
+        }, 1000); 
+    }).fmapR(function(value){
+        return 'now: ' + value;
+    });
+
+##### pass (passL, passR) #####
+
+Метод выполняющий роль логического оператора 'и'. 
+В случае соответствия типов значений, возвращается новое значение по цепочке, 
+в качестве параметра метод принимает как простое значение, так и экземпляр потока.
+
+    Latte.IStream(function(handle){
+        setTimeout(function(){
+            handle(Date.now()); 
+        }, 1000); 
+    }).pass('new value'); 
+
+    Latte.IStream(function(handle){
+        setTimeout(function(){
+            handle(Date.now()); 
+        }, 1000); 
+    }).passL(Latte.IStream(function(handle){
+        setTimeout(function(){
+            handle(Latte.L('new error')); 
+        }, 1000); 
+    })); 
+    
+##### when (whenL, whenR) #####
+
+Метод фильтрации потока, метод принимает функцию-предикат и контекст 
+для нее. Функция-предикат приводит возвращаемое значение к типу Boolean. 
+Если значение функции приводится к false, то для данного типа значение далее 
+не распространяется.
+
+    Latte.IStream(function(handle){
+        setTimeout(function(){
+            handle(Date.now()); 
+        }, 1000); 
+    }).whenR(function(value){
+        return value > new Date(2014, 1, 1).valueOf();   
     }); 
+
     
-##### gmap #####
+##### unless (unlessL, unlessR) #####
 
-Метод аналогичен методу fmap, но работает с генератором. Генератор работает аналогично 
-Latte.Promise.gen/Latte.Stream.gen.
+Метод фильтрации потока, метод принимает функцию-предикат и контекст 
+для нее. Функция-предикат приводит возвращаемое значение к типу Boolean. 
+Если значение функции приводится к true, то для данного типа значение далее 
+не распространяется.
 
-    Latte.Promise(function(handle){
+    Latte.IStream(function(handle){
         setTimeout(function(){
-            handle('test');
-        }, 1000);
-    }).gmap(function*(a){
-        var b = yield Latte.Promise(function(handle){
-            handle('rest');
-        });
+            handle(Date.now()); 
+        }, 1000); 
+    }).unlessR(function(value){
+        return value > new Date(2014, 1, 1).valueOf();   
+    }); 
+
+##### cdip (cdipL, cdipR) #####
+
+Метод для работы с состоянием, метод принимает функцию инициализации и 
+контекст для нее. Функция инициализации вызывается при получении первого значения 
+потока и в качестве параметра получает функцию задания значения в поток, она должна
+вернуть функцию, в которую будет передаваться текущее значение потока. С помощью 
+этого метода также можно разгонять/тормозить поток.
+
+    Latte.MStream(function(handle){
+        setInterval(function(){
+            handle(Date.now()); 
+        }, 1000); 
+    }).cdip(function(handle){
+        var prev;
         
-        var c = yield 'west';
+        return function(value){
+            handle({
+                current : value,
+                prev : prev    
+            });
+            
+            prev = value;    
+        };   
+    }); 
+
+##### fdip (fdipL, fdipR) #####
+
+Метод для работы с состоянием, метод принимает функцию инициализации и 
+контекст для нее. Функция инициализации вызывается при получении первого значения 
+потока, она должна вернуть функцию, в которую будет передаваться текущее значение 
+потока и которая будет возвращать новое значение.
+
+    Latte.MStream(function(handle){
+        setInterval(function(){
+            handle(Date.now()); 
+        }, 1000); 
+    }).fdip(function(){
+        var c = 0;
         
-        return Latte.Promise(function(handle){
-            handle([a, b, c].toString());
-        });
-    }).always(function(value){
-        value === 'test,rest,west';
-    });
+        return function(value){
+            return {
+                value : value,
+                count : ++c    
+            };
+        };   
+    }); 
 
-##### log #####
+##### debounce (debounceL, debounceR) #####
 
-Метод логирующий текущие аргументы через вызов console.log. Метод не принимает параметров.
+Метод подтормаживания потока до тех пор, пока не сработает таймаут с момента 
+вызова получения последнего значения. Метод принимает значение таймаута в
+миллисекундах.
 
-    Latte.Stream(function(handle){
+    Latte.MStream(function(handle){
+        document.addEventListener('mousemove', handle, false);
+    }).debounce(100);
+
+##### throttle (throttleL, throttleR) #####
+
+Метод подтормаживания потока, с помощью заданного таймаута. Метод принимает значение таймаута в миллисекундах.
+
+    Latte.MStream(function(handle){
         setInterval(function(){
             handle(Date.now());
-        }, 1000);
+        }, 20);
+    }).throttle(100);
+    
+
+##### log (logL, logR) #####
+
+Метод вывода текущего значения в консоль (*console.log*), если она доступна. Метод не принимает параметров. 
+
+    Latte.MStream(function(handle){
+        setInterval(function(){
+            handle(Date.now());
+        }, 20);
     }).log();
     
-##### combine #####
-
-Метод комбинирующий текущий экземпляр с другими значениями. В качестве результата
-будет возврашаться массив данных.
-
-    Latte.Stream(function(handle){
-        // ...code
-    }).combine([
-        Latte.Stream(function(){
-            // ...code
-        }),
-        Latte.Stream(function(){
-            // ...code
-        }),
-        'simple value'
-    ]);
-    
 ##### any #####
 
-Метод комбинирующий текущий экземпляр с другими значениями. В качестве результата
-будут возврашаться данные от одного экзепляра.
+Метод объединения потоков. Метод принимает в качестве параметра значение или список значений и соединяет
+их с текущим потоком. В качестве значения могут быть как потоки, так и обычные значения. Новый поток 
+будет генерировать событие при любом изменении.
 
-    Latte.Stream(function(handle){
-        // ...code
-    }).any([
-        Latte.Stream(function(){
-            // ...code
-        }),
-        Latte.Stream(function(){
-            // ...code
-        })
-    ]);
+    Latte.MStream(function(handle){
+        handle('default value');
+    }).any([Latte.MStream(function(handle){
+        setTimeout(function(){
+            handle('new value');
+        }, 100);
+    })]); 
     
-### Статические методы Promise/Stream ###
+##### merge #####
 
-Методы collect и any, аналогичны методом combine и any, определенных для экземпляра. Все методы возвращают новый экземпляр.
-Методы collectAll, collect, any принимают в качестве параметра массив значений. В качестве значения могут выступать
-как экземпляры Promise/Stream, так и любые другие значения.
+Метод объединения потоков. Метод принимает в качестве параметра значение или список значений и соединяет
+их с текущим потоком. В качестве значения могут быть как потоки, так и обычные значения. При изменении в качестве значения
+будет возвращаться массив всех значений. 
 
-##### init #####
+    Latte.MStream(function(handle){
+        handle('default value');
+    }).merge(['other value', Latte.MStream(function(handle){
+        setTimeout(function(){
+            handle('new value');
+        }, 100);
+    })]); 
 
-Метод создающий экземляр Promise или Stream из переданного значения. Если значение является экземпляром Promise/Stream,
-то оно распаковывается
 
-    Latte.Promise.init('test').next(function(v){
-        v === 'test' // true
-    });
-    
-    Latte.Promise.init(Latte.Promise.init('test')).next(function(v){
-        v === 'test' // true
-    });
+#### Статические методы ####
 
-##### collectAll #####
-
-Метод собирающий данные в список, как успешные, так и нет, если есть хотя бы одно неуспешное 
-значение, то весь список упаковывается в Latte.E, в котором содержатся все данные экземпляров.
-
-    Latte.Promise.collectAll(([
-        Latte.Promise(function(){
-            // ...code
-        }),
-        Latte.Promise(function(){
-            // ...code
-        }),
-        'simple value'
-    ]);
-
-##### collect #####
-
-Метод собирающий успешные данные в список, если хотя бы один результат будет неуспешным, 
-то возвращается первое неуспешное значение.
-
-    Latte.Promise.collect(([
-        Latte.Promise(function(){
-            // ...code
-        }),
-        Latte.Promise(function(){
-            // ...code
-        })
-    ]);
-    
 ##### any #####
 
-Метод обрабатывающий первое успешное значение из списка. Возвращается это успешное значение.
+Метод с той же функциональностью что и метод any от экземпляра потока, но принимает только массив значений.
 
-    Latte.Stream.any([
-        Latte.Stream(function(){
-            // ...code
-        }),
-        Latte.Stream(function(){
-            // ...code
-        })
-    ]);
+    Latte.MStream.any(['value', Latte.MStream(function(handle){
+        setTimeout(function(){
+            handle('new value');
+        }, 100);
+    })]); 
     
-##### fun #####
+##### merge #####
 
-Метод принимает функцию и контекст для нее в качестве опционального параметра и возвращает функцию которая возвращает
-объект Promise/Stream. Если переданная функция возвращает не объект Promise/Stream, то возвращаемое значение упаковывается в
-необходимую обертку. Функция в качестве аргументов может получать как простые значения, так и значения Promise/Stream, которые 
-вычисляются и только потом передаются в качестве параметров. Если хотя бы один из параметров будет E, либо вычислен
-как E, то фунция не будет вызвана, но при этом цепочка не прервется.
+Метод с той же функциональностью что и метод merge от экземпляра потока, но принимает только массив значений.
 
-    Latte.Promise.fun(function(){
-        return Array.prototype.slice.call(arguments).toString();
-    })(Latte.Promise(function(handle){
-        handle('test');
-    }), 'rest').always(function(value){
-        value === 'test,rest';
-    });
+    Latte.MStream.merge(['other value', Latte.MStream(function(handle){
+        setTimeout(function(){
+            handle('new value');
+        }, 100);
+    })]); 
     
-##### gen #####
+##### pack #####
 
-Метод принимает генератор (или функцию возвращающую объект реализующий интерфейс генератора) и контекст для него в качестве 
-опционального параметра и возвращает функцию которая возвращает объект Promise/Stream. 
-Если переданная функция возвращает не объект Promise/Stream, то возвращаемое значение упаковывается в
-необходимую обертку. Функция в качестве аргументов может получать как простые значения, так и значения Promise/Stream, которые 
-вычисляются и только потом передаются в качестве параметров. Если хотя бы один из параметров будет E, либо вычислен
-как E, то фунция не будет вызвана, но при этом цепочка не прервется. Внутри генератора если для yield передавать объект 
-Promise/Stream, то это значение будет вычисляться. 
+Метод для передачи значения в поток.
 
-    Latte.Promise.gen(function*(a, b){
-        var c = yield Latte.Promise(function(handle){
-            handle('best');
-        });
-        
-        var d = yield 'west';
-        
-        return Latte.Promise(function(handle){
-            handle([a, b, c, d].toString());
-        });
-    })(Latte.Promise(function(handle){
-        handle('test');
-    }), 'rest').always(function(value){
-        value === 'test,rest,best,west';
-    });
- 
+    Latte.IStream.pack('value'); 
+    
+##### never #####
+
+Метод создание пустого потока. Метод не принимает аргументов.
+
+    Latte.IStream.never(); 
+    
+##### lazy #####
+
+Метод создания ленивого потока, в данном случае, функция инициализации вызывается не в момент создания экземпляра,
+как в обычном случае, а в момент присоединения к экземпляру обработчика или слушателя потока. Метод принимает 
+в качестве параметра функцию инициализации и контекст для нее.
+
+    Latte.IStream.lazy(function(handle){
+        setTimeout(function(){
+            handle('test');
+        }, 100);
+    }); 
+    
 ##### shell #####
 
-Метод возвращающий объект, представляющий собой обертку над Promise/Stream объектом, который имеет методы:
+Метод для ручного управления потоком. Метод возвращает объект с методами *set*, *get* и *out*.
+Метод *set* - для передачи значения в поток, метод *out* - возвращает экземпляр потока (один и тот же экземпляр).
+С помощью метода *get* можно узнать текущее значение. Метод принимает в качестве параметра значение, которое будет 
+возвращено в случае, если значение не было задано, либо еще не вычислено.
 
--  set - принимает один параметр - значение любого типа и помещает его в Promise/Stream, если в качестве значение будет
-экземпляр Promise/Stream, то оно будет развернуто перед тем как помещено в качестве значения в текущий экземпляр.
-
--  out - метод возвращает сам объект Promise/Stream.
-
-Сам метод не принимает параметров.
-
-    var shell = Latte.Stream.shell();
+    var shell = Latte.MStream.shell();
     
-    setInterval(function(){
-        shell.set(Date.now());
-    }, 1000);
+    shell.out().log();
+    console.log(shell.get());
     
-    shell.out().always(function(value){
-        // value - current timestamp
-    });
+    shell.set('value-1');
+    shell.set('value-2'); 
 
+### Latte.fun & Latte.callback ###
 
-### Latte.callback ###
+Благодаря методам *Latte.fun* и *Latte.callback* имеется возможность преобразовывать функции работающие с 
+callback функциями в потоки Latte.IStream/Latte.MStream.
 
-Метод для оберки функции. Метод принимает функции и опционально, контекст для нее и возращает обернутую функцию 
-которую можно использовать в методах Latte.Promise.fun/Latte.Stream.fun.
+Метод *Latte.fun* принимает обычную функцию и преобразовывает ее в функцию возвращающую Latte.MStream поток. В качестве 
+второго параметра принимается контекст для этой функции.
 
-    Latte.Stream.fun(document.addEventListener, document)('click', Latte.callback(function(e){
-        return e;
-    }), false).log();
+    Latte.fun(function(a, b, c, d){
+        return a + b + c + d;
+    })('t', 'e', 's', 't').log();
     
-Если callback-функция обернута в Latte.callback и используется в Latte.Promise.fun/Latte.Stream.fun, то 
-возращается значение возвращаемое функцией обернутой Latte.callback. Можно передавать несколько обернутых функций.
+Метод *Latte.callback* принимает callback-функцию и преобразует ее для работы в связке с *Latte.fun*, значение возвращаемое 
+из этой функции передавается в поток.
 
-Для проверки что функция обернута, есть метод Latte.isCallback.
-   
-### Latte.extend ###
+    Latte.fun(setTimeout)(Latte.callback(function(){
+        return 'test';
+    }), 100).log(); 
+    
+    Latte.fun(document.addEventListener, document)('mousemove', Latte.callback(function(e){
+        return {
+            x : e.pageX,
+            y : e.pageY
+        };
+    }), false).debounce(50).log();
+    
+Можно задать несколько callback функций, если это определено в оригинальной функции, в таком случае, 
+вызов любой из них будет передавать значение в поток. 
+Чтобы проверить что функция обернута в *Latte.callback*, нужно вызвать метод *Latte.isCallback*
 
-Метод Latte.extend позволяет создать пользовательскую сущность Promise/Stream на основе имеющихся, реализуя механизм наследования и копируя статические методы родительской сущности.
+    Latte.isCallback(function(){}) === false;
+    Latte.isCallback(Latte.callback(function(){})) === true;
+    
+### ES6 генераторы ###
 
-    var MyPromise = Latte.extend(Latte.Promise, {
+Метод *Latte.gen* позволяет работать с ES6 генераторами. Нотация похожа на do-нотацию Haskell при работе с монадами.
+
+    Latte.gen(function*(a, b){
+        var c = yield Latte.IStream(function(handle){
+                setTimeout(function(){
+                    handle('s');
+                }, 20);
+            }),
+            d = yield 't';
+            
+        return Latte.IStream(function(handle){
+            setTimeout(function(){
+                handle(a + b + c + d);
+            }, 100);
+        });    
+    })('t', 'e').log(); 
+    
+Метод может возвращать на любом этапе (yield/return) значение любого типа, в том числе и потоки. 
+Если возвращается *Latte.L*, то происходит выход из генератора с возвратом этого значения.
+    
+### Расширение Latte.IStream/Latte.MStream ###
+
+Метод *Latte.extend* позволяет создать пользовательский тип потока на основе уже имеющихся (IStream/MStream), 
+реализуя механизм наследования и копируя статические методы родительского типа.
+
+    var MyStream = Latte.extend(Latte.IStream, {
         method : function(){
             return 'method';
         }
     });
 
-Метод принимает сущность, на основе которой будет построена пользовательская сущность и объект, расширяющий прототип, если в этом объекте имеется ключ constructor, 
-то функция, заданная по этому ключу, будет являться конструктором новой сущности.
+Метод принимает конструктор потока, на основе которого будет построен пользовательский поток и объект, 
+расширяющий прототип, если в этом объекте имеется ключ constructor, то функция, заданная по этому ключу, 
+будет являться конструктором новой потока.
 
 Второй параметр может быть опущен.
 
-    var MyStream = Latte.extend(Latte.Stream);
+    var MyStream2 = Latte.extend(Latte.MStream);
